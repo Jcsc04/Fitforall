@@ -107,8 +107,8 @@ const S = {
   mono: { fontFamily:"var(--fm)", fontSize:"10px", letterSpacing:"2px", color:"var(--mut)" },
 };
 
-function Card({ children, style, accent }) {
-  return <div style={{ ...S.card, ...(accent ? { border:`1px solid ${accent}` } : {}), ...style }}>{children}</div>;
+function Card({ children, style, accent, onClick }) {
+  return <div onClick={onClick} style={{ ...S.card, ...(accent ? { border:`1px solid ${accent}` } : {}), ...style }}>{children}</div>;
 }
 function Mono({ children, style }) {
   return <div style={{ ...S.mono, ...style }}>{children}</div>;
@@ -513,7 +513,7 @@ function AdminPanel({ onClose }) {
               : (ADMIN_DATA.trainerClients[selTrainer.id]||[]).map((cl,i)=>(
                 <Card key={i} style={{ padding:"12px", marginBottom:"7px" }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"3px" }}>
-                    <span style={{ fontWeight:600, fontSize:"13px" }}>{cl.name}</span>
+                    <span style={{ fontWeight:700, fontSize:"16px" }}>{cl.name}</span>
                     <span style={{ fontSize:"11px", color:"var(--mut)" }}>{cl.sessions} sessions</span>
                   </div>
                   <div style={{ fontSize:"11px", color:"var(--mut)", marginBottom:"6px" }}>{cl.goal}</div>
@@ -847,7 +847,7 @@ function NutritionHub() {
       });
       const d = await res.json();
       const raw = d.content?.[0]?.text || "";
-      setMeals(JSON.parse(raw.replace("```json","").replace("```","").trim()));
+      setMeals(JSON.parse(raw.replace(/```json/g,"").replace(/```/g,"").trim()));
     } catch { setMeals({ meals:[{mealTime:"Error",name:"Couldn't generate meals",calories:"—",protein:"—",carbs:"—",fat:"—",ingredients:[],prep:"Please try again.",tip:"Check your connection."}], dailyTotals:{}, groceryList:[] }); }
     setMealsLoading(false);
   }
@@ -1263,6 +1263,506 @@ function TrainerUpgradeScreen({ clientCount, onUpgraded, onClose }) {
   );
 }
 
+
+// ─── Packages Manager ─────────────────────────────────────────────────────────
+function PackagesManager({ packages, setPackages, paypalEmail, bankDetails, onClose }) {
+  const [editing, setEditing] = useState(null);
+  const [newPkg, setNewPkg] = useState({ name:"", sessions:"4", price:"", desc:"", perks:"" });
+  const [showNew, setShowNew] = useState(false);
+
+  function save() {
+    if (!newPkg.name||!newPkg.price) return;
+    if (editing) {
+      setPackages(p=>p.map(x=>x.id===editing?{...newPkg,id:editing}:x));
+    } else {
+      setPackages(p=>[...p,{...newPkg,id:Date.now()}]);
+    }
+    setEditing(null); setShowNew(false); setNewPkg({name:"",sessions:"4",price:"",desc:"",perks:""});
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:600, display:"flex", flexDirection:"column", animation:"fadeIn .2s" }}>
+      <div style={{ padding:"14px 18px", background:"rgba(15,15,15,.98)", borderBottom:"1px solid rgba(255,255,255,.08)", display:"flex", alignItems:"center", gap:"11px", flexShrink:0 }}>
+        <div style={{ flex:1 }}><div style={{ fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"2px", color:"var(--acc)" }}>📦 PT PACKAGES</div><Mono>Create & manage your training packages</Mono></div>
+        <button onClick={onClose} style={{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--mut)", cursor:"pointer", padding:"6px 13px", fontSize:"11px", fontFamily:"var(--fm)" }}>← BACK</button>
+      </div>
+      <div style={{ flex:1, overflowY:"auto", padding:"16px 18px" }}>
+        {/* Payment info */}
+        <Card style={{ padding:"13px", marginBottom:"14px", border:"1px solid rgba(255,140,0,.2)" }}>
+          <Mono style={{ color:"var(--a3)", marginBottom:"7px" }}>CLIENTS PAY VIA</Mono>
+          <div style={{ fontSize:"13px", color:"rgba(255,255,255,.7)" }}>
+            {paypalEmail && <div>💳 PayPal: <span style={{ color:"var(--acc)" }}>{paypalEmail}</span></div>}
+            {bankDetails && <div style={{ marginTop:"4px" }}>🏦 Bank: <span style={{ color:"var(--acc)" }}>{bankDetails}</span></div>}
+            {!paypalEmail && !bankDetails && <div style={{ color:"var(--mut)" }}>No payment method set. Go to Profile → Payment Settings.</div>}
+          </div>
+        </Card>
+
+        {/* Package list */}
+        <div style={{ fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px", marginBottom:"10px" }}>YOUR PACKAGES ({packages.length})</div>
+        {packages.map(pkg=>(
+          <Card key={pkg.id} style={{ padding:"14px", marginBottom:"9px", border:"1px solid rgba(124,58,237,.2)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px" }}>
+              <div>
+                <div style={{ fontFamily:"var(--fd)", fontSize:"15px", color:"var(--acc)", letterSpacing:"1px" }}>{pkg.name}</div>
+                <Mono style={{ marginTop:"2px" }}>{pkg.sessions} sessions · <span style={{ color:"var(--a3)" }}>${pkg.price}/mo</span></Mono>
+              </div>
+              <div style={{ display:"flex", gap:"6px" }}>
+                <button onClick={()=>{ setNewPkg({...pkg}); setEditing(pkg.id); setShowNew(true); }} style={{ padding:"4px 10px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"6px", color:"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)" }}>EDIT</button>
+                <button onClick={()=>setPackages(p=>p.filter(x=>x.id!==pkg.id))} style={{ padding:"4px 10px", background:"rgba(255,61,107,.08)", border:"1px solid rgba(255,61,107,.2)", borderRadius:"6px", color:"var(--a2)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)" }}>DEL</button>
+              </div>
+            </div>
+            {pkg.desc && <div style={{ fontSize:"12px", color:"rgba(255,255,255,.55)", marginBottom:"3px" }}>{pkg.desc}</div>}
+            {pkg.perks && <div style={{ fontSize:"11px", color:"var(--a3)" }}>✓ {pkg.perks}</div>}
+          </Card>
+        ))}
+
+        <button onClick={()=>{ setNewPkg({name:"",sessions:"4",price:"",desc:"",perks:""}); setEditing(null); setShowNew(true); }} style={{ width:"100%", padding:"13px", background:"rgba(255,112,67,.1)", border:"2px dashed rgba(255,112,67,.3)", borderRadius:"12px", color:"var(--tr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px", marginTop:"8px" }}>+ CREATE NEW PACKAGE</button>
+
+        {showNew && (
+          <Sheet onClose={()=>setShowNew(false)} title={editing?"EDIT PACKAGE":"NEW PACKAGE"} acc="var(--tr)">
+            <div style={{ display:"flex", flexDirection:"column", gap:"11px" }}>
+              <Field lbl="PACKAGE NAME" val={newPkg.name} set={v=>setNewPkg(p=>({...p,name:v}))} ph="e.g. Starter Pack" acc="var(--tr)"/>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" }}>
+                <div>
+                  <Mono style={{ marginBottom:"7px" }}>SESSIONS</Mono>
+                  <select value={newPkg.sessions} onChange={e=>setNewPkg(p=>({...p,sessions:e.target.value}))} style={{ width:"100%", padding:"10px 12px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"10px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)" }}>
+                    {["1","2","4","6","8","10","12","16","20"].map(n=><option key={n}>{n}</option>)}
+                  </select>
+                </div>
+                <Field lbl="PRICE (USD)" val={newPkg.price} set={v=>setNewPkg(p=>({...p,price:v}))} ph="49.99" acc="var(--tr)" type="number"/>
+              </div>
+              <Field lbl="DESCRIPTION" val={newPkg.desc} set={v=>setNewPkg(p=>({...p,desc:v}))} ph="What's included" acc="var(--tr)"/>
+              <Field lbl="PERKS (optional)" val={newPkg.perks} set={v=>setNewPkg(p=>({...p,perks:v}))} ph="e.g. Nutrition guide, Check-ins" acc="var(--tr)"/>
+              <PBtn onClick={save} disabled={!newPkg.name||!newPkg.price} col="var(--tr)" style={{ color:"#fff" }}>{editing?"SAVE CHANGES":"CREATE PACKAGE"}</PBtn>
+            </div>
+          </Sheet>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Client Full Profile ───────────────────────────────────────────────────────
+function ClientProfile({ client, notes, onBack, onUpdate, onDelete, onSuspend, packages, paypalEmail, clientPrograms, setClientPrograms, setShowSendWorkout }) {
+  const [view, setView] = useState("profile"); // profile | program | packages
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState({...client});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showProgramBuilder, setShowProgramBuilder] = useState(false);
+  const [genType, setGenType] = useState("ai");
+  const prog = (clientPrograms||{})[client.id];
+
+  const age = client.dob ? new Date().getFullYear() - new Date(client.dob).getFullYear() : null;
+  const isSuspended = client.status === "suspended";
+
+  function sendProgram() {
+    if (!client.email || !prog) return;
+    const sub = encodeURIComponent("Fit2All — New Workout Program from your Trainer");
+    const days = prog.phases?.[0]?.days||prog.weeklySchedule||[];
+    const sched = days.slice(0,3).map(d=>"• "+d.day+": "+(d.sessionName||d.focus)).join("\n");
+    const body = encodeURIComponent(
+      "Hi "+client.name+"! 💪\n\n"+
+      "Your trainer has created a new program for you!\n\n"+
+      "📋 "+prog.programName+"\n\n"+
+      "WEEKLY SCHEDULE PREVIEW:\n"+sched+"\n\nAnd more...\n\n"+
+      "Log in to your Fit2All Member account to see your full program:\nhttps://fit2all.vercel.app\n\n"+
+      "— Your Personal Trainer"
+    );
+    window.open("mailto:"+client.email+"?subject="+sub+"&body="+body,"_blank");
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column" }}>
+      {/* Header */}
+      <div style={{ position:"relative", height:"180px" }}>
+        <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=70" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.4) saturate(.6)" }}/>
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(10,10,10,.2) 0%,rgba(10,10,10,.9) 100%)" }}/>
+        <button onClick={onBack} style={{ position:"absolute", top:"14px", left:"14px", background:"rgba(0,0,0,.5)", border:"1px solid rgba(255,255,255,.15)", borderRadius:"8px", color:"rgba(255,255,255,.7)", cursor:"pointer", padding:"6px 11px", fontSize:"11px", fontFamily:"var(--fm)" }}>← CLIENTS</button>
+        {isSuspended && <div style={{ position:"absolute", top:"14px", right:"14px", padding:"3px 10px", background:"rgba(255,61,107,.2)", border:"1px solid rgba(255,61,107,.4)", borderRadius:"50px", fontSize:"10px", color:"var(--a2)", fontFamily:"var(--fm)" }}>SUSPENDED</div>}
+        <div style={{ position:"absolute", bottom:"14px", left:"18px", right:"18px", display:"flex", alignItems:"flex-end", gap:"12px" }}>
+          <div style={{ width:"56px", height:"56px", borderRadius:"50%", background:"linear-gradient(135deg,var(--tr),#ff8a50)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"20px", border:"2px solid rgba(255,112,67,.4)", flexShrink:0 }}>{client.av}</div>
+          <div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px", color:"var(--txt)" }}>{client.name}</div>
+            <Mono style={{ color:"var(--tr)" }}>{client.goal}{age?" · Age "+age:""}</Mono>
+          </div>
+        </div>
+      </div>
+
+      {/* Sub nav */}
+      <div style={{ display:"flex", gap:"6px", padding:"12px 18px 0", borderBottom:"1px solid rgba(255,255,255,.06)", flexShrink:0 }}>
+        {[["profile","👤 Profile"],["program","💪 Program"],["packages","📦 Packages"]].map(([v,lbl])=>(
+          <button key={v} onClick={()=>setView(v)} style={{ padding:"7px 13px", background:view===v?"var(--tr)":"rgba(255,255,255,.04)", border:`1px solid ${view===v?"var(--tr)":"rgba(255,255,255,.07)"}`, borderRadius:"50px", color:view===v?"#fff":"var(--mut)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fb)", fontWeight:600 }}>{lbl}</button>
+        ))}
+      </div>
+
+      <div style={{ flex:1, overflowY:"auto", padding:"14px 18px 80px" }}>
+
+        {/* ── PROFILE VIEW ── */}
+        {view==="profile" && (
+          <div>
+            <Card style={{ padding:"14px", marginBottom:"11px", border:"1px solid rgba(255,112,67,.18)" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px" }}>
+                <div style={{ fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px", color:"var(--tr)" }}>CLIENT DETAILS</div>
+                <button onClick={()=>setEditing(!editing)} style={{ padding:"5px 12px", background:editing?"var(--tr)":"rgba(255,112,67,.12)", border:"1px solid rgba(255,112,67,.3)", borderRadius:"7px", color:editing?"#fff":"var(--tr)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)" }}>{editing?"SAVE ✓":"EDIT"}</button>
+              </div>
+              {editing ? (
+                <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+                  <Field lbl="NAME" val={editData.name} set={v=>setEditData(p=>({...p,name:v}))} ph="Full name" acc="var(--tr)"/>
+                  <Field lbl="EMAIL" val={editData.email||""} set={v=>setEditData(p=>({...p,email:v}))} ph="client@email.com" acc="var(--tr)" type="email"/>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px" }}>
+                    <div>
+                      <Mono style={{ marginBottom:"6px" }}>SEX</Mono>
+                      <select value={editData.sex||"Male"} onChange={e=>setEditData(p=>({...p,sex:e.target.value}))} style={{ width:"100%", padding:"9px 11px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"9px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)" }}>
+                        {["Male","Female","Other"].map(s=><option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <Mono style={{ marginBottom:"6px" }}>DATE OF BIRTH</Mono>
+                      <input type="date" value={editData.dob||""} onChange={e=>setEditData(p=>({...p,dob:e.target.value}))} style={{ width:"100%", padding:"9px 11px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"9px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)", outline:"none", colorScheme:"dark" }}/>
+                    </div>
+                  </div>
+                  <div>
+                    <Mono style={{ marginBottom:"6px" }}>GOAL</Mono>
+                    <select value={editData.goal} onChange={e=>setEditData(p=>({...p,goal:e.target.value}))} style={{ width:"100%", padding:"9px 11px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"9px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)" }}>
+                      {["Muscle Gain","Fat Loss","Endurance","Flexibility","General Fitness","Sport Performance"].map(g=><option key={g}>{g}</option>)}
+                    </select>
+                  </div>
+                  <Field lbl="INJURIES / LIMITATIONS" val={editData.injuries||""} set={v=>setEditData(p=>({...p,injuries:v}))} ph="e.g. Lower back pain..." acc="var(--tr)" rows={2}/>
+                  <PBtn onClick={()=>{ onUpdate(editData); setEditing(false); }} col="var(--tr)" style={{ color:"#fff" }}>SAVE CHANGES</PBtn>
+                </div>
+              ) : (
+                <div>
+                  {[["Email",client.email||"—"],["Sex",client.sex||"—"],["Age",age?age+" years":"—"],["Injuries",client.injuries||"None reported"],["Sessions",client.sessions+" completed"],["Progress",client.progress+"%"],["Streak",client.streak+" days"]].map(([k,v])=>(
+                    <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+                      <span style={{ fontSize:"13px", color:"var(--mut)" }}>{k}</span>
+                      <span style={{ fontSize:"13px", fontWeight:500, color:k==="Injuries"&&v!=="None reported"?"var(--yw)":"var(--txt)" }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Recent notes */}
+            {(notes||[]).slice(0,3).length>0 && (
+              <Card style={{ padding:"13px", marginBottom:"11px" }}>
+                <Mono style={{ marginBottom:"9px", color:"var(--tr)" }}>RECENT NOTES</Mono>
+                {(notes||[]).slice(0,3).map((n,i)=>(
+                  <div key={i} style={{ padding:"8px 0", borderBottom:i<2?"1px solid rgba(255,255,255,.05)":"none" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"3px" }}><Mono>{n.d}</Mono><span>{n.m}</span></div>
+                    <div style={{ fontSize:"13px", color:"rgba(255,255,255,.7)" }}>{n.n}</div>
+                  </div>
+                ))}
+              </Card>
+            )}
+
+            {/* Actions */}
+            <div style={{ display:"flex", gap:"8px", marginBottom:"10px" }}>
+              <button onClick={()=>setShowSendWorkout(client.id)} style={{ flex:1, padding:"11px", background:"rgba(232,41,30,.1)", border:"1px solid rgba(232,41,30,.25)", borderRadius:"10px", color:"var(--rd)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>💪 SEND WORKOUT</button>
+              <button onClick={()=>onSuspend(client.id)} style={{ flex:1, padding:"11px", background:isSuspended?"rgba(34,197,94,.1)":"rgba(255,140,0,.08)", border:`1px solid ${isSuspended?"rgba(34,197,94,.25)":"rgba(255,140,0,.2)"}`, borderRadius:"10px", color:isSuspended?"var(--a3)":"var(--yw)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>
+                {isSuspended?"RESTORE":"SUSPEND"}
+              </button>
+            </div>
+            {showDeleteConfirm ? (
+              <Card style={{ padding:"14px", border:"1px solid rgba(255,61,107,.3)", textAlign:"center" }}>
+                <div style={{ fontSize:"13px", color:"var(--mut)", marginBottom:"11px" }}>Delete {client.name}? This cannot be undone.</div>
+                <div style={{ display:"flex", gap:"9px" }}>
+                  <button onClick={()=>setShowDeleteConfirm(false)} style={{ flex:1, padding:"10px", background:"transparent", border:"1px solid rgba(255,255,255,.1)", borderRadius:"9px", color:"var(--mut)", cursor:"pointer" }}>Cancel</button>
+                  <button onClick={()=>{ onDelete(client.id); onBack(); }} style={{ flex:1, padding:"10px", background:"var(--a2)", border:"none", borderRadius:"9px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>DELETE</button>
+                </div>
+              </Card>
+            ) : (
+              <button onClick={()=>setShowDeleteConfirm(true)} style={{ width:"100%", padding:"10px", background:"transparent", border:"1px solid rgba(255,61,107,.2)", borderRadius:"9px", color:"var(--a2)", cursor:"pointer", fontSize:"13px" }}>🗑 Delete Client</button>
+            )}
+          </div>
+        )}
+
+        {/* ── PROGRAM VIEW ── */}
+        {view==="program" && (
+          <div>
+            {prog ? (
+              <div>
+                <Card style={{ padding:"13px", marginBottom:"11px", border:"1px solid rgba(124,58,237,.25)" }}>
+                  <div style={{ fontFamily:"var(--fd)", fontSize:"15px", color:"var(--acc)", letterSpacing:"1px", marginBottom:"4px" }}>{prog.programName}</div>
+                  <div style={{ fontSize:"12px", color:"rgba(255,255,255,.55)", lineHeight:1.6, marginBottom:"10px" }}>{prog.overview}</div>
+                  <div style={{ display:"flex", gap:"7px" }}>
+                    <button onClick={()=>setShowProgramBuilder(true)} style={{ flex:1, padding:"9px", background:"rgba(255,112,67,.1)", border:"1px solid rgba(255,112,67,.25)", borderRadius:"9px", color:"var(--tr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>✏️ EDIT</button>
+                    <button onClick={sendProgram} disabled={!client.email} style={{ flex:1, padding:"9px", background:client.email?"rgba(124,58,237,.15)":"rgba(255,255,255,.05)", border:`1px solid ${client.email?"rgba(124,58,237,.3)":"rgba(255,255,255,.1)"}`, borderRadius:"9px", color:client.email?"var(--acc)":"var(--mut)", cursor:client.email?"pointer":"default", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>📧 SEND TO CLIENT</button>
+                  </div>
+                </Card>
+                <ProgramView prog={prog}/>
+              </div>
+            ) : (
+              <Card style={{ padding:"24px", textAlign:"center", border:"1px solid rgba(255,255,255,.08)" }}>
+                <div style={{ fontSize:"40px", marginBottom:"12px" }}>💪</div>
+                <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"1px", marginBottom:"8px" }}>NO PROGRAM YET</div>
+                <div style={{ fontSize:"13px", color:"var(--mut)", marginBottom:"18px", lineHeight:1.6 }}>Create a program for {client.name} to send directly to their account.</div>
+                <div style={{ display:"flex", gap:"9px" }}>
+                  <button onClick={()=>{ setGenType("ai"); setShowProgramBuilder(true); }} style={{ flex:1, padding:"12px", background:"var(--acc)", border:"none", borderRadius:"10px", color:"#000", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px" }}>🤖 AI GENERATE</button>
+                  <button onClick={()=>{ setGenType("manual"); setShowProgramBuilder(true); }} style={{ flex:1, padding:"12px", background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"10px", color:"var(--txt)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px" }}>✏️ MANUAL</button>
+                </div>
+              </Card>
+            )}
+            {showProgramBuilder && (
+              <ClientProgramBuilder
+                client={client}
+                existing={prog}
+                onSave={p=>{ setClientPrograms(prev=>({...prev,[client.id]:p})); setShowProgramBuilder(false); }}
+                onClose={()=>setShowProgramBuilder(false)}
+              />
+            )}
+          </div>
+        )}
+
+        {/* ── PACKAGES VIEW ── */}
+        {view==="packages" && (
+          <div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px", marginBottom:"11px", color:"var(--acc)" }}>PACKAGES AVAILABLE TO {client.name.split(" ")[0].toUpperCase()}</div>
+            {packages.length===0 ? (
+              <Card style={{ padding:"20px", textAlign:"center" }}><Mono>No packages created yet. Add packages in your Profile tab.</Mono></Card>
+            ) : packages.map(pkg=>(
+              <Card key={pkg.id} style={{ padding:"14px", marginBottom:"9px", border:"1px solid rgba(124,58,237,.2)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px" }}>
+                  <div style={{ fontFamily:"var(--fd)", fontSize:"15px", color:"var(--acc)", letterSpacing:"1px" }}>{pkg.name}</div>
+                  <div style={{ fontFamily:"var(--fd)", fontSize:"20px", color:"var(--a3)" }}>${pkg.price}</div>
+                </div>
+                <Mono style={{ marginBottom:"4px" }}>{pkg.sessions} sessions</Mono>
+                {pkg.desc && <div style={{ fontSize:"12px", color:"rgba(255,255,255,.55)", marginBottom:"3px" }}>{pkg.desc}</div>}
+                {pkg.perks && <div style={{ fontSize:"11px", color:"var(--a3)" }}>✓ {pkg.perks}</div>}
+                <div style={{ marginTop:"10px", padding:"8px 11px", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:"8px" }}>
+                  <Mono style={{ color:"var(--acc)", marginBottom:"3px" }}>CLIENT PAYS VIA</Mono>
+                  <div style={{ fontSize:"11px", color:"rgba(255,255,255,.5)" }}>{paypalEmail||"PayPal (not set)"}</div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Client Program Builder ────────────────────────────────────────────────────
+function ClientProgramBuilder({ client, existing, onSave, onClose }) {
+  const [mode, setMode] = useState(existing?"view":"choose");
+  const [genLoading, setGenLoading] = useState(false);
+  const [prog, setProg] = useState(existing||null);
+  const [phase, setPhase] = useState(0);
+  const phases = ["Analysing client profile...","Building personalised splits...","Calculating overload...","Finalising program..."];
+
+  async function generateAI() {
+    setMode("generating"); setGenLoading(true);
+    const cycler = setInterval(()=>setPhase(p=>(p+1)%phases.length),1500);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:6000,
+          system:"You are an elite personal trainer. Create a detailed 4-week periodized program. Return ONLY valid JSON.",
+          messages:[{role:"user",content:"Create 4-week program JSON for client: Name:"+client.name+", Goal:"+client.goal+", Sex:"+(client.sex||"unknown")+", Injuries:"+(client.injuries||"none")+". Use same JSON structure as before with phases, exercises, sets/reps/rest/tempo/rpe/cues/progression fields. Be thorough and professional."}]})
+      });
+      const d = await res.json();
+      const raw = d.content?.[0]?.text||"";
+      clearInterval(cycler);
+      const parsed = JSON.parse(raw.replace(/```json/g,"").replace(/```/g,"").trim());
+      setProg(parsed); setMode("preview"); setGenLoading(false);
+    } catch {
+      clearInterval(cycler);
+      setProg({programName:client.name+"'s Custom Plan",overview:"Personalised "+client.goal+" program.",phases:[{week:1,theme:"Foundation",focus:"Establish baseline",days:[{day:"Monday",sessionName:"Full Body A",muscleGroups:["Full Body"],duration:"50 min",intensity:"Moderate",warmup:"5 min dynamic",exercises:[{name:"Squat",sets:"3",reps:"10",rest:"90s",tempo:"3-1-1",rpe:"7",cues:"Depth below parallel",progression:"Add 2.5kg when all reps complete",muscleTarget:"Quads, glutes"},{name:"Push-ups",sets:"3",reps:"12",rest:"60s",tempo:"2-1-1",rpe:"6",cues:"Core tight",progression:"+2 reps weekly",muscleTarget:"Chest, triceps"}],cooldown:"5 min stretch",sessionNotes:"Focus on form this week"}]}],weeklyGoals:["Complete all sessions","Log weights","Track nutrition"],progressionMarkers:["Adding weight each session","Feel stronger by week 2"],progressionProtocol:"Add weight when reps feel easy",nutritionGuidance:{preworkout:"Light meal 90 min before",postworkout:"Protein within 30 min",dailyProtein:"1.8g/kg bodyweight",hydration:"3L daily"},recoveryProtocol:"Sleep 8 hours, stretch daily"});
+      setMode("preview"); setGenLoading(false);
+    }
+  }
+
+  if (mode==="choose") return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:700, animation:"fadeIn .2s" }}>
+      <Card style={{ padding:"26px 22px", width:"300px", textAlign:"center" }}>
+        <div style={{ fontSize:"36px", marginBottom:"12px" }}>💪</div>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px", marginBottom:"6px" }}>CREATE PROGRAM</div>
+        <div style={{ fontSize:"13px", color:"var(--mut)", marginBottom:"20px" }}>for {client.name}</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:"9px" }}>
+          <PBtn onClick={generateAI} col="var(--acc)" style={{ color:"#000" }}>🤖 AI GENERATE</PBtn>
+          <button onClick={onClose} style={{ padding:"12px", background:"transparent", border:"1px solid rgba(255,255,255,.1)", borderRadius:"var(--r)", color:"var(--mut)", cursor:"pointer", fontSize:"13px" }}>Cancel</button>
+        </div>
+      </Card>
+    </div>
+  );
+
+  if (mode==="generating") return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:700 }}>
+      <Card style={{ padding:"28px 22px", width:"300px", textAlign:"center" }}>
+        <div style={{ width:"50px", height:"50px", borderRadius:"50%", border:"3px solid var(--acc)", borderTopColor:"transparent", animation:"spin 1s linear infinite", margin:"0 auto 16px" }}/>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"8px" }}>GENERATING</div>
+        <Mono style={{ color:"var(--acc)" }}>{phases[phase]}</Mono>
+      </Card>
+    </div>
+  );
+
+  if (mode==="preview" && prog) return (
+    <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:700, display:"flex", flexDirection:"column", animation:"fadeIn .2s", overflowY:"auto" }}>
+      <div style={{ padding:"14px 18px", background:"rgba(15,15,15,.98)", borderBottom:"1px solid rgba(255,255,255,.08)", display:"flex", alignItems:"center", gap:"10px", flexShrink:0 }}>
+        <div style={{ flex:1 }}><div style={{ fontFamily:"var(--fd)", fontSize:"14px", color:"var(--acc)" }}>{prog.programName}</div><Mono>Review before saving</Mono></div>
+        <button onClick={onClose} style={{ background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"8px", color:"var(--mut)", cursor:"pointer", padding:"6px 12px", fontSize:"11px", fontFamily:"var(--fm)" }}>CANCEL</button>
+        <button onClick={()=>onSave(prog)} style={{ padding:"8px 16px", background:"var(--tr)", border:"none", borderRadius:"8px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>SAVE ✓</button>
+      </div>
+      <div style={{ flex:1, padding:"14px 18px", overflowY:"auto" }}>
+        <ProgramView prog={prog}/>
+      </div>
+    </div>
+  );
+  return null;
+}
+
+
+// ─── Send Workout Sheet ────────────────────────────────────────────────────────
+function SendWorkoutSheet({ client, onClose }) {
+  const [workoutType, setWorkoutType] = useState("Full Body Strength");
+  const [week, setWeek] = useState("Week 1");
+  const [customNote, setCustomNote] = useState("");
+  const [sent, setSent] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [workout, setWorkout] = useState(null);
+
+  const WORKOUT_TEMPLATES = {
+    "Full Body Strength": [
+      { name:"Barbell Squat", sets:"4", reps:"8-10", rest:"90s", notes:"Depth below parallel, brace core" },
+      { name:"Bench Press", sets:"4", reps:"8-10", rest:"90s", notes:"Retract scapula, controlled descent" },
+      { name:"Deadlift", sets:"3", reps:"6-8", rest:"2min", notes:"Hip hinge, neutral spine" },
+      { name:"Overhead Press", sets:"3", reps:"10-12", rest:"75s", notes:"Squeeze glutes, lock core" },
+      { name:"Pull-ups", sets:"3", reps:"8-10", rest:"75s", notes:"Full ROM, no kipping" },
+      { name:"Plank", sets:"3", reps:"45s", rest:"45s", notes:"Neutral spine, breathe steadily" },
+    ],
+    "Push Day": [
+      { name:"Bench Press", sets:"4", reps:"8-10", rest:"90s", notes:"Control descent to chest" },
+      { name:"Incline DB Press", sets:"3", reps:"10-12", rest:"75s", notes:"Upper chest focus" },
+      { name:"Overhead Press", sets:"3", reps:"10-12", rest:"75s", notes:"Core tight throughout" },
+      { name:"Lateral Raises", sets:"3", reps:"15", rest:"60s", notes:"Lead with elbows, no swinging" },
+      { name:"Tricep Pushdown", sets:"3", reps:"12-15", rest:"60s", notes:"Elbows pinned to sides" },
+    ],
+    "Pull Day": [
+      { name:"Deadlift", sets:"4", reps:"6-8", rest:"2min", notes:"Hip hinge, bar close to body" },
+      { name:"Pull-ups", sets:"4", reps:"6-10", rest:"90s", notes:"Elbows down, not back" },
+      { name:"Seated Row", sets:"3", reps:"10-12", rest:"75s", notes:"Squeeze shoulder blades" },
+      { name:"Face Pulls", sets:"3", reps:"15-20", rest:"60s", notes:"External rotation at end" },
+      { name:"Barbell Curl", sets:"3", reps:"10-12", rest:"60s", notes:"Fixed elbows, full ROM" },
+    ],
+    "Leg Day": [
+      { name:"Barbell Squat", sets:"4", reps:"8-10", rest:"2min", notes:"Below parallel, drive knees out" },
+      { name:"Romanian Deadlift", sets:"3", reps:"10-12", rest:"90s", notes:"Feel the hamstring stretch" },
+      { name:"Leg Press", sets:"3", reps:"12-15", rest:"75s", notes:"Full depth, controlled" },
+      { name:"Bulgarian Split Squat", sets:"3", reps:"10 each", rest:"75s", notes:"Torso upright" },
+      { name:"Calf Raises", sets:"4", reps:"15-20", rest:"60s", notes:"Pause at top, full ROM" },
+    ],
+    "HIIT Cardio": [
+      { name:"Burpees", sets:"4", reps:"45s on / 15s off", rest:"60s between rounds", notes:"Full extension at top" },
+      { name:"Mountain Climbers", sets:"4", reps:"45s on / 15s off", rest:"60s", notes:"Hips level, fast pace" },
+      { name:"Jump Squats", sets:"4", reps:"45s on / 15s off", rest:"60s", notes:"Land softly, full depth" },
+      { name:"High Knees", sets:"4", reps:"45s on / 15s off", rest:"60s", notes:"Drive knees to chest" },
+      { name:"Box Jumps", sets:"3", reps:"10", rest:"60s", notes:"Soft landing, step down" },
+    ],
+    "Core & Mobility": [
+      { name:"Plank", sets:"3", reps:"60s", rest:"45s", notes:"Neutral spine, no hip sag" },
+      { name:"Dead Bug", sets:"3", reps:"10 each side", rest:"45s", notes:"Lower back flat to floor" },
+      { name:"Russian Twist", sets:"3", reps:"20", rest:"45s", notes:"Controlled rotation" },
+      { name:"Hip 90/90 Stretch", sets:"2", reps:"60s each side", rest:"30s", notes:"Breathe into the stretch" },
+      { name:"Pigeon Pose", sets:"2", reps:"90s each", rest:"30s", notes:"Full hip opener" },
+    ],
+  };
+
+  async function genAIWorkout() {
+    setGenerating(true);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1500,
+          messages:[{ role:"user", content:`Create a single workout session for: Name:${client?.name}, Goal:${client?.goal}${client?.injuries?", Injuries:"+client.injuries:""}. Type:${workoutType}. Return ONLY JSON: {"sessionName":"...","warmup":"5 min specific warmup","exercises":[{"name":"...","sets":"3","reps":"10","rest":"60s","notes":"technique cue"}],"cooldown":"5 min cooldown","coachNote":"motivating note from trainer"}` }]
+        })
+      });
+      const d = await res.json();
+      const raw = d.content?.[0]?.text || "";
+      setWorkout(JSON.parse(raw.replace(/```json/g,"").replace(/```/g,"").trim()));
+    } catch {
+      setWorkout({ sessionName:workoutType, warmup:"5 min light cardio + dynamic stretching", exercises:WORKOUT_TEMPLATES[workoutType]||WORKOUT_TEMPLATES["Full Body Strength"], cooldown:"5 min static stretching", coachNote:"Great session planned for you! Push hard today." });
+    }
+    setGenerating(false);
+  }
+
+  function sendWorkout() {
+    if (!client?.email) { setSent(true); return; }
+    const w = workout || { sessionName:workoutType, exercises:WORKOUT_TEMPLATES[workoutType]||[] };
+    const exerciseList = w.exercises.map(e=>"• "+e.name+": "+e.sets+" sets x "+e.reps+" | Rest: "+e.rest+"\n  Notes: "+e.notes).join("\n");
+    const sub = encodeURIComponent("Fit2All — "+w.sessionName+" from your trainer");
+    const body = encodeURIComponent(
+      "Hi "+client.name+"! 💪\n\n"+
+      "Here is your workout for "+week+":\n\n"+
+      "🔥 SESSION: "+w.sessionName+"\n\n"+
+      "🏃 WARM-UP\n"+(w.warmup||"5 min light cardio")+"\n\n"+
+      "💪 EXERCISES\n"+exerciseList+"\n\n"+
+      "❄️ COOL-DOWN\n"+(w.cooldown||"5 min stretching")+"\n\n"+
+      "📝 COACH NOTES\n"+(customNote||w.coachNote||"Work hard, stay consistent!")+"\n\n"+
+      "— Your Trainer via Fit2All\nhttps://fit2all.vercel.app"
+    );
+    window.open("mailto:"+client.email+"?subject="+sub+"&body="+body, "_blank");
+    setSent(true);
+  }
+
+  if (sent) return (
+    <Sheet onClose={onClose} title="WORKOUT SENT" acc="var(--tr)">
+      <div style={{ textAlign:"center", padding:"20px 0" }}>
+        <div style={{ fontSize:"48px", marginBottom:"12px", animation:"pop .4s" }}>✅</div>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"18px", color:"var(--tr)", letterSpacing:"2px", marginBottom:"8px" }}>SENT!</div>
+        <p style={{ fontSize:"13px", color:"var(--mut)", lineHeight:1.7 }}>Workout emailed to {client?.name}.</p>
+        <PBtn onClick={onClose} col="var(--tr)" style={{ marginTop:"18px", color:"#fff" }}>CLOSE</PBtn>
+      </div>
+    </Sheet>
+  );
+
+  return (
+    <Sheet onClose={onClose} title={"SEND WORKOUT — "+client?.name?.split(" ")[0]?.toUpperCase()} acc="var(--tr)">
+      <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+        {/* Workout type */}
+        <div>
+          <Mono style={{ marginBottom:"8px" }}>WORKOUT TYPE</Mono>
+          <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
+            {Object.keys(WORKOUT_TEMPLATES).map(t=>(
+              <button key={t} onClick={()=>{ setWorkoutType(t); setWorkout(null); }} style={{ padding:"6px 11px", background:workoutType===t?"rgba(232,41,30,.15)":"rgba(255,255,255,.04)", border:`1px solid ${workoutType===t?"var(--rd)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:workoutType===t?"var(--rd)":"var(--mut)", cursor:"pointer", fontSize:"12px" }}>{t}</button>
+            ))}
+          </div>
+        </div>
+        {/* Week */}
+        <div>
+          <Mono style={{ marginBottom:"8px" }}>WEEK / LABEL</Mono>
+          <div style={{ display:"flex", gap:"6px" }}>
+            {["Week 1","Week 2","Week 3","Week 4","Custom"].map(w=>(
+              <button key={w} onClick={()=>setWeek(w)} style={{ padding:"5px 10px", background:week===w?"rgba(255,112,67,.15)":"rgba(255,255,255,.04)", border:`1px solid ${week===w?"var(--tr)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:week===w?"var(--tr)":"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{w}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* AI Generate or use template */}
+        <button onClick={genAIWorkout} disabled={generating} style={{ width:"100%", padding:"11px", background:generating?"rgba(255,255,255,.05)":"rgba(232,41,30,.1)", border:"1px solid rgba(232,41,30,.25)", borderRadius:"10px", color:generating?"var(--mut)":"var(--rd)", cursor:generating?"default":"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>
+          {generating ? "⏳ GENERATING..." : "🤖 AI GENERATE CUSTOM WORKOUT"}
+        </button>
+
+        {/* Preview */}
+        {(workout || WORKOUT_TEMPLATES[workoutType]) && (
+          <Card style={{ padding:"13px", maxHeight:"200px", overflowY:"auto" }}>
+            <Mono style={{ marginBottom:"8px", color:"var(--tr)" }}>WORKOUT PREVIEW</Mono>
+            {(workout?.exercises || WORKOUT_TEMPLATES[workoutType] || []).slice(0,5).map((ex,i)=>(
+              <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:i<4?"1px solid rgba(255,255,255,.05)":"none" }}>
+                <span style={{ fontSize:"13px", fontWeight:500 }}>{ex.name}</span>
+                <span style={{ fontSize:"11px", color:"var(--mut)", fontFamily:"var(--fm)" }}>{ex.sets}×{ex.reps}</span>
+              </div>
+            ))}
+          </Card>
+        )}
+
+        <Field lbl="COACH NOTE (optional)" val={customNote} set={setCustomNote} ph="Words of motivation for your client..." acc="var(--tr)" rows={2}/>
+        <PBtn onClick={sendWorkout} col="var(--tr)" style={{ color:"#fff" }}>📧 SEND TO {client?.name?.split(" ")[0]?.toUpperCase()}</PBtn>
+        {!client?.email && <Mono style={{ textAlign:"center", color:"var(--yw)" }}>⚠️ No email on file for this client</Mono>}
+      </div>
+    </Sheet>
+  );
+}
+
+
 // ─── Trainer Calendar & Booking ────────────────────────────────────────────────
 const TODAY = new Date();
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -1401,7 +1901,7 @@ function TrainerCalendar({ clients }) {
   return (
     <div style={{ animation:"fadeIn .3s" }}>
       {/* View toggle */}
-      <div style={{ display:"flex", gap:"6px", marginBottom:"14px" }}>
+      <div style={{ display:"flex", gap:"6px", marginBottom:"14px", overflowX:"auto", scrollbarWidth:"none" }}>
         {[["month","📅 Month"],["day","🕐 Day"],["requests","📩 Requests"+(pendingCount>0?" ("+pendingCount+")":"")]].map(([v,lbl])=>(
           <button key={v} onClick={()=>setCalView(v)} style={{ padding:"7px 13px", background:calView===v?"var(--tr)":"rgba(255,255,255,.04)", border:`1px solid ${calView===v?"var(--tr)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:calView===v?"#fff":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px", whiteSpace:"nowrap" }}>{lbl}</button>
         ))}
@@ -1611,66 +2111,55 @@ function TrainerDashboard({ user, tab, setTab, onHome }) {
   const [trainerSub, setTrainerSub] = useState(()=>loadTrainerSub());
   const [newName, setNewName] = useState("");
   const [newGoal, setNewGoal] = useState("Muscle Gain");
+  const [newSex, setNewSex] = useState("Male");
+  const [newDOB, setNewDOB] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newInjuries, setNewInjuries] = useState("");
   const [note, setNote] = useState("");
   const [showNote, setShowNote] = useState(false);
+  const [showSendWorkout, setShowSendWorkout] = useState(null); // client id
 
+  const [packages, setPackages] = useState([
+    { id:1, name:"Starter Pack", sessions:4, price:"49.99", desc:"4 x 1-on-1 sessions", perks:"Nutrition guide included" },
+    { id:2, name:"Monthly Program", sessions:8, price:"89.99", desc:"8 sessions + program", perks:"Full program + nutrition" },
+    { id:3, name:"Elite Transform", sessions:16, price:"159.99", desc:"16 sessions + 4-week plan", perks:"Full access + weekly check-ins" },
+  ]);
+  const [paypalEmail, setPaypalEmail] = useState(PP_EMAIL);
+  const [bankDetails, setBankDetails] = useState("");
+  const [showPaymentSettings, setShowPaymentSettings] = useState(false);
+  const [showPackages, setShowPackages] = useState(false);
+  const [clientPrograms, setClientPrograms] = useState({});
   const tplan = getTrainerPlan(trainerSub);
   const limit = tplan.clientLimit;
   const atLimit = clients.length >= limit;
 
-  function handleAdd() { if (atLimit) setShowUpgrade(true); else setShowAdd(true); }
-  function handleUpgraded(pid) { const s = mkTrainerSub(pid); setTrainerSub(s); setShowUpgrade(false); }
+  // Safe guard: clear selId if client no longer exists
+  useEffect(() => {
+    if (selId && !clients.find(c=>c.id===selId)) setSelId(null);
+  }, [selId, clients]);
 
-  // Client detail
+  // Render client profile as full replacement
   if (selId) {
     const cl = clients.find(c=>c.id===selId);
-    const cNotes = notes[selId] || [];
-    return (
-      <div style={{ minHeight:"100vh", background:"var(--bg)", paddingBottom:"32px" }}>
-        <HeroBg src={IMG.trainer} ov="linear-gradient(180deg,rgba(10,10,10,.1) 0%,rgba(10,10,10,.9) 100%)" style={{ height:"165px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 18px 13px", position:"relative" }}>
-          <BackBtn onClick={()=>setSelId(null)}/>
-          <div style={{ fontFamily:"var(--fd)", fontSize:"21px", letterSpacing:"2px" }}>{cl.name.split(" ")[0].toUpperCase()}</div>
-          <div style={{ fontSize:"11px", color:"rgba(255,255,255,.5)", marginTop:"2px" }}>{cl.goal}</div>
-        </HeroBg>
-        <div style={{ padding:"13px 18px 0" }}>
-          <Card style={{ padding:"13px", marginBottom:"11px", border:"1px solid rgba(255,112,67,.2)" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"9px" }}>
-              <div style={{ width:"50px", height:"50px", borderRadius:"50%", background:"linear-gradient(135deg,var(--tr),#ff8a50)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"16px", border:"2px solid rgba(255,112,67,.4)", flexShrink:0 }}>{cl.av}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontWeight:600, fontSize:"14px" }}>{cl.name}</div>
-                <Mono>{cl.sessions} sessions · 🔥 {cl.streak}d streak</Mono>
-              </div>
-            </div>
-            <div style={{ height:"4px", background:"rgba(255,255,255,.08)", borderRadius:"2px", marginBottom:"4px" }}><div style={{ height:"100%", width:cl.progress+"%", background:"linear-gradient(90deg,var(--tr),#ffb74d)", borderRadius:"2px" }}/></div>
-            <div style={{ display:"flex", justifyContent:"space-between" }}><span style={{ fontSize:"10px", color:"var(--mut)" }}>Progress</span><span style={{ fontSize:"10px", color:"var(--tr)", fontFamily:"var(--fm)" }}>{cl.progress}%</span></div>
-          </Card>
-          {/* Quick schedule button */}
-          <div style={{ display:"flex", gap:"8px", marginBottom:"12px" }}>
-            <button onClick={()=>{ setSelId(null); setTab("calendar"); }} style={{ flex:1, padding:"10px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"10px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>📅 SCHEDULE SESSION</button>
-            <button onClick={()=>setShowNote(true)} style={{ flex:1, padding:"10px", background:"rgba(255,112,67,.1)", border:"1px solid rgba(255,112,67,.25)", borderRadius:"10px", color:"var(--tr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>📝 ADD NOTE</button>
-          </div>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"9px" }}>
-            <div style={{ fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px" }}>SESSION NOTES</div>
-          </div>
-          {showNote && (
-            <Card style={{ padding:"11px", marginBottom:"9px", border:"1px solid rgba(255,112,67,.3)", animation:"fadeIn .3s" }}>
-              <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Session notes..." rows={3} style={{ width:"100%", background:"transparent", border:"none", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)", outline:"none" }}/>
-              <div style={{ display:"flex", gap:"6px", marginTop:"6px" }}>
-                <button onClick={()=>{ if(note.trim()){ setNotes(p=>({...p,[selId]:[{d:"Today",n:note,m:"📝"},...(p[selId]||[])]})); setNote(""); setShowNote(false); } }} style={{ flex:1, padding:"8px", background:"var(--tr)", border:"none", borderRadius:"7px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>SAVE</button>
-                <button onClick={()=>setShowNote(false)} style={{ padding:"8px 11px", background:"transparent", border:"1px solid rgba(255,255,255,.08)", borderRadius:"7px", color:"var(--mut)", cursor:"pointer" }}>Cancel</button>
-              </div>
-            </Card>
-          )}
-          {cNotes.map((n,i)=>(
-            <Card key={i} style={{ padding:"11px", marginBottom:"7px", animation:`fadeUp .3s ease ${i*.07}s both` }}>
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"5px" }}><Mono>{n.d}</Mono><span style={{ fontSize:"14px" }}>{n.m}</span></div>
-              <div style={{ fontSize:"13px", lineHeight:1.6 }}>{n.n}</div>
-            </Card>
-          ))}
-        </div>
-      </div>
+    if (cl) return (
+      <ClientProfile
+        client={cl}
+        notes={notes[selId]||[]}
+        onBack={()=>setSelId(null)}
+        onUpdate={updated=>setClients(p=>p.map(c=>c.id===updated.id?{...c,...updated}:c))}
+        onDelete={id=>{ setClients(p=>p.filter(c=>c.id!==id)); setSelId(null); }}
+        onSuspend={id=>setClients(p=>p.map(c=>c.id===id?{...c,status:c.status==="suspended"?"active":"suspended"}:c))}
+        packages={packages}
+        paypalEmail={paypalEmail}
+        clientPrograms={clientPrograms}
+        setClientPrograms={setClientPrograms}
+        setShowSendWorkout={setShowSendWorkout}
+      />
     );
   }
+
+  function handleAdd() { if (atLimit) setShowUpgrade(true); else setShowAdd(true); }
+  function handleUpgraded(pid) { const s = mkTrainerSub(pid); setTrainerSub(s); setShowUpgrade(false); }
 
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", paddingBottom:"100px" }}>
@@ -1698,11 +2187,11 @@ function TrainerDashboard({ user, tab, setTab, onHome }) {
         </div>
       </div>
       <div style={{ display:"flex", gap:"10px", padding:"14px 18px 0", overflowX:"auto", scrollbarWidth:"none" }}>
-        {[{l:"CLIENTS",v:clients.length,i:"👥",c:"var(--tr)"},{l:"THIS WEEK",v:"6",i:"📅",c:"var(--a3)"},{l:"AVG PROGRESS",v:Math.round(clients.reduce((a,c)=>a+c.progress,0)/clients.length)+"%",i:"📈",c:"var(--acc)"}].map(s=>(
-          <div key={s.l} style={{ flexShrink:0, padding:"14px 18px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"14px", minWidth:"100px", textAlign:"center" }}>
+        {[{l:"CLIENTS",v:clients.length,i:"👥",c:"var(--tr)",action:null},{l:"THIS WEEK",v:"6",i:"📅",c:"var(--a3)",action:()=>setTab("calendar")},{l:"AVG PROGRESS",v:Math.round(clients.reduce((a,c)=>a+c.progress,0)/clients.length)+"%",i:"📈",c:"var(--acc)",action:null}].map(s=>(
+          <div key={s.l} onClick={s.action||undefined} style={{ flexShrink:0, padding:"14px 18px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"14px", minWidth:"100px", textAlign:"center", cursor:s.action?"pointer":"default" }}>
             <div style={{ fontSize:"20px", marginBottom:"5px" }}>{s.i}</div>
             <div style={{ fontFamily:"var(--fd)", fontSize:"22px", color:s.c, lineHeight:1 }}>{s.v}</div>
-            <Mono style={{ fontSize:"9px", marginTop:"4px" }}>{s.l}</Mono>
+            <Mono style={{ fontSize:"9px", marginTop:"4px" }}>{s.l}{s.action?" →":""}</Mono>
           </div>
         ))}
       </div>
@@ -1727,9 +2216,10 @@ function TrainerDashboard({ user, tab, setTab, onHome }) {
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"2px" }}>
                     <span style={{ fontWeight:600, fontSize:"13px" }}>{cl.name}</span>
-                    <span style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--acc)", background:"rgba(124,58,237,.08)", padding:"1px 5px", borderRadius:"4px" }}>🔥 {cl.streak}d</span>
+                    <span style={{ fontFamily:"var(--fm)", fontSize:"11px", color:"var(--tr)", background:"rgba(255,112,67,.12)", padding:"2px 8px", borderRadius:"6px" }}>🔥 {cl.streak}d</span>
                   </div>
-                  <Mono style={{ marginBottom:"5px" }}>{cl.goal} · {cl.sessions} sessions</Mono>
+                  <div style={{ fontSize:"13px", color:"rgba(255,255,255,.6)", marginBottom:"3px", fontFamily:"var(--fb)" }}>{cl.goal} · {cl.sessions} sessions{cl.sex?" · "+cl.sex:""}</div>
+                  {(cl.injuries||cl.email) && <div style={{ display:"flex", gap:"8px", marginBottom:"3px" }}>{cl.injuries&&<Mono style={{ fontSize:"9px", color:"var(--yw)" }}>⚠️ {cl.injuries.slice(0,25)}{cl.injuries.length>25?"...":""}</Mono>}{cl.email&&<Mono style={{ fontSize:"9px", color:"var(--acc)" }}>✉️</Mono>}</div>}
                   <div style={{ height:"3px", background:"rgba(255,255,255,.08)", borderRadius:"2px" }}><div style={{ height:"100%", width:cl.progress+"%", background:"linear-gradient(90deg,var(--tr),#ffb74d)", borderRadius:"2px" }}/></div>
                 </div>
               </div>
@@ -1772,25 +2262,115 @@ function TrainerDashboard({ user, tab, setTab, onHome }) {
               </div>
             </div>
           </Card>
+
+          {/* Financials */}
+          <Card style={{ padding:"15px", marginBottom:"11px", border:"1px solid rgba(255,106,26,.25)" }}>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px", color:"var(--a3)", marginBottom:"12px" }}>💰 FINANCIALS</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"9px", marginBottom:"12px" }}>
+              {[
+                {l:"This Week",v:"$"+(clients.filter(c=>c.status!=="suspended").length * (packages.reduce((a,p)=>a+parseFloat(p.price||0),0)/Math.max(packages.length,1))).toFixed(0),c:"var(--a3)"},
+                {l:"This Month",v:"$"+(clients.filter(c=>c.status!=="suspended").length * (packages.reduce((a,p)=>a+parseFloat(p.price||0),0)/Math.max(packages.length,1)) * 4).toFixed(0),c:"var(--acc)"},
+                {l:"Active Clients",v:clients.filter(c=>c.status!=="suspended").length,c:"var(--tr)"},
+                {l:"Packages",v:packages.length,c:"var(--a4)"},
+              ].map(s=>(
+                <div key={s.l} style={{ padding:"11px", background:"rgba(255,255,255,.04)", borderRadius:"10px", textAlign:"center" }}>
+                  <div style={{ fontFamily:"var(--fd)", fontSize:"22px", color:s.c, lineHeight:1 }}>{s.v}</div>
+                  <div style={{ fontSize:"11px", color:"var(--mut)", marginTop:"3px" }}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding:"10px 12px", background:"rgba(255,255,255,.03)", borderRadius:"9px", marginBottom:"10px" }}>
+              <Mono style={{ marginBottom:"4px" }}>PAYMENT DETAILS</Mono>
+              <div style={{ fontSize:"12px", color:"rgba(255,255,255,.5)", marginBottom:"8px" }}>
+                {paypalEmail || "No payment method set"}{bankDetails?" · Bank: "+bankDetails.slice(0,12)+"...":""}
+              </div>
+              <button onClick={()=>setShowPaymentSettings(true)} style={{ padding:"6px 13px", background:"var(--tr)", border:"none", borderRadius:"7px", color:"#fff", cursor:"pointer", fontFamily:"var(--fm)", fontSize:"10px", letterSpacing:"1px" }}>⚙️ UPDATE PAYMENT</button>
+            </div>
+            <button onClick={()=>setShowPackages(true)} style={{ width:"100%", padding:"11px", background:"rgba(124,58,237,.12)", border:"1px solid rgba(124,58,237,.25)", borderRadius:"10px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px" }}>📦 MANAGE PACKAGES</button>
+          </Card>
+
           <PBtn onClick={()=>setShowContact(true)} col="var(--a3)" style={{ color:"#000" }}>📧 CONTACT DEVELOPER</PBtn>
         </div>
+      )}
+      {showSendWorkout && (
+        <SendWorkoutSheet
+          client={clients.find(c=>c.id===showSendWorkout)}
+          onClose={()=>setShowSendWorkout(null)}
+        />
       )}
       {showAdd && (
         <Sheet onClose={()=>setShowAdd(false)} title="ADD CLIENT" acc="var(--tr)">
           <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
-            <Field lbl="CLIENT NAME" val={newName} set={setNewName} ph="Full name" acc="var(--tr)"/>
+            <Field lbl="CLIENT NAME *" val={newName} set={setNewName} ph="Full name" acc="var(--tr)"/>
+            <Field lbl="CLIENT EMAIL *" val={newEmail} set={setNewEmail} ph="client@email.com" acc="var(--tr)" type="email"/>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" }}>
+              <div>
+                <Mono style={{ marginBottom:"7px" }}>SEX</Mono>
+                <select value={newSex} onChange={e=>setNewSex(e.target.value)} style={{ width:"100%", padding:"10px 12px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"10px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)" }}>
+                  {["Male","Female","Other"].map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <Mono style={{ marginBottom:"7px" }}>DATE OF BIRTH</Mono>
+                <input type="date" value={newDOB} onChange={e=>setNewDOB(e.target.value)} style={{ width:"100%", padding:"10px 12px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"10px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)", outline:"none", colorScheme:"dark" }}/>
+              </div>
+            </div>
             <div>
               <Mono style={{ marginBottom:"7px" }}>GOAL</Mono>
               <select value={newGoal} onChange={e=>setNewGoal(e.target.value)} style={{ width:"100%", padding:"10px 12px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"10px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)" }}>
-                {["Muscle Gain","Fat Loss","Endurance","Flexibility","General Fitness"].map(g=><option key={g}>{g}</option>)}
+                {["Muscle Gain","Fat Loss","Endurance","Flexibility","General Fitness","Sport Performance"].map(g=><option key={g}>{g}</option>)}
               </select>
             </div>
-            <PBtn onClick={()=>{ if(!newName.trim()) return; const av=newName.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2); setClients(p=>[...p,{id:p.length+1,name:newName,goal:newGoal,sessions:0,progress:0,av,streak:0}]); setNewName(""); setShowAdd(false); }} col="var(--tr)" style={{ color:"#fff" }}>ADD CLIENT</PBtn>
+            <Field lbl="INJURIES / LIMITATIONS (optional)" val={newInjuries} set={setNewInjuries} ph="e.g. Lower back pain, knee injury..." acc="var(--tr)" rows={2}/>
+            <div style={{ padding:"10px 12px", background:"rgba(255,112,67,.08)", border:"1px solid rgba(255,112,67,.2)", borderRadius:"9px", fontSize:"12px", color:"rgba(255,255,255,.6)", lineHeight:1.6 }}>
+              📧 An email invitation with a temporary password and app download link will be sent to the client automatically.
+            </div>
+            <PBtn onClick={()=>{
+              if (!newName.trim() || !newEmail.trim()) return;
+              const tempPass = "FIT2ALL" + Math.floor(1000+Math.random()*9000);
+              const av = newName.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+              setClients(p=>[...p,{id:p.length+1,name:newName,goal:newGoal,sex:newSex,dob:newDOB,email:newEmail,injuries:newInjuries,sessions:0,progress:0,av,streak:0,tempPass}]);
+              const sub = encodeURIComponent("Welcome to Fit2All — Your trainer has added you!");
+              const body = encodeURIComponent(`Hi ${newName},
+
+Your personal trainer has added you to Fit2All!
+
+Your temporary password: ${tempPass}
+
+Download Fit2All and sign in as a Member:
+https://fit2all.vercel.app
+
+See you in the gym! 💪
+— Your Fit2All Trainer`);
+              window.open("mailto:"+newEmail+"?subject="+sub+"&body="+body, "_blank");
+              setNewName(""); setNewEmail(""); setNewDOB(""); setNewInjuries(""); setShowAdd(false);
+            }} col="var(--tr)" style={{ color:"#fff" }}>ADD CLIENT & SEND INVITE</PBtn>
           </div>
         </Sheet>
       )}
       {showContact && <ContactModal onClose={()=>setShowContact(false)}/>}
       {showUpgrade && <TrainerUpgradeScreen clientCount={clients.length} onUpgraded={handleUpgraded} onClose={()=>setShowUpgrade(false)}/>}
+      {showPaymentSettings && (
+        <Sheet onClose={()=>setShowPaymentSettings(false)} title="PAYMENT SETTINGS" acc="var(--tr)">
+          <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+            <Field lbl="PAYPAL EMAIL" val={paypalEmail} set={setPaypalEmail} ph="your@paypal.com" acc="var(--tr)" type="email"/>
+            <Field lbl="BANK DETAILS (optional)" val={bankDetails} set={setBankDetails} ph="Sort code / Account no or IBAN" acc="var(--tr)"/>
+            <div style={{ padding:"10px 12px", background:"rgba(255,140,0,.08)", border:"1px solid rgba(255,140,0,.2)", borderRadius:"9px", fontSize:"12px", color:"rgba(255,255,255,.55)", lineHeight:1.6 }}>
+              💡 Your payment details are shown to clients when they purchase packages. Keep them accurate.
+            </div>
+            <PBtn onClick={()=>setShowPaymentSettings(false)} col="var(--tr)" style={{ color:"#fff" }}>SAVE SETTINGS</PBtn>
+          </div>
+        </Sheet>
+      )}
+      {showPackages && (
+        <PackagesManager
+          packages={packages}
+          setPackages={setPackages}
+          paypalEmail={paypalEmail}
+          bankDetails={bankDetails}
+          onClose={()=>setShowPackages(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1830,42 +2410,139 @@ function ContactModal({ onClose }) {
   );
 }
 
+// ─── Account Tab ─────────────────────────────────────────────────────────────
+function AccountTab({ sub, ctx, user, onUpgrade }) {
+  const [photo, setPhoto] = useState(null);
+  const fileRef = useRef();
+  const camRef = useRef();
+
+  function handlePhoto(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setPhoto(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div style={{ animation:"fadeIn .4s" }}>
+      <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"1px", marginBottom:"14px" }}>MY ACCOUNT</div>
+
+      {/* Profile photo */}
+      <Card style={{ padding:"16px", marginBottom:"12px" }}>
+        <Mono style={{ marginBottom:"12px" }}>PROFILE PHOTO</Mono>
+        <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
+          <div style={{ width:"76px", height:"76px", borderRadius:"50%", background:"rgba(255,255,255,.06)", border:"2px solid rgba(255,255,255,.12)", overflow:"hidden", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            {photo
+              ? <img src={photo} alt="Profile" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+              : <span style={{ fontSize:"28px" }}>👤</span>
+            }
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:"8px", flex:1 }}>
+            <button onClick={()=>fileRef.current.click()} style={{ padding:"10px 14px", background:"rgba(124,58,237,.12)", border:"1px solid rgba(124,58,237,.3)", borderRadius:"9px", color:"var(--acc)", cursor:"pointer", fontSize:"13px", fontFamily:"var(--fd)", letterSpacing:"1px", textAlign:"left" }}>
+              🖼️ Choose from Library
+            </button>
+            <button onClick={()=>camRef.current.click()} style={{ padding:"10px 14px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"9px", color:"var(--txt)", cursor:"pointer", fontSize:"13px", fontFamily:"var(--fd)", letterSpacing:"1px", textAlign:"left" }}>
+              📷 Take Photo
+            </button>
+          </div>
+        </div>
+        {/* Hidden file inputs */}
+        <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display:"none" }}/>
+        <input ref={camRef} type="file" accept="image/*" capture="user" onChange={handlePhoto} style={{ display:"none" }}/>
+      </Card>
+
+      {/* Plan info */}
+      <Card style={{ padding:"15px", marginBottom:"11px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"11px" }}>
+          <div style={{ width:"46px", height:"46px", borderRadius:"50%", background:ctx.plan.color+"15", border:`1.5px solid ${ctx.plan.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px" }}>{sub.id==="pro"?"⚡":"🎁"}</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"17px", color:ctx.plan.color, letterSpacing:"2px" }}>{ctx.plan.name}</div>
+            <Mono>{ctx.plan.price} {ctx.plan.period}</Mono>
+          </div>
+          {sub.id==="pro" && <div style={{ padding:"4px 9px", background:"rgba(124,58,237,.1)", border:"1px solid rgba(124,58,237,.25)", borderRadius:"7px", fontSize:"10px", color:"var(--acc)", fontFamily:"var(--fm)" }}>ACTIVE</div>}
+        </div>
+        {sub.id==="free" && (
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"7px", marginBottom:"11px" }}>
+            <div style={{ textAlign:"center", padding:"9px", background:"rgba(255,255,255,.03)", borderRadius:"8px" }}><div style={{ fontFamily:"var(--fd)", fontSize:"22px", color:"var(--a3)" }}>{ctx.aiLeft()}</div><div style={{ fontSize:"11px", color:"var(--mut)", marginTop:"2px" }}>AI left today</div></div>
+            <div style={{ textAlign:"center", padding:"9px", background:"rgba(255,255,255,.03)", borderRadius:"8px" }}><div style={{ fontFamily:"var(--fd)", fontSize:"22px", color:"var(--acc)" }}>{ctx.daysLeft()}</div><div style={{ fontSize:"11px", color:"var(--mut)", marginTop:"2px" }}>trial days left</div></div>
+          </div>
+        )}
+        {sub.id==="free" && <UpgradeBtn onUpgrade={onUpgrade}/>}
+      </Card>
+
+      {/* Profile details */}
+      <Card style={{ padding:"14px" }}>
+        <Mono style={{ marginBottom:"10px" }}>PROFILE</Mono>
+        {[["Name", user.name],["Email", user.email||"—"]].map(([k,v])=>(
+          <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+            <span style={{ fontSize:"13px", color:"var(--mut)" }}>{k}</span>
+            <span style={{ fontSize:"13px", fontWeight:500 }}>{v}</span>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+
 // ─── Member Onboarding ─────────────────────────────────────────────────────────
 function ProfileSetup({ onDone, user }) {
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({ goal:"", level:"", days:"3", equipment:"" });
+  const [data, setData] = useState({ goal:"", level:"", days:"3", duration:"60", equipment:"" });
   const steps = [
-    { key:"goal",      img:IMG.workout, lbl:"MAIN GOAL?",      opts:["💪 Muscle Gain","🔥 Fat Loss","🏃 Build Endurance","🧘 Improve Flexibility","⚡ General Fitness","🏆 Sport Performance"] },
-    { key:"level",     img:IMG.pro,     lbl:"FITNESS LEVEL?",  opts:["🌱 Beginner","🌿 Some Experience","💪 Intermediate","🔥 Advanced"] },
-    { key:"days",      img:IMG.free,    lbl:"DAYS PER WEEK?",  opts:["2 Days","3 Days","4 Days","5 Days","6 Days"] },
-    { key:"equipment", img:IMG.trainer, lbl:"EQUIPMENT?",      opts:["🏠 No Equipment","🏠 Basic Home","🏋️ Full Gym","🌳 Outdoors"] },
+    { key:"goal",      img:IMG.workout, lbl:"WHAT'S YOUR MAIN GOAL?",
+      opts:["💪 Muscle Gain","🔥 Fat Loss","🏃 Build Endurance","🧘 Improve Flexibility","⚡ General Fitness","🏆 Sport Performance"] },
+    { key:"level",     img:IMG.pro,     lbl:"YOUR FITNESS LEVEL?",
+      opts:["🌱 Complete Beginner","🌿 Some Experience","💪 Intermediate","🔥 Advanced","🏆 Elite / Athlete"] },
+    { key:"days",      img:IMG.free,    lbl:"DAYS PER WEEK?",
+      opts:["2 Days / Week","3 Days / Week","4 Days / Week","5 Days / Week","6 Days / Week"] },
+    { key:"duration",  img:IMG.recovery,lbl:"HOW LONG PER SESSION?",
+      opts:["30 Minutes","45 Minutes","60 Minutes","75 Minutes","90 Minutes","120 Minutes"] },
+    { key:"equipment", img:IMG.trainer, lbl:"EQUIPMENT AVAILABLE?",
+      opts:["🏠 No Equipment","🏠 Basic Home Gym","🏋️ Full Gym Access","🌳 Outdoors Only","🏊 Pool Access"] },
   ];
+
   if (step >= steps.length) return (
     <div style={{ minHeight:"100vh", background:"var(--bg)" }}>
-      <HeroBg src={IMG.pro} ov="linear-gradient(180deg,rgba(10,10,10,.1) 0%,rgba(10,10,10,.95) 60%,rgba(10,10,10,1) 100%)" style={{ height:"240px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 22px" }}>
-        <div style={{ fontFamily:"var(--fd)", fontSize:"44px", letterSpacing:"4px", lineHeight:.95 }}>YOU'RE<br/><span style={{ color:"var(--rd)" }}>READY.</span></div>
+      <HeroBg src={IMG.pro} ov="linear-gradient(180deg,rgba(10,10,10,.1) 0%,rgba(10,10,10,.95) 60%,rgba(10,10,10,1) 100%)" style={{ height:"260px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 22px" }}>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"48px", letterSpacing:"4px", lineHeight:.9 }}>YOU'RE<br/><span style={{ color:"var(--rd)" }}>READY.</span></div>
       </HeroBg>
-      <div style={{ padding:"22px" }}>
-        <p style={{ fontSize:"14px", color:"var(--mut)", marginBottom:"20px", lineHeight:1.7 }}>We have everything needed for your personalized AI program.</p>
-        <PBtn onClick={()=>onDone(data)} style={{ fontSize:"15px", letterSpacing:"3px", color:"#000" }}>⚡ GENERATE MY PROGRAM</PBtn>
+      <div style={{ padding:"24px" }}>
+        <Card style={{ padding:"16px", marginBottom:"18px" }}>
+          {[["Goal",data.goal],["Level",data.level],["Days",data.days],["Duration",data.duration],["Equipment",data.equipment]].map(([k,v])=>(
+            <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid rgba(255,255,255,.05)" }}>
+              <span style={{ fontSize:"13px", color:"var(--mut)" }}>{k}</span>
+              <span style={{ fontSize:"13px", fontWeight:600, color:"var(--txt)" }}>{v}</span>
+            </div>
+          ))}
+        </Card>
+        <PBtn onClick={()=>onDone(data)} style={{ fontSize:"17px", letterSpacing:"3px", color:"#000" }}>⚡ GENERATE MY PROGRAM</PBtn>
       </div>
     </div>
   );
+
   const cur = steps[step];
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)" }}>
-      <HeroBg src={cur.img} ov="linear-gradient(180deg,rgba(10,10,10,.05) 0%,rgba(10,10,10,.88) 55%,rgba(10,10,10,1) 100%)" style={{ height:"200px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 20px" }}>
-        <div style={{ display:"flex", gap:"5px", marginBottom:"9px" }}>{steps.map((_,i)=><div key={i} style={{ height:"3px", flex:1, background:i<=step?"var(--acc)":"rgba(255,255,255,.12)", borderRadius:"2px", transition:"background .3s" }}/>)}</div>
-        <Mono style={{ color:"var(--a3)", marginBottom:"5px" }}>STEP {step+1} OF {steps.length}</Mono>
-        <div style={{ fontFamily:"var(--fd)", fontSize:"30px", letterSpacing:"3px", lineHeight:1 }}>{cur.lbl}</div>
+      <HeroBg src={cur.img} ov="linear-gradient(180deg,rgba(10,10,10,.05) 0%,rgba(10,10,10,.88) 55%,rgba(10,10,10,1) 100%)" style={{ height:"210px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 20px", position:"relative" }}>
+        {step > 0 && <button onClick={()=>setStep(step-1)} style={{ position:"absolute", top:"14px", left:"14px", background:"rgba(0,0,0,.5)", border:"1px solid rgba(255,255,255,.15)", borderRadius:"8px", color:"rgba(255,255,255,.7)", cursor:"pointer", padding:"6px 11px", fontSize:"11px", fontFamily:"var(--fm)" }}>← BACK</button>}
+        <div style={{ display:"flex", gap:"5px", marginBottom:"10px" }}>{steps.map((_,i)=><div key={i} style={{ height:"4px", flex:1, background:i<=step?"var(--acc)":"rgba(255,255,255,.12)", borderRadius:"2px", transition:"background .3s" }}/>)}</div>
+        <Mono style={{ color:"var(--acc)", marginBottom:"6px" }}>STEP {step+1} OF {steps.length}</Mono>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"clamp(22px,7vw,30px)", letterSpacing:"2px", lineHeight:1.1 }}>{cur.lbl}</div>
       </HeroBg>
-      <div style={{ padding:"18px" }}>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {cur.opts.map(opt=>(
-            <button key={opt} onClick={()=>{ setData({...data,[cur.key]:opt}); setStep(step+1); }} style={{ padding:"12px 15px", background:data[cur.key]===opt?"rgba(124,58,237,.1)":"rgba(255,255,255,.03)", border:`1px solid ${data[cur.key]===opt?"var(--acc)":"rgba(255,255,255,.08)"}`, borderRadius:"12px", color:"var(--txt)", cursor:"pointer", textAlign:"left", fontSize:"14px", fontFamily:"var(--fb)", fontWeight:500, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span>{opt}</span>{data[cur.key]===opt&&<span style={{ color:"var(--acc)" }}>✓</span>}
-            </button>
-          ))}
+      <div style={{ padding:"18px 18px 100px" }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+          {cur.opts.map(opt=>{
+            const sel = data[cur.key]===opt;
+            return (
+              <button key={opt} onClick={()=>{ setData({...data,[cur.key]:opt}); setTimeout(()=>setStep(step+1), 180); }}
+                style={{ padding:"18px 18px", background:sel?"rgba(124,58,237,.14)":"rgba(255,255,255,.04)", border:`2px solid ${sel?"var(--acc)":"rgba(255,255,255,.1)"}`, borderRadius:"14px", color:sel?"var(--txt)":"rgba(255,255,255,.75)", cursor:"pointer", textAlign:"left", fontSize:"18px", fontFamily:"var(--fb)", fontWeight:sel?700:500, display:"flex", justifyContent:"space-between", alignItems:"center", transition:"all .15s" }}>
+                <span>{opt}</span>
+                <span style={{ width:"24px", height:"24px", borderRadius:"50%", border:`2px solid ${sel?"var(--acc)":"rgba(255,255,255,.2)"}`, background:sel?"var(--acc)":"transparent", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", color:"#000", flexShrink:0 }}>{sel?"✓":""}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -1881,85 +2558,77 @@ function GenProg({ profile, user, onDone }) {
     if (started.current) return; started.current = true;
     const cycler = setInterval(() => setPhase(p => (p + 1) % phases.length), 1800);
     const goal = (profile.goal || "").replace(/[🔥💪🏃🧘⚡🏆]/g, "").trim();
-    const level = (profile.level || "").replace(/[🌱🌿💪🔥]/g, "").trim();
+    const level = (profile.level || "").replace(/[🌱🌿💪🔥🏆]/g, "").trim();
     const days = parseInt(profile.days) || 3;
-    const equip = (profile.equipment || "").replace(/[🏠🏋️🌳]/g, "").trim();
+    const duration = profile.duration || "60 Minutes";
+    const equip = (profile.equipment || "").replace(/[🏠🏋️🌳🏊]/g, "").trim();
 
     const systemPrompt = `You are an elite certified personal trainer and sports scientist with 15+ years experience. Create advanced, periodized workout programs that deliver real results. You understand progressive overload, periodization, muscle physiology, and evidence-based training principles. Always be specific, practical and professional.`;
 
-    const userPrompt = `Create a comprehensive 4-week progressive training program for:
-- Name: ${user.name}
-- Goal: ${goal}
-- Level: ${level}
-- Training days/week: ${days}
-- Equipment: ${equip}
+    const userPrompt = `Create a 4-week training program for:
+- Name: ${user.name}, Goal: ${goal}, Level: ${level}
+- ${days} days/week, ${duration} sessions, Equipment: ${equip}
 
-Return ONLY valid JSON (no markdown, no explanation):
+Return ONLY valid JSON:
 {
-  "programName": "specific name",
-  "overview": "2-3 sentence professional overview of methodology",
-  "methodology": "e.g. Linear Periodization PPL Split",
-  "weeklyStructure": "brief split explanation",
-  "phases": [
+  "programName": "short name",
+  "overview": "1-2 sentences",
+  "methodology": "e.g. PPL / Upper-Lower",
+  "weeklyStructure": "brief split",
+  "week1": [
     {
-      "week": 1,
-      "theme": "Foundation / Adaptation",
-      "focus": "what this week builds",
-      "days": [
+      "day": "Monday",
+      "sessionName": "e.g. Push Day A",
+      "muscleGroups": ["Chest","Shoulders"],
+      "duration": "${duration}",
+      "intensity": "Moderate",
+      "warmup": "5 min warmup",
+      "exercises": [
         {
-          "day": "Monday",
-          "sessionName": "e.g. Push Day A",
-          "muscleGroups": ["Chest","Shoulders","Triceps"],
-          "duration": "55 min",
-          "intensity": "Moderate",
-          "warmup": "specific 5-min warmup protocol",
-          "exercises": [
-            {
-              "name": "Exercise Name",
-              "sets": "4",
-              "reps": "8-10",
-              "rest": "90s",
-              "tempo": "3-1-1-0",
-              "rpe": "7",
-              "cues": "2-3 specific technique cues",
-              "progression": "how to progress this exercise",
-              "muscleTarget": "Primary and secondary muscles"
-            }
-          ],
-          "cooldown": "specific 5-min cooldown",
-          "sessionNotes": "key focus for this session"
+          "name": "Exercise name",
+          "sets": "3",
+          "reps": "10-12",
+          "rest": "75s",
+          "tempo": "2-1-1-0",
+          "rpe": "7",
+          "cues": "key technique cue",
+          "progression": "add 2.5kg when reps complete",
+          "muscleTarget": "Primary muscle"
         }
-      ]
-    },
-    { "week": 2, "theme": "Progressive Overload", "focus": "increase from week 1", "days": [] },
-    { "week": 3, "theme": "Intensification", "focus": "peak effort", "days": [] },
-    { "week": 4, "theme": "Deload", "focus": "recovery at 60% intensity", "days": [] }
+      ],
+      "cooldown": "5 min stretch",
+      "sessionNotes": "focus for this day"
+    }
   ],
-  "progressionProtocol": "week by week overload instructions",
+  "progressionProtocol": "Week 1 @ RPE7, Week 2 add weight/reps, Week 3 peak effort RPE8-9, Week 4 deload 60%",
   "nutritionGuidance": {
-    "preworkout": "specific timing and food advice",
-    "postworkout": "recovery nutrition",
-    "dailyProtein": "g/kg target with food examples",
-    "hydration": "daily target and timing"
+    "preworkout": "advice",
+    "postworkout": "advice",
+    "dailyProtein": "target",
+    "hydration": "target"
   },
-  "recoveryProtocol": "sleep, mobility, active recovery advice",
-  "weeklyGoals": ["goal1", "goal2", "goal3"],
-  "progressionMarkers": ["marker1", "marker2", "marker3"]
+  "recoveryProtocol": "sleep and recovery advice",
+  "weeklyGoals": ["goal1","goal2","goal3"],
+  "progressionMarkers": ["marker1","marker2"]
 }
 
-IMPORTANT: Provide FULL day schedules for ALL 4 weeks. Include ${days} training days per week. Make exercises specific to goal "${goal}" and equipment "${equip}". Include 5-6 exercises per session with all fields complete. This is a premium fitness app — be thorough and professional.`;
+Include ${days} training days in week1. 4-5 exercises per day. Be specific to goal "${goal}".`;
 
     async function go() {
       try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 8000, system: systemPrompt, messages: [{ role: "user", content: userPrompt }] })
+          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 3000, system: systemPrompt, messages: [{ role: "user", content: userPrompt }] })
         });
         const d = await res.json();
         const raw = d.content?.[0]?.text || "";
         clearInterval(cycler);
-        try { onDone(JSON.parse(raw.replace(/```json|```/g, "").trim())); }
+        try {
+          const parsed = JSON.parse(raw.replace(/```json/g,"").replace(/```/g,"").trim());
+          // Derive all 4 phases from week1 if API returned week1 format
+          onDone(buildPhases(parsed));
+        }
         catch { onDone(advancedFallback(profile, user)); }
       } catch {
         clearInterval(cycler);
@@ -1993,6 +2662,34 @@ IMPORTANT: Provide FULL day schedules for ALL 4 weeks. Include ${days} training 
       </Card>
     </HeroBg>
   );
+}
+
+// Derives 4 progressive weeks from a week1 day array
+function buildPhases(parsed) {
+  const base = parsed.week1 || parsed.phases?.[0]?.days || [];
+  const makeWeek = (weekNum, theme, focus, rpeAdd, setsAdd, intensityLabel) => ({
+    week: weekNum, theme, focus,
+    days: base.map(day => ({
+      ...day,
+      intensity: intensityLabel,
+      sessionNotes: weekNum === 4 ? "Deload — use 60% of Week 3 weights, focus on form" : day.sessionNotes,
+      exercises: day.exercises.map(ex => ({
+        ...ex,
+        rpe: weekNum === 4 ? "5-6" : String(Math.min(10, parseInt(ex.rpe||7) + rpeAdd)),
+        sets: weekNum === 4 ? "3" : String(Math.max(3, parseInt(ex.sets||3) + setsAdd)),
+      }))
+    }))
+  });
+  return {
+    ...parsed,
+    phases: [
+      makeWeek(1, "Foundation", "Learn movements, establish baseline weights", 0, 0, "Moderate"),
+      makeWeek(2, "Progressive Overload", "Add weight or reps to all main lifts", 1, 0, "Moderate-High"),
+      makeWeek(3, "Intensification", "Peak effort — push to RPE 8-9", 2, 1, "High"),
+      makeWeek(4, "Deload", "Reduce volume 40%, consolidate gains", 0, -1, "Low"),
+    ],
+    week1: undefined,
+  };
 }
 
 const advancedFallback = (p, u) => {
@@ -2153,8 +2850,8 @@ function ProgramView({ prog }) {
     <div style={{ animation:"fadeIn .5s" }}>
       {/* Program header card */}
       <Card style={{ padding:"16px", marginBottom:"12px", border:"1px solid rgba(124,58,237,.15)" }}>
-        <div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"5px" }}>{prog.programName}</div>
-        <p style={{ fontSize:"13px", lineHeight:1.7, color:"rgba(255,255,255,.65)", marginBottom:"10px" }}>{prog.overview}</p>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"20px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"8px" }}>{prog.programName}</div>
+        <p style={{ fontSize:"15px", lineHeight:1.8, color:"rgba(255,255,255,.75)", marginBottom:"10px" }}>{prog.overview}</p>
         {prog.methodology && (
           <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
             <div style={{ padding:"4px 10px", background:"rgba(124,58,237,.12)", border:"1px solid rgba(124,58,237,.25)", borderRadius:"50px", fontSize:"11px", color:"var(--a4)", fontFamily:"var(--fm)" }}>⚡ {prog.methodology}</div>
@@ -2210,12 +2907,12 @@ function ProgramView({ prog }) {
             {days.length} SESSIONS THIS WEEK
           </div>
           {days.map((day, i) => (
-            <Card key={i} style={{ marginBottom:"8px", overflow:"hidden", border:`1px solid ${expDay===i?"rgba(124,58,237,.3)":"rgba(255,255,255,.06)"}` }}>
+            <Card key={i} style={{ marginBottom:"12px", overflow:"hidden", border:`2px solid ${expDay===i?"var(--acc)":"rgba(255,255,255,.12)"}`, borderRadius:"14px" }}>
               {/* Day header */}
               <div onClick={()=>setExpDay(expDay===i?-1:i)} style={{ padding:"13px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:600, fontSize:"14px", marginBottom:"2px" }}>{day.day}</div>
-                  <div style={{ fontSize:"12px", color:"var(--acc)", fontFamily:"var(--fm)", letterSpacing:"1px", marginBottom:"2px" }}>{day.sessionName || day.focus}</div>
+                  <div style={{ fontWeight:700, fontSize:"17px", marginBottom:"3px" }}>{day.day}</div>
+                  <div style={{ fontSize:"13px", color:"var(--acc)", fontFamily:"var(--fm)", letterSpacing:"1px", marginBottom:"3px" }}>{day.sessionName || day.focus}</div>
                   {day.muscleGroups && <div style={{ display:"flex", gap:"5px", flexWrap:"wrap" }}>{day.muscleGroups.map(mg=><span key={mg} style={{ fontSize:"10px", padding:"1px 7px", background:"rgba(255,255,255,.05)", borderRadius:"4px", color:"var(--mut)" }}>{mg}</span>)}</div>}
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:"7px", flexShrink:0 }}>
@@ -2234,7 +2931,7 @@ function ProgramView({ prog }) {
                   {day.warmup && (
                     <div style={{ padding:"10px 14px", background:"rgba(147,51,234,.05)", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
                       <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--a3)", letterSpacing:"1px", marginBottom:"3px" }}>🔥 WARM-UP</div>
-                      <div style={{ fontSize:"12px", color:"rgba(255,255,255,.6)", lineHeight:1.6 }}>{day.warmup}</div>
+                      <div style={{ fontSize:"14px", color:"rgba(255,255,255,.7)", lineHeight:1.7 }}>{day.warmup}</div>
                     </div>
                   )}
 
@@ -2254,7 +2951,7 @@ function ProgramView({ prog }) {
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px" }}>
                           <div style={{ flex:1 }}>
                             <div style={{ fontSize:"12px", fontWeight:500, color:"var(--mut)", marginBottom:"2px" }}>{ex.name}</div>
-                            {ex.muscleTarget && <div style={{ fontSize:"11px", color:"var(--mut)", lineHeight:1.4 }}>{ex.muscleTarget}</div>}
+                            {ex.muscleTarget && <div style={{ fontSize:"13px", color:"var(--mut)", lineHeight:1.5 }}>{ex.muscleTarget}</div>}
                           </div>
                           {ex.rpe && <div style={{ padding:"2px 8px", background:"rgba(255,61,107,.1)", border:"1px solid rgba(255,61,107,.2)", borderRadius:"6px", fontSize:"10px", color:"var(--a2)", fontFamily:"var(--fm)", flexShrink:0, marginLeft:"8px" }}>RPE {ex.rpe}</div>}
                         </div>
@@ -2262,8 +2959,8 @@ function ProgramView({ prog }) {
                         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"6px", marginBottom:"6px" }}>
                           {[{v:ex.sets,l:"sets"},{v:ex.reps,l:"reps"},{v:ex.rest,l:"rest"},{v:ex.tempo,l:"tempo"}].map((x,k)=>x.v?(
                             <div key={k} style={{ textAlign:"center", padding:"6px 4px", background:"rgba(255,255,255,.04)", borderRadius:"7px" }}>
-                              <div style={{ fontFamily:"var(--fm)", fontSize:"12px", color:"var(--acc)" }}>{x.v}</div>
-                              <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--mut)", marginTop:"1px" }}>{x.l}</div>
+                              <div style={{ fontFamily:"var(--fm)", fontSize:"14px", color:"var(--acc)", fontWeight:700 }}>{x.v}</div>
+                              <div style={{ fontFamily:"var(--fm)", fontSize:"11px", color:"var(--mut)", marginTop:"2px" }}>{x.l}</div>
                             </div>
                           ):null)}
                         </div>
@@ -2271,7 +2968,7 @@ function ProgramView({ prog }) {
                         {ex.cues && (
                           <div style={{ padding:"7px 10px", background:"rgba(124,58,237,.05)", border:"1px solid rgba(124,58,237,.1)", borderRadius:"7px", marginBottom:"4px" }}>
                             <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--acc)", letterSpacing:"1px", marginBottom:"2px" }}>TECHNIQUE CUES</div>
-                            <div style={{ fontSize:"12px", color:"rgba(255,255,255,.7)", lineHeight:1.5 }}>{ex.cues}</div>
+                            <div style={{ fontSize:"14px", color:"rgba(255,255,255,.8)", lineHeight:1.6 }}>{ex.cues}</div>
                           </div>
                         )}
                         {/* Progression */}
@@ -2288,7 +2985,7 @@ function ProgramView({ prog }) {
                   {day.cooldown && (
                     <div style={{ padding:"10px 14px", background:"rgba(124,58,237,.05)", borderTop:"1px solid rgba(255,255,255,.04)" }}>
                       <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--a4)", letterSpacing:"1px", marginBottom:"3px" }}>❄️ COOL-DOWN</div>
-                      <div style={{ fontSize:"12px", color:"rgba(255,255,255,.6)", lineHeight:1.6 }}>{day.cooldown}</div>
+                      <div style={{ fontSize:"14px", color:"rgba(255,255,255,.7)", lineHeight:1.7 }}>{day.cooldown}</div>
                     </div>
                   )}
 
@@ -2392,6 +3089,90 @@ function ProgramView({ prog }) {
   );
 }
 
+// ─── Exercise Q&A (for trainer-assigned members) ──────────────────────────────
+function ExerciseQA() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const QUICK = ["How do I squat correctly?","Show me push-up form","How to do a deadlift","Best bicep exercises","Proper plank technique","Romanian deadlift form"];
+
+  async function ask(q) {
+    const question = q||query.trim();
+    if (!question) return;
+    setLoading(true); setResults(null);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,
+          system:"You are a fitness coach. Answer exercise questions concisely. Always include a relevant YouTube URL for form demonstrations. Known URLs: squat:https://youtu.be/gcNh17Ckjgg deadlift:https://youtu.be/op9kVnSso6Q bench:https://youtu.be/rT7DgCr-3pg push-up:https://youtu.be/IODxDxX7oi4 plank:https://youtu.be/ASdvN_XEl_c",
+          messages:[{role:"user",content:question}]})
+      });
+      const d = await res.json();
+      setResults(d.content?.[0]?.text||"Sorry, try again.");
+    } catch { setResults("Connection error. Please try again."); }
+    setLoading(false);
+  }
+
+  const ytMatch = results && results.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+
+  return (
+    <div style={{ animation:"fadeIn .3s" }}>
+      <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"1px", marginBottom:"11px" }}>🎥 EXERCISE Q&A</div>
+      <div style={{ display:"flex", gap:"7px", marginBottom:"11px" }}>
+        <input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==="Enter"&&ask()} placeholder="Ask about any exercise..." style={{ flex:1, padding:"11px 13px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"10px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)", outline:"none" }}/>
+        <button onClick={()=>ask()} disabled={!query.trim()||loading} style={{ padding:"11px 16px", background:query.trim()&&!loading?"var(--acc)":"rgba(255,255,255,.07)", border:"none", borderRadius:"10px", color:query.trim()&&!loading?"#000":"var(--mut)", cursor:query.trim()&&!loading?"pointer":"default", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>ASK</button>
+      </div>
+      <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"14px" }}>
+        {QUICK.map(q=><button key={q} onClick={()=>ask(q)} style={{ padding:"5px 11px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"50px", color:"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{q}</button>)}
+      </div>
+      {loading && <Card style={{ padding:"18px", textAlign:"center" }}><div style={{ width:"36px",height:"36px",borderRadius:"50%",border:"3px solid var(--acc)",borderTopColor:"transparent",animation:"spin 1s linear infinite",margin:"0 auto 10px" }}/><Mono style={{color:"var(--acc)"}}>Finding answer...</Mono></Card>}
+      {results && !loading && (
+        <Card style={{ padding:"14px" }}>
+          {ytMatch && (
+            <a href={"https://youtu.be/"+ytMatch[1]} target="_blank" rel="noopener noreferrer" style={{ display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",background:"rgba(255,0,0,.08)",border:"1px solid rgba(255,0,0,.2)",borderRadius:"10px",textDecoration:"none",color:"var(--txt)",marginBottom:"12px" }}>
+              <div style={{ position:"relative",width:"60px",height:"40px",borderRadius:"6px",overflow:"hidden",background:"#000",flexShrink:0 }}>
+                <img src={"https://img.youtube.com/vi/"+ytMatch[1]+"/mqdefault.jpg"} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                <div style={{ position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center" }}><div style={{width:"18px",height:"18px",background:"rgba(255,0,0,.85)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"7px",color:"#fff"}}>▶</div></div>
+              </div>
+              <div><Mono style={{color:"#ff4444",marginBottom:"2px",letterSpacing:"1px"}}>▶ WATCH TUTORIAL</Mono><div style={{fontSize:"11px",color:"var(--mut)"}}>Tap to open on YouTube</div></div>
+            </a>
+          )}
+          <div style={{ fontSize:"14px", lineHeight:1.8, whiteSpace:"pre-wrap", color:"rgba(255,255,255,.85)" }}>{results.replace(/https?:\/\/\S+/g,"").trim()}</div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── Member Packages (purchase) ────────────────────────────────────────────────
+function MemberPackages({ user }) {
+  const [showPay, setShowPay] = useState(null);
+  const DEMO_PKGS = [
+    { id:1, name:"Starter Pack", sessions:4, price:"49.99", desc:"4 x 1-on-1 sessions", perks:"Nutrition guide included", trainer:"Your Trainer" },
+    { id:2, name:"Monthly Program", sessions:8, price:"89.99", desc:"8 sessions + program", perks:"Full program + nutrition", trainer:"Your Trainer" },
+    { id:3, name:"Elite Transform", sessions:16, price:"159.99", desc:"16 sessions + 4-week plan", perks:"Full access + weekly check-ins", trainer:"Your Trainer" },
+  ];
+  return (
+    <div style={{ animation:"fadeIn .3s" }}>
+      <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"1px", marginBottom:"6px" }}>📦 TRAINING PACKAGES</div>
+      <Mono style={{ marginBottom:"14px" }}>Purchase directly from your trainer</Mono>
+      {DEMO_PKGS.map(pkg=>(
+        <Card key={pkg.id} style={{ padding:"15px", marginBottom:"10px", border:"1px solid rgba(124,58,237,.2)" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"8px" }}>
+            <div><div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:"var(--acc)", letterSpacing:"1px" }}>{pkg.name}</div><Mono style={{ marginTop:"2px" }}>{pkg.sessions} sessions with {pkg.trainer}</Mono></div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"22px", color:"var(--a3)" }}>${pkg.price}</div>
+          </div>
+          {pkg.desc && <div style={{ fontSize:"13px", color:"rgba(255,255,255,.6)", marginBottom:"4px" }}>{pkg.desc}</div>}
+          {pkg.perks && <div style={{ fontSize:"12px", color:"var(--a3)", marginBottom:"12px" }}>✓ {pkg.perks}</div>}
+          <PBtn onClick={()=>setShowPay(pkg)} style={{ color:"#000", fontSize:"14px", letterSpacing:"1px" }}>💳 PURCHASE — ${pkg.price}</PBtn>
+        </Card>
+      ))}
+      {showPay && <PayPalModal planName={showPay.name} amount={showPay.price} onSuccess={()=>setShowPay(null)} onClose={()=>setShowPay(null)}/>}
+    </div>
+  );
+}
+
+
 // ─── Member Dashboard ──────────────────────────────────────────────────────────
 function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
   const [showGen, setShowGen] = useState(false);
@@ -2399,8 +3180,13 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
   const [prog, setProg] = useState(null);
   const [showContact, setShowContact] = useState(false);
 
-  if (!profile) return <ProfileSetup onDone={p=>{ setProfile(p); setShowGen(true); }} user={user}/>;
-  if (showGen && !prog) return <GenProg profile={profile} user={user} onDone={p=>{ setProg(p); setShowGen(false); setTab("program"); }}/>;
+  // Trainer client: skip profile setup, use trainer-assigned program
+  if (user.isTrainerClient) {
+    // Show a limited view - no profile setup needed
+  } else {
+    if (!profile) return <ProfileSetup onDone={p=>{ setProfile(p); setShowGen(true); }} user={user}/>;
+    if (showGen && !prog) return <GenProg profile={profile} user={user} onDone={p=>{ setProg(p); setShowGen(false); setTab("program"); }}/>;
+  }
 
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", paddingBottom:"100px" }}>
@@ -2430,7 +3216,10 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
         </div>
       </div>
       <div style={{ display:"flex", gap:"7px", padding:"12px 18px 4px", overflowX:"auto", scrollbarWidth:"none" }}>
-        {[["program","📋","Program"],["nutrition","🥗","Nutrition"],["wearables","⌚","Wearables"],["stats","📊","Stats"],["account","👤","Account"],["new","🔄","New Plan"]].map(([t,ic,lbl])=>{
+        {(user.isTrainerClient
+          ? [["program","📋","My Program"],["nutrition","🥗","Nutrition"],["exercises","🎥","Exercises"],["account","👤","Account"],["packages","📦","Packages"]]
+          : [["program","📋","Program"],["nutrition","🥗","Nutrition"],["wearables","⌚","Wearables"],["stats","📊","Stats"],["account","👤","Account"],["new","🔄","New Plan"]]
+        ).map(([t,ic,lbl])=>{
           const isA = tab===t;
           return (
             <button key={t} onClick={()=>{ if(t==="new"){ setProg(null); setShowGen(true); } else setTab(t); }}
@@ -2451,6 +3240,12 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
         {tab==="program" && prog && <ProgramView prog={prog}/>}
         {tab==="nutrition" && <NutritionHub/>}
         {tab==="wearables" && <WearablesHub/>}
+        {tab==="exercises" && (
+          <ExerciseQA/>
+        )}
+        {tab==="packages" && (
+          <MemberPackages user={user}/>
+        )}
         {tab==="stats" && (
           <div style={{ animation:"fadeIn .4s" }}>
             <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"1px", marginBottom:"11px" }}>YOUR STATS</div>
@@ -2462,23 +3257,7 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
           </div>
         )}
         {tab==="account" && sub && ctx && (
-          <div style={{ animation:"fadeIn .4s" }}>
-            <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"1px", marginBottom:"11px" }}>MY ACCOUNT</div>
-            <Card style={{ padding:"15px", marginBottom:"11px" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"11px" }}>
-                <div style={{ width:"42px", height:"42px", borderRadius:"11px", background:ctx.plan.color+"15", border:`1px solid ${ctx.plan.color}30`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px" }}>{sub.id==="pro"?"⚡":"🎁"}</div>
-                <div style={{ flex:1 }}><div style={{ fontFamily:"var(--fd)", fontSize:"17px", color:ctx.plan.color, letterSpacing:"2px" }}>{ctx.plan.name}</div><Mono>{ctx.plan.price} {ctx.plan.period}</Mono></div>
-                {sub.id==="pro" && <div style={{ padding:"4px 9px", background:"rgba(124,58,237,.1)", border:"1px solid rgba(124,58,237,.25)", borderRadius:"7px", fontSize:"10px", color:"var(--acc)", fontFamily:"var(--fm)" }}>ACTIVE</div>}
-              </div>
-              {sub.id==="free" && (
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"7px", marginBottom:"11px" }}>
-                  <div style={{ textAlign:"center", padding:"9px", background:"rgba(255,255,255,.03)", borderRadius:"8px" }}><div style={{ fontFamily:"var(--fd)", fontSize:"21px", color:"var(--a3)" }}>{ctx.aiLeft()}</div><div style={{ fontSize:"10px", color:"var(--mut)" }}>AI questions left</div></div>
-                  <div style={{ textAlign:"center", padding:"9px", background:"rgba(255,255,255,.03)", borderRadius:"8px" }}><div style={{ fontFamily:"var(--fd)", fontSize:"21px", color:"var(--acc)" }}>{ctx.daysLeft()}</div><div style={{ fontSize:"10px", color:"var(--mut)" }}>trial days left</div></div>
-                </div>
-              )}
-              {sub.id==="free" && <UpgradeBtn onUpgrade={onUpgrade}/>}
-            </Card>
-          </div>
+          <AccountTab sub={sub} ctx={ctx} user={user} onUpgrade={onUpgrade}/>
         )}
       </div>
       {showContact && <ContactModal onClose={()=>setShowContact(false)}/>}
