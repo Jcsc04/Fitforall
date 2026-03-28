@@ -8,9 +8,9 @@ import React, { useState, useEffect, useRef } from "react";
   document.head.appendChild(fl);
   const gs = document.createElement("style");
   gs.textContent = `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --bg:#080810;--card:#14141f;--acc:#00e5ff;--a2:#ff3d6b;--a3:#22d4a8;--a4:#a855f7;--txt:#f4f4f8;--mut:#5a5a72;--tr:#ff7043;--gr:#22c55e;--yw:#fbbf24;--rd:#e8294a;--r:14px;--fd:'Orbitron',sans-serif;--fb:'Inter',sans-serif;--fm:'Space Mono',monospace; }
+:root { --bg:#0a0a0a;--card:#141414;--acc:#7c3aed;--a2:#e8291e;--a3:#9333ea;--a4:#7c3aed;--txt:#f5f5f5;--mut:#666666;--tr:#e8291e;--gr:#9333ea;--yw:#9333ea;--rd:#e8291e;--r:14px;--fd:'Orbitron',sans-serif;--fb:'Inter',sans-serif;--fm:'Space Mono',monospace; }
 body { background:var(--bg);color:var(--txt);font-family:var(--fb);overflow-x:hidden; }
-::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:#1e1e2e;border-radius:2px}
+::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
@@ -20,7 +20,7 @@ body { background:var(--bg);color:var(--txt);font-family:var(--fb);overflow-x:hi
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;outline:none;cursor:pointer}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid var(--bg)}
 select{-webkit-appearance:none} textarea{resize:none}
-.glass{background:rgba(8,8,16,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}.card-hover:active{transform:scale(.98)}`;
+.glass{background:rgba(10,10,10,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}.card-hover:active{transform:scale(.98)}`;
   document.head.appendChild(gs);
 })();
 
@@ -50,7 +50,7 @@ const TRAINER_PLANS = {
   free:      { id:"free",      name:"FREE",      price:"$0",     period:"forever", color:"var(--a3)",  clientLimit:1 },
   starter:   { id:"starter",   name:"STARTER",   price:"$4.99",  period:"/month",  color:"var(--acc)", clientLimit:5 },
   pro:       { id:"pro",       name:"PRO",        price:"$6.99",  period:"/month",  color:"var(--a4)",  clientLimit:10 },
-  unlimited: { id:"unlimited", name:"UNLIMITED",  price:"$14.99", period:"/month",  color:"var(--rd)",  clientLimit:Infinity },
+  unlimited: { id:"unlimited", name:"UNLIMITED",  price:"$14.99", period:"/month",  color:"var(--tr)",  clientLimit:Infinity },
 };
 const TP_FEATURES = {
   free:      [{l:"1 Client",d:"free forever",y:1},{l:"Full management",d:"",y:1},{l:"Session notes",d:"",y:1},{l:"More clients",d:"",y:0}],
@@ -64,8 +64,14 @@ const PROMO_CODES = {
   "STARTER10":     { discount:10,  label:"10% off" },
   "PRO20":         { discount:20,  label:"20% off" },
   "UNLIMITED30":   { discount:30,  label:"30% off" },
+  "PROFREE":       { discount:100, label:"Pro — 1 month FREE" },
+  "UNLIMITEDFREE": { discount:100, label:"Unlimited — 1 month FREE" },
 };
 const applyPromo = code => PROMO_CODES[code.trim().toUpperCase()] || null;
+// ─── Owner Access ─────────────────────────────────────────────────────────────
+const OWNER = { name:"Joao", email:"Jcsc04@gmail.com", password:"Fit2All2024" };
+
+
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 const store = {
@@ -97,7 +103,7 @@ const getTrainerPlan = sub => TRAINER_PLANS[(sub && sub.id) || "free"] || TRAINE
 
 // ─── UI Atoms ─────────────────────────────────────────────────────────────────
 const S = {
-  card: { background:"rgba(20,20,31,.85)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:"1px solid rgba(255,255,255,.07)", borderRadius:"var(--r)" },
+  card: { background:"rgba(20,20,20,.85)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"var(--r)" },
   mono: { fontFamily:"var(--fm)", fontSize:"10px", letterSpacing:"2px", color:"var(--mut)" },
 };
 
@@ -111,7 +117,7 @@ function HeroBg({ src, ov, style, children }) {
   return (
     <div style={{ position:"relative", overflow:"hidden", ...style }}>
       <img src={src} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", zIndex:0, filter:"brightness(.5) saturate(.7)" }} />
-      <div style={{ position:"absolute", inset:0, background:ov||"rgba(8,8,16,.7)", zIndex:1 }} />
+      <div style={{ position:"absolute", inset:0, background:ov||"rgba(10,10,10,.7)", zIndex:1 }} />
       <div style={{ position:"relative", zIndex:2 }}>{children}</div>
     </div>
   );
@@ -184,63 +190,121 @@ function Wordmark({ size, col }) {
 // ─── PayPal ───────────────────────────────────────────────────────────────────
 const PP_EMAIL = "jcsc0912@hotmail.com";
 function PayPalLogo() {
-  return <span style={{ fontFamily:"Arial,sans-serif", fontWeight:900, fontSize:"19px" }}><span style={{ color:"#009cde" }}>Pay</span><span style={{ color:"#003087" }}>Pal</span></span>;
+  return <span style={{ fontFamily:"Arial,sans-serif", fontWeight:900, fontSize:"19px" }}><span style={{ color:"#7c3aed" }}>Pay</span><span style={{ color:"#003087" }}>Pal</span></span>;
 }
 function PayPalModal({ planName, amount, onSuccess, onClose }) {
-  const [step, setStep] = useState("form");
+  const [step, setStep] = useState("choose");   // choose | paypal | card | cardForm | loading | done
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  function pay() {
-    if (!name.trim() || !email.trim()) return;
+  const [cardNum, setCardNum] = useState("");
+  const [cardExp, setCardExp] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+  const [cardName, setCardName] = useState("");
+
+  function fmtCard(v) { return v.replace(/\D/g,"").slice(0,16).replace(/(.{4})/g,"$1 ").trim(); }
+  function fmtExp(v) { const d = v.replace(/\D/g,"").slice(0,4); return d.length>2?d.slice(0,2)+"/"+d.slice(2):d; }
+
+  function payPP() {
+    if (!name.trim()||!email.trim()) return;
     setStep("loading");
-    window.open("https://www.paypal.com/paypalme/jcsc0912/" + amount + "USD", "_blank");
-    setTimeout(() => setStep("done"), 2000);
+    window.open("https://www.paypal.com/paypalme/jcsc0912/"+amount+"USD","_blank");
+    setTimeout(()=>setStep("done"),2000);
   }
-  function emailFallback() {
-    const sub = encodeURIComponent("Fit2All " + planName);
-    const body = encodeURIComponent("Plan: " + planName + "\nAmount: $" + amount + "/mo\nName: " + name + "\nEmail: " + email);
-    window.open("mailto:" + PP_EMAIL + "?subject=" + sub + "&body=" + body, "_blank");
-    setTimeout(() => setStep("done"), 600);
+  function payCard() {
+    if (!cardNum||!cardExp||!cardCvc||!cardName) return;
+    setStep("loading");
+    setTimeout(()=>setStep("done"),2200);
   }
+
+  const PlanSummary = () => (
+    <Card style={{ padding:"13px", marginBottom:"4px" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <span style={{ fontSize:"14px", fontWeight:600 }}>{planName}</span>
+        <span style={{ fontFamily:"var(--fd)", fontSize:"22px", color:"var(--acc)" }}>${amount}<span style={{ fontSize:"12px", color:"var(--mut)", fontFamily:"var(--fb)" }}>/mo</span></span>
+      </div>
+      <Mono style={{ marginTop:"3px" }}>BILLED MONTHLY · CANCEL ANYTIME</Mono>
+    </Card>
+  );
+
   return (
-    <Sheet onClose={onClose} title="PAYMENT" acc="#009cde">
-      {step === "form" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:"13px" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"12px", padding:"13px", background:"rgba(0,156,222,.08)", border:"1px solid rgba(0,156,222,.2)", borderRadius:"12px" }}>
-            <PayPalLogo />
-            <div style={{ fontSize:"12px", color:"rgba(255,255,255,.6)", lineHeight:1.5 }}>Secure payment<br/><span style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"#009cde" }}>{PP_EMAIL}</span></div>
-          </div>
-          <Card style={{ padding:"14px" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"5px" }}>
-              <span style={{ fontSize:"14px", fontWeight:600 }}>{planName}</span>
-              <span style={{ fontFamily:"var(--fd)", fontSize:"22px", color:"var(--acc)" }}>${amount}</span>
-            </div>
-            <Mono>BILLED MONTHLY · CANCEL ANYTIME</Mono>
-          </Card>
-          <Field lbl="YOUR NAME" val={name} set={setName} ph="Full name" acc="#009cde" />
-          <Field lbl="YOUR EMAIL" val={email} set={setEmail} ph="your@email.com" acc="#009cde" type="email" />
-          <button onClick={pay} disabled={!name.trim()||!email.trim()} style={{ width:"100%", padding:"14px", background:name.trim()&&email.trim()?"#009cde":"rgba(255,255,255,.08)", border:"none", borderRadius:"12px", color:name.trim()&&email.trim()?"#fff":"var(--mut)", cursor:name.trim()&&email.trim()?"pointer":"default", fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px" }}>
-            PAY ${amount}/mo via PayPal
+    <Sheet onClose={onClose} title="PAYMENT" acc="var(--acc)">
+      {/* ── CHOOSE METHOD ── */}
+      {step==="choose" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:"11px" }}>
+          <PlanSummary/>
+          <Mono style={{ marginTop:"4px" }}>SELECT PAYMENT METHOD</Mono>
+          <button onClick={()=>setStep("paypal")} style={{ width:"100%", padding:"15px 16px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.25)", borderRadius:"14px", cursor:"pointer", display:"flex", alignItems:"center", gap:"14px", textAlign:"left" }}>
+            <div style={{ fontFamily:"Arial,sans-serif", fontWeight:900, fontSize:"22px", flexShrink:0 }}><span style={{ color:"#7c3aed" }}>Pay</span><span style={{ color:"#003087" }}>Pal</span></div>
+            <div><div style={{ fontSize:"14px", color:"var(--txt)", fontWeight:600, marginBottom:"2px" }}>PayPal</div><div style={{ fontSize:"11px", color:"rgba(255,255,255,.45)" }}>Pay securely with your PayPal account</div></div>
+            <div style={{ marginLeft:"auto", color:"var(--mut)", fontSize:"18px" }}>›</div>
           </button>
-          <button onClick={emailFallback} style={{ width:"100%", padding:"11px", background:"transparent", border:"1px solid rgba(255,255,255,.08)", borderRadius:"12px", color:"var(--mut)", cursor:"pointer", fontSize:"13px" }}>Send via Email instead</button>
-          <Mono style={{ textAlign:"center" }}>Payment goes to: {PP_EMAIL}</Mono>
+          <button onClick={()=>setStep("cardForm")} style={{ width:"100%", padding:"15px 16px", background:"rgba(124,58,237,.06)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"14px", cursor:"pointer", display:"flex", alignItems:"center", gap:"14px", textAlign:"left" }}>
+            <div style={{ width:"36px", height:"26px", background:"linear-gradient(135deg,#111111,#111111)", border:"1px solid rgba(124,58,237,.3)", borderRadius:"5px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px", flexShrink:0 }}>💳</div>
+            <div><div style={{ fontSize:"14px", color:"var(--txt)", fontWeight:600, marginBottom:"2px" }}>Card Payment</div><div style={{ fontSize:"11px", color:"rgba(255,255,255,.45)" }}>Debit or credit card — coming soon</div></div>
+            <div style={{ marginLeft:"auto", color:"var(--mut)", fontSize:"18px" }}>›</div>
+          </button>
         </div>
       )}
-      {step === "loading" && (
-        <div style={{ textAlign:"center", padding:"28px 0" }}>
-          <div style={{ width:"46px", height:"46px", borderRadius:"50%", border:"3px solid #009cde", borderTopColor:"transparent", animation:"spin 1s linear infinite", margin:"0 auto 14px" }} />
-          <div style={{ fontFamily:"var(--fd)", fontSize:"17px", color:"#009cde", letterSpacing:"2px" }}>REDIRECTING</div>
+
+      {/* ── PAYPAL FORM ── */}
+      {step==="paypal" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+          <button onClick={()=>setStep("choose")} style={{ background:"none", border:"none", color:"var(--mut)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fm)", textAlign:"left", letterSpacing:"1px" }}>← BACK</button>
+          <PlanSummary/>
+          <Field lbl="YOUR NAME" val={name} set={setName} ph="Full name" acc="#7c3aed"/>
+          <Field lbl="YOUR EMAIL" val={email} set={setEmail} ph="your@email.com" acc="#7c3aed" type="email"/>
+          <button onClick={payPP} disabled={!name.trim()||!email.trim()} style={{ width:"100%", padding:"14px", background:name.trim()&&email.trim()?"#7c3aed":"rgba(255,255,255,.08)", border:"none", borderRadius:"12px", color:"#fff", cursor:name.trim()&&email.trim()?"pointer":"default", fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"2px" }}>
+            <span style={{ fontFamily:"Arial,sans-serif", fontWeight:900 }}><span style={{ color:"#fff" }}>Pay</span><span style={{ color:"rgba(255,255,255,.7)" }}>Pal</span></span> — ${amount}/mo
+          </button>
+          <Mono style={{ textAlign:"center" }}>Redirects to PayPal · {PP_EMAIL}</Mono>
         </div>
       )}
-      {step === "done" && (
+
+      {/* ── CARD FORM ── */}
+      {step==="cardForm" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+          <button onClick={()=>setStep("choose")} style={{ background:"none", border:"none", color:"var(--mut)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fm)", textAlign:"left", letterSpacing:"1px" }}>← BACK</button>
+          <PlanSummary/>
+          <div style={{ padding:"12px 14px", background:"rgba(255,140,0,.07)", border:"1px solid rgba(255,140,0,.25)", borderRadius:"10px", fontSize:"12px", color:"var(--yw)", lineHeight:1.6 }}>
+            💳 Card payment is coming soon. Enter your details below and we'll process your payment manually within 24 hours.
+          </div>
+          <Field lbl="NAME ON CARD" val={cardName} set={setCardName} ph="Full name as on card" acc="var(--acc)"/>
+          <div>
+            <Mono style={{ marginBottom:"7px" }}>CARD NUMBER</Mono>
+            <input value={cardNum} onChange={e=>setCardNum(fmtCard(e.target.value))} placeholder="1234 5678 9012 3456" inputMode="numeric" style={{ width:"100%", padding:"12px 14px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"10px", color:"var(--txt)", fontSize:"15px", fontFamily:"var(--fm)", outline:"none", letterSpacing:"2px" }}/>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" }}>
+            <div>
+              <Mono style={{ marginBottom:"7px" }}>EXPIRY</Mono>
+              <input value={cardExp} onChange={e=>setCardExp(fmtExp(e.target.value))} placeholder="MM/YY" inputMode="numeric" style={{ width:"100%", padding:"12px 14px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"10px", color:"var(--txt)", fontSize:"15px", fontFamily:"var(--fm)", outline:"none", letterSpacing:"2px" }}/>
+            </div>
+            <div>
+              <Mono style={{ marginBottom:"7px" }}>CVC</Mono>
+              <input value={cardCvc} onChange={e=>setCardCvc(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="123" inputMode="numeric" style={{ width:"100%", padding:"12px 14px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"10px", color:"var(--txt)", fontSize:"15px", fontFamily:"var(--fm)", outline:"none", letterSpacing:"2px" }}/>
+            </div>
+          </div>
+          <Field lbl="EMAIL FOR RECEIPT" val={email} set={setEmail} ph="your@email.com" acc="var(--acc)" type="email"/>
+          <button onClick={payCard} disabled={!cardNum||!cardExp||!cardCvc||!cardName||!email} style={{ width:"100%", padding:"14px", background:cardNum&&cardExp&&cardCvc&&cardName&&email?"var(--acc)":"rgba(255,255,255,.08)", border:"none", borderRadius:"12px", color:cardNum&&cardExp&&cardCvc&&cardName&&email?"#000":"var(--mut)", cursor:cardNum&&cardExp&&cardCvc&&cardName&&email?"pointer":"default", fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"2px" }}>
+            💳 PAY ${amount}/mo
+          </button>
+          <Mono style={{ textAlign:"center" }}>256-bit encrypted · Your details are secure</Mono>
+        </div>
+      )}
+
+      {step==="loading" && (
+        <div style={{ textAlign:"center", padding:"32px 0" }}>
+          <div style={{ width:"50px", height:"50px", borderRadius:"50%", border:"3px solid var(--acc)", borderTopColor:"transparent", animation:"spin 1s linear infinite", margin:"0 auto 16px" }}/>
+          <div style={{ fontFamily:"var(--fd)", fontSize:"17px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"6px" }}>PROCESSING</div>
+          <p style={{ fontSize:"12px", color:"var(--mut)" }}>Please wait...</p>
+        </div>
+      )}
+
+      {step==="done" && (
         <div style={{ textAlign:"center", padding:"24px 0" }}>
-          <div style={{ fontSize:"46px", marginBottom:"12px", animation:"pop .4s" }}>🎉</div>
-          <div style={{ fontFamily:"var(--fd)", fontSize:"20px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"7px" }}>WELCOME TO PRO!</div>
-          <p style={{ fontSize:"13px", color:"var(--mut)", lineHeight:1.7, marginBottom:"16px" }}>Payment processing. Activates once confirmed.</p>
-          <Card style={{ padding:"11px", marginBottom:"14px", border:"1px solid rgba(0,156,222,.2)" }}>
-            <Mono style={{ textAlign:"center", color:"#009cde" }}>TO: {PP_EMAIL}</Mono>
-          </Card>
-          <PBtn onClick={()=>{ onSuccess(); onClose(); }}>⚡ ACTIVATE</PBtn>
+          <div style={{ fontSize:"50px", marginBottom:"12px", animation:"pop .4s" }}>🎉</div>
+          <div style={{ fontFamily:"var(--fd)", fontSize:"20px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"8px" }}>PAYMENT RECEIVED</div>
+          <p style={{ fontSize:"13px", color:"var(--mut)", lineHeight:1.7, marginBottom:"18px" }}>Your plan is being activated.<br/>You'll receive a confirmation shortly.</p>
+          <PBtn onClick={()=>{ onSuccess(); onClose(); }} style={{ color:"#000" }}>⚡ ACTIVATE MY PLAN</PBtn>
         </div>
       )}
     </Sheet>
@@ -285,7 +349,7 @@ function AdminLogin({ onLogin, onClose }) {
   }
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.97)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:9999, animation:"fadeIn .3s" }}>
-      <div style={{ width:"300px", padding:"30px 26px", background:"rgba(14,14,22,.98)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"20px", animation:"pop .3s", position:"relative" }}>
+      <div style={{ width:"300px", padding:"30px 26px", background:"rgba(15,15,15,.98)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"20px", animation:"pop .3s", position:"relative" }}>
         <button onClick={onClose} style={{ position:"absolute", top:"14px", right:"14px", background:"none", border:"none", color:"rgba(255,255,255,.3)", cursor:"pointer", fontSize:"16px" }}>✕</button>
         <div style={{ textAlign:"center", marginBottom:"26px" }}>
           <div style={{ width:"48px", height:"48px", borderRadius:"13px", background:"rgba(232,41,74,.15)", border:"1px solid rgba(232,41,74,.3)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", fontSize:"22px" }}>🔐</div>
@@ -352,7 +416,7 @@ function AdminPanel({ onClose }) {
   return (
     <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:9000, display:"flex", flexDirection:"column", animation:"fadeIn .2s" }}>
       {/* Header */}
-      <div style={{ padding:"14px 18px", background:"rgba(14,14,22,.98)", borderBottom:"1px solid rgba(232,41,74,.2)", display:"flex", alignItems:"center", gap:"11px", flexShrink:0 }}>
+      <div style={{ padding:"14px 18px", background:"rgba(15,15,15,.98)", borderBottom:"1px solid rgba(232,41,74,.2)", display:"flex", alignItems:"center", gap:"11px", flexShrink:0 }}>
         <div style={{ width:"34px", height:"34px", borderRadius:"9px", background:"rgba(232,41,74,.15)", border:"1px solid rgba(232,41,74,.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px" }}>🔐</div>
         <div style={{ flex:1 }}>
           <div style={{ fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"3px", color:"var(--rd)" }}>ADMIN PANEL</div>
@@ -364,7 +428,7 @@ function AdminPanel({ onClose }) {
       {/* Nav */}
       <div style={{ display:"flex", gap:"6px", padding:"10px 18px", borderBottom:"1px solid rgba(255,255,255,.05)", flexShrink:0 }}>
         {[["dash","📊 Dashboard"],["trainers","🏋️ Trainers"],["members","👥 Members"]].map(([v,lbl])=>(
-          <button key={v} onClick={()=>{ setView(v); setSearch(""); setSelTrainer(null); }} style={{ padding:"6px 13px", background:view===v?"var(--rd)":"rgba(255,255,255,.04)", border:"1px solid "+(view===v?"var(--rd)":"rgba(255,255,255,.07)"), borderRadius:"50px", color:view===v?"#fff":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>{lbl}</button>
+          <button key={v} onClick={()=>{ setView(v); setSearch(""); setSelTrainer(null); }} style={{ padding:"6px 13px", background:view===v?"var(--rd)":"rgba(255,255,255,.04)", border:"1px solid "+(view===v?"var(--rd)":"rgba(255,255,255,.08)"), borderRadius:"50px", color:view===v?"#fff":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>{lbl}</button>
         ))}
       </div>
 
@@ -391,7 +455,7 @@ function AdminPanel({ onClose }) {
                 return (
                   <div key={plan.id} style={{ display:"flex", alignItems:"center", gap:"9px", padding:"6px 0", borderBottom:i<3?"1px solid rgba(255,255,255,.04)":"none" }}>
                     <div style={{ fontFamily:"var(--fd)", fontSize:"11px", color:plan.color, width:"75px", letterSpacing:"1px" }}>{plan.name}</div>
-                    <div style={{ flex:1, height:"5px", background:"rgba(255,255,255,.07)", borderRadius:"3px", overflow:"hidden" }}><div style={{ height:"100%", width:pct+"%", background:plan.color, borderRadius:"3px" }}/></div>
+                    <div style={{ flex:1, height:"5px", background:"rgba(255,255,255,.08)", borderRadius:"3px", overflow:"hidden" }}><div style={{ height:"100%", width:pct+"%", background:plan.color, borderRadius:"3px" }}/></div>
                     <Mono style={{ color:plan.color, width:"18px", textAlign:"right" }}>{cnt}</Mono>
                   </div>
                 );
@@ -468,7 +532,7 @@ function AdminPanel({ onClose }) {
             {filt(members).map((mb,i)=>(
               <Card key={mb.id} style={{ padding:"13px", marginBottom:"8px", animation:`fadeUp .3s ease ${i*.05}s both` }}>
                 <div style={{ display:"flex", alignItems:"center", gap:"11px" }}>
-                  <div style={{ width:"42px", height:"42px", borderRadius:"50%", background:"linear-gradient(135deg,var(--acc),#009eb5)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"14px", color:"#000", flexShrink:0 }}>{mb.name.charAt(0)}</div>
+                  <div style={{ width:"42px", height:"42px", borderRadius:"50%", background:"linear-gradient(135deg,var(--acc),#5b21b6)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"14px", color:"#000", flexShrink:0 }}>{mb.name.charAt(0)}</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"2px" }}>
                       <span style={{ fontWeight:600, fontSize:"13px" }}>{mb.name}</span>
@@ -505,7 +569,7 @@ function AdminPanel({ onClose }) {
               <Mono style={{ marginBottom:"8px" }}>STATUS</Mono>
               <div style={{ display:"flex", gap:"6px" }}>
                 {["active","suspended"].map(st=>(
-                  <button key={st} onClick={()=>setEditItem(p=>({...p,status:st}))} style={{ padding:"7px 13px", background:editItem.status===st?"rgba(34,197,94,.15)":"rgba(255,255,255,.04)", border:"1px solid "+(editItem.status===st?"var(--gr)":"rgba(255,255,255,.08)"), borderRadius:"50px", color:editItem.status===st?"var(--gr)":"var(--mut)", cursor:"pointer", fontSize:"12px" }}>{st}</button>
+                  <button key={st} onClick={()=>setEditItem(p=>({...p,status:st}))} style={{ padding:"7px 13px", background:editItem.status===st?"rgba(147,51,234,.15)":"rgba(255,255,255,.04)", border:"1px solid "+(editItem.status===st?"var(--gr)":"rgba(255,255,255,.08)"), borderRadius:"50px", color:editItem.status===st?"var(--gr)":"var(--mut)", cursor:"pointer", fontSize:"12px" }}>{st}</button>
                 ))}
               </div>
             </div>
@@ -534,12 +598,12 @@ function AdminPanel({ onClose }) {
 
 // ─── Wearables ─────────────────────────────────────────────────────────────────
 const DEVICES = [
-  { id:"galaxy",  name:"Samsung Galaxy Watch", icon:"⌚", col:"#1a73e8", models:["Watch 6","Watch 6 Classic","Watch 5 Pro","Watch 4"],           mets:["Heart Rate","SpO2","Sleep","Stress","ECG","Body Comp","GPS","VO2 Max","Steps","Calories"] },
+  { id:"galaxy",  name:"Samsung Galaxy Watch", icon:"⌚", col:"#e8291e", models:["Watch 6","Watch 6 Classic","Watch 5 Pro","Watch 4"],           mets:["Heart Rate","SpO2","Sleep","Stress","ECG","Body Comp","GPS","VO2 Max","Steps","Calories"] },
   { id:"apple",   name:"Apple Watch",          icon:"⌚", col:"#888",    models:["Series 9","Series 8","Ultra 2","SE 2nd gen"],                 mets:["Heart Rate","SpO2","ECG","GPS","Sleep","Temperature","Calories"] },
   { id:"garmin",  name:"Garmin",               icon:"🟠", col:"#007CC3", models:["Fenix 7","Forerunner 965","Venu 3","Vivoactive 5"],            mets:["Heart Rate","GPS","VO2 Max","HRV","Body Battery","Training Load","Sleep"] },
   { id:"fitbit",  name:"Fitbit / Pixel Watch", icon:"💚", col:"#00B0B9", models:["Pixel Watch 2","Sense 2","Versa 4","Charge 6"],                mets:["Heart Rate","SpO2","Sleep Score","Steps","Stress","Active Zones"] },
   { id:"whoop",   name:"WHOOP 4.0",            icon:"🔴", col:"#E63946", models:["WHOOP 4.0"],                                                   mets:["HRV","Recovery Score","Sleep Coach","Strain","Respiratory Rate","SpO2"] },
-  { id:"polar",   name:"Polar",                icon:"🔵", col:"#C62828", models:["Vantage V3","Pacer Pro","Ignite 3","H10 Strap"],               mets:["Heart Rate","HRV","GPS","Training Load","Recovery","VO2 Max"] },
+  { id:"polar",   name:"Polar",                icon:"🔵", col:"#e8291e", models:["Vantage V3","Pacer Pro","Ignite 3","H10 Strap"],               mets:["Heart Rate","HRV","GPS","Training Load","Recovery","VO2 Max"] },
 ];
 const rndMet = () => ({ hr:62+Math.floor(Math.random()*30), spo2:97+Math.floor(Math.random()*3), steps:3800+Math.floor(Math.random()*5000), kcal:280+Math.floor(Math.random()*350), hrv:35+Math.floor(Math.random()*40), stress:18+Math.floor(Math.random()*50), rec:50+Math.floor(Math.random()*45), bat:40+Math.floor(Math.random()*55), vo2:40+Math.floor(Math.random()*20), act:25+Math.floor(Math.random()*50) });
 
@@ -548,7 +612,7 @@ function ArcGauge({ v, max, col, lbl, unit }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"3px" }}>
       <svg width="52" height="52" viewBox="0 0 52 52">
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="5" strokeDasharray={`${circ*.75} ${circ}`} strokeLinecap="round" transform="rotate(135 26 26)"/>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="5" strokeDasharray={`${circ*.75} ${circ}`} strokeLinecap="round" transform="rotate(135 26 26)"/>
         <circle cx={cx} cy={cy} r={r} fill="none" stroke={col} strokeWidth="5" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" transform="rotate(135 26 26)"/>
         <text x={cx} y={cy+4} textAnchor="middle" fill={col} fontSize="9" fontFamily="Space Mono,monospace">{v}</text>
       </svg>
@@ -573,7 +637,19 @@ function WearablesHub() {
   const dm = mets[selId];
   const connDevs = DEVICES.filter(d=>conn.includes(d.id));
 
-  function doPair(d) { setPairing(d.id); setTimeout(()=>{ setConn(p=>[...p.filter(x=>x!==d.id),d.id]); setMets(p=>({...p,[d.id]:rndMet()})); setPairing(null); },2600); }
+  function doPair(d) {
+    setPairing(d.id);
+    const timer = setTimeout(() => {
+      setConn(prev => {
+        if (!prev.includes(d.id)) return [...prev, d.id];
+        return prev;
+      });
+      setMets(prev => ({ ...prev, [d.id]: rndMet() }));
+      setPairing(null);
+      setVw("detail");
+    }, 2800);
+    return () => clearTimeout(timer);
+  }
   function doUnpair(id) { setConn(p=>p.filter(x=>x!==id)); if(selId===id){setVw("list");setSelId(null);} }
   function startLive() { setLive(rndMet()); liveRef.current=setInterval(()=>setLive(rndMet()),2000); }
   function stopLive() { clearInterval(liveRef.current); setLive(null); }
@@ -586,7 +662,7 @@ function WearablesHub() {
   if (vw==="live" && live) return (
     <div style={{ animation:"fadeIn .3s" }}>
       <button onClick={()=>{ stopLive(); setVw("detail"); }} style={{ background:"none", border:"none", color:"var(--mut)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fm)", marginBottom:"12px" }}>← BACK</button>
-      <Card style={{ padding:"15px", marginBottom:"10px", border:wActive?"2px solid var(--rd)":"1px solid rgba(0,229,255,.2)" }}>
+      <Card style={{ padding:"15px", marginBottom:"10px", border:wActive?"2px solid var(--rd)":"1px solid rgba(124,58,237,.2)" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:"5px", marginBottom:"4px" }}><Dot col={wActive?"var(--rd)":"var(--acc)"}/><Mono style={{ color:wActive?"var(--rd)":"var(--acc)" }}>{wActive?"LIVE WORKOUT":"LIVE METRICS"}</Mono></div>
@@ -642,10 +718,10 @@ function WearablesHub() {
             <div style={{ fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px", color:dev.col, marginBottom:"3px" }}>{dev.name}</div>
             <Mono style={{ marginBottom:"7px" }}>Bluetooth LE · {dev.mets.length} metrics</Mono>
             <div style={{ display:"flex", gap:"6px" }}>
-              <div style={{ padding:"3px 10px", background:isConn?"rgba(34,197,94,.15)":"rgba(255,255,255,.05)", border:`1px solid ${isConn?"rgba(34,197,94,.3)":"rgba(255,255,255,.1)"}`, borderRadius:"50px", fontSize:"11px", color:isConn?"var(--gr)":"var(--mut)", display:"flex", alignItems:"center", gap:"4px" }}>
+              <div style={{ padding:"3px 10px", background:isConn?"rgba(147,51,234,.15)":"rgba(255,255,255,.05)", border:`1px solid ${isConn?"rgba(147,51,234,.3)":"rgba(255,255,255,.1)"}`, borderRadius:"50px", fontSize:"11px", color:isConn?"var(--gr)":"var(--mut)", display:"flex", alignItems:"center", gap:"4px" }}>
                 {isConn && <Dot col="var(--gr)"/>}{isConn?"CONNECTED":"NOT CONNECTED"}
               </div>
-              {isConn && dm && <div style={{ padding:"3px 10px", background:"rgba(0,229,255,.08)", border:"1px solid rgba(0,229,255,.2)", borderRadius:"50px", fontSize:"11px", color:"var(--acc)" }}>🔋 {dm.bat}%</div>}
+              {isConn && dm && <div style={{ padding:"3px 10px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"50px", fontSize:"11px", color:"var(--acc)" }}>🔋 {dm.bat}%</div>}
             </div>
           </div>
         </div>
@@ -663,15 +739,19 @@ function WearablesHub() {
           {isConn
             ? <><button onClick={()=>{ startLive(); setVw("live"); }} style={{ flex:1, padding:"11px", background:"var(--acc)", border:"none", borderRadius:"var(--r)", color:"#000", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px" }}>📡 LIVE DATA</button>
               <button onClick={()=>doUnpair(dev.id)} style={{ padding:"11px 13px", background:"rgba(255,61,107,.1)", border:"1px solid rgba(255,61,107,.25)", borderRadius:"var(--r)", color:"var(--a2)", cursor:"pointer", fontSize:"12px" }}>Disconnect</button></>
-            : <button onClick={()=>doPair(dev)} disabled={pairing===dev.id} style={{ flex:1, padding:"12px", background:pairing===dev.id?"rgba(255,255,255,.08)":dev.col, border:"none", borderRadius:"var(--r)", color:"#fff", cursor:pairing===dev.id?"default":"pointer", fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px" }}>
-                {pairing===dev.id ? <span style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"7px" }}><div style={{ width:"12px", height:"12px", borderRadius:"50%", border:"2px solid #fff", borderTopColor:"transparent", animation:"spin .8s linear infinite" }}/>PAIRING...</span> : "🔗 PAIR DEVICE"}
+            : <button onClick={()=>doPair(dev)} disabled={!!pairing} style={{ flex:1, padding:"12px", background:pairing?"rgba(255,255,255,.06)":dev.col, border:pairing?"1px solid rgba(255,255,255,.1)":"none", borderRadius:"var(--r)", color:"#fff", cursor:pairing?"default":"pointer", fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px" }}>
+                {pairing===dev.id
+                  ? <span style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"7px" }}><div style={{ width:"12px", height:"12px", borderRadius:"50%", border:"2px solid #fff", borderTopColor:"transparent", animation:"spin .8s linear infinite" }}/>CONNECTING...</span>
+                  : pairing
+                  ? "Pairing another device..."
+                  : "🔗 CONNECT DEVICE"}
               </button>
           }
         </div>
       </Card>
       <Mono style={{ marginBottom:"9px" }}>TRACKED METRICS</Mono>
       <div style={{ display:"flex", flexWrap:"wrap", gap:"6px", marginBottom:"11px" }}>
-        {dev.mets.map(m=><div key={m} style={{ padding:"4px 10px", background:isConn?dev.col+"12":"rgba(255,255,255,.04)", border:`1px solid ${isConn?dev.col+"30":"rgba(255,255,255,.07)"}`, borderRadius:"50px", fontSize:"11px", color:isConn?dev.col:"var(--mut)" }}>{isConn&&"● "}{m}</div>)}
+        {dev.mets.map(m=><div key={m} style={{ padding:"4px 10px", background:isConn?dev.col+"12":"rgba(255,255,255,.04)", border:`1px solid ${isConn?dev.col+"30":"rgba(255,255,255,.08)"}`, borderRadius:"50px", fontSize:"11px", color:isConn?dev.col:"var(--mut)" }}>{isConn&&"● "}{m}</div>)}
       </div>
       <Card style={{ padding:"13px" }}>
         <Mono style={{ marginBottom:"9px" }}>COMPATIBLE MODELS</Mono>
@@ -693,12 +773,12 @@ function WearablesHub() {
 
   return (
     <div style={{ animation:"fadeIn .3s" }}>
-      <HeroBg src={IMG.recovery} ov="linear-gradient(180deg,rgba(8,8,16,.15) 0%,rgba(8,8,16,.9) 100%)" style={{ height:"120px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 0 13px", borderRadius:"12px", overflow:"hidden", marginBottom:"13px" }}>
+      <HeroBg src={IMG.recovery} ov="linear-gradient(180deg,rgba(10,10,10,.15) 0%,rgba(10,10,10,.9) 100%)" style={{ height:"120px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 0 13px", borderRadius:"12px", overflow:"hidden", marginBottom:"13px" }}>
         <Mono>SMART DEVICES</Mono>
         <div style={{ fontFamily:"var(--fd)", fontSize:"23px", letterSpacing:"2px" }}>WEARABLES <span style={{ color:"var(--acc)" }}>HUB</span></div>
       </HeroBg>
       {connDevs.length>0 && (
-        <Card style={{ padding:"13px", marginBottom:"13px", border:"1px solid rgba(34,197,94,.2)" }}>
+        <Card style={{ padding:"13px", marginBottom:"13px", border:"1px solid rgba(147,51,234,.2)" }}>
           <div style={{ display:"flex", alignItems:"center", gap:"5px", marginBottom:"8px" }}><Dot col="var(--rd)"/><Mono style={{ color:"var(--gr)" }}>{connDevs.length} DEVICE{connDevs.length>1?"S":""} CONNECTED</Mono></div>
           {mets[connDevs[0].id] && (
             <>
@@ -751,18 +831,38 @@ function NutritionHub() {
   const [water, setWater] = useState(0);
   const [diet, setDiet] = useState("Standard");
   const [vw, setVw] = useState("overview");
+  const [mealGoal, setMealGoal] = useState("Muscle Gain");
+  const [mealTime, setMealTime] = useState("All meals");
+  const [meals, setMeals] = useState(null);
+  const [mealsLoading, setMealsLoading] = useState(false);
+
+  async function genMeals() {
+    setMealsLoading(true); setMeals(null);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:2000,
+          messages:[{ role:"user", content:`Create a practical, delicious 1-day meal plan for someone with the goal: ${mealGoal}. Focus on: ${mealTime}. Return ONLY JSON: {"meals":[{"mealTime":"Breakfast","name":"Meal name","calories":"kcal","protein":"g","carbs":"g","fat":"g","ingredients":["item1","item2"],"prep":"2-sentence prep instructions","tip":"1 practical tip"}],"dailyTotals":{"calories":"total","protein":"g","carbs":"g","fat":"g"},"groceryList":["item1","item2"]}. Include 4-5 meals with snacks. Make meals realistic, tasty and goal-aligned.` }]
+        })
+      });
+      const d = await res.json();
+      const raw = d.content?.[0]?.text || "";
+      setMeals(JSON.parse(raw.replace("```json","").replace("```","").trim()));
+    } catch { setMeals({ meals:[{mealTime:"Error",name:"Couldn't generate meals",calories:"—",protein:"—",carbs:"—",fat:"—",ingredients:[],prep:"Please try again.",tip:"Check your connection."}], dailyTotals:{}, groceryList:[] }); }
+    setMealsLoading(false);
+  }
   const totalKcal = macros.p*4 + macros.c*4 + macros.f*9;
   const diets = { Standard:{p:165,c:220,f:60}, "High Protein":{p:220,c:165,f:55}, Keto:{p:175,c:28,f:155}, Vegan:{p:110,c:275,f:60} };
 
   return (
     <div style={{ animation:"fadeIn .3s" }}>
-      <HeroBg src={IMG.food} ov="linear-gradient(180deg,rgba(8,8,16,.15) 0%,rgba(8,8,16,.9) 100%)" style={{ height:"115px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 0 12px", borderRadius:"12px", overflow:"hidden", marginBottom:"12px" }}>
+      <HeroBg src={IMG.food} ov="linear-gradient(180deg,rgba(10,10,10,.15) 0%,rgba(10,10,10,.9) 100%)" style={{ height:"115px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 0 12px", borderRadius:"12px", overflow:"hidden", marginBottom:"12px" }}>
         <Mono>FUEL CENTER</Mono>
         <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px" }}>NUTRITION <span style={{ color:"var(--acc)" }}>HUB</span></div>
       </HeroBg>
       <div style={{ display:"flex", gap:"6px", marginBottom:"11px", overflowX:"auto" }}>
         {[["overview","📊"],["macros","🎚️"],["water","💧"]].map(([t,ic])=>(
-          <button key={t} onClick={()=>setVw(t)} style={{ padding:"6px 12px", background:vw===t?"var(--a3)":"rgba(255,255,255,.04)", border:`1px solid ${vw===t?"var(--a3)":"rgba(255,255,255,.07)"}`, borderRadius:"50px", color:vw===t?"#000":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px", whiteSpace:"nowrap" }}>{ic} {t.toUpperCase()}</button>
+          <button key={t} onClick={()=>setVw(t)} style={{ padding:"6px 12px", background:vw===t?"var(--a3)":"rgba(255,255,255,.04)", border:`1px solid ${vw===t?"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:vw===t?"#000":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px", whiteSpace:"nowrap" }}>{ic} {t.toUpperCase()}</button>
         ))}
       </div>
       {vw==="overview" && (
@@ -786,7 +886,7 @@ function NutritionHub() {
               ))}
             </div>
           </Card>
-          <Card style={{ padding:"12px", border:"1px solid rgba(0,229,255,.2)", display:"flex", alignItems:"center", gap:"11px" }}>
+          <Card style={{ padding:"12px", border:"1px solid rgba(124,58,237,.2)", display:"flex", alignItems:"center", gap:"11px" }}>
             <div style={{ fontSize:"22px" }}>💧</div>
             <div style={{ flex:1 }}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"5px" }}>
@@ -798,12 +898,111 @@ function NutritionHub() {
           </Card>
         </div>
       )}
+      {vw==="meals" && (
+        <div style={{ animation:"fadeIn .3s" }}>
+          <Card style={{ padding:"14px", marginBottom:"12px", border:"1px solid rgba(147,51,234,.2)" }}>
+            <Mono style={{ marginBottom:"10px" }}>🍽️ AI MEAL PLANNER</Mono>
+            <div style={{ marginBottom:"10px" }}>
+              <Mono style={{ marginBottom:"7px" }}>YOUR GOAL</Mono>
+              <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
+                {["Muscle Gain","Fat Loss","Endurance","General Fitness","Vegan","High Protein","Keto"].map(g=>(
+                  <button key={g} onClick={()=>setMealGoal(g)} style={{ padding:"5px 11px", background:mealGoal===g?"rgba(147,51,234,.18)":"rgba(255,255,255,.04)", border:`1px solid ${mealGoal===g?"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:mealGoal===g?"var(--a3)":"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{g}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom:"12px" }}>
+              <Mono style={{ marginBottom:"7px" }}>MEAL FOCUS</Mono>
+              <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
+                {["All meals","Pre-workout","Post-workout","Breakfast","High protein snacks"].map(t=>(
+                  <button key={t} onClick={()=>setMealTime(t)} style={{ padding:"5px 11px", background:mealTime===t?"rgba(147,51,234,.18)":"rgba(255,255,255,.04)", border:`1px solid ${mealTime===t?"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:mealTime===t?"var(--a3)":"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{t}</button>
+                ))}
+              </div>
+            </div>
+            <button onClick={genMeals} disabled={mealsLoading} style={{ width:"100%", padding:"13px", background:mealsLoading?"rgba(255,255,255,.06)":"var(--a3)", border:"none", borderRadius:"10px", color:mealsLoading?"var(--mut)":"#000", cursor:mealsLoading?"default":"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px" }}>
+              {mealsLoading ? "⏳ GENERATING..." : "🍽️ GENERATE MEAL PLAN"}
+            </button>
+          </Card>
+
+          {mealsLoading && (
+            <Card style={{ padding:"22px", textAlign:"center" }}>
+              <div style={{ width:"40px", height:"40px", borderRadius:"50%", border:"3px solid var(--a3)", borderTopColor:"transparent", animation:"spin 1s linear infinite", margin:"0 auto 12px" }}/>
+              <Mono style={{ color:"var(--a3)" }}>AI crafting your meal plan...</Mono>
+            </Card>
+          )}
+
+          {meals && !mealsLoading && (
+            <div>
+              {/* Daily totals */}
+              {meals.dailyTotals?.calories && (
+                <Card style={{ padding:"13px", marginBottom:"11px", border:"1px solid rgba(147,51,234,.15)" }}>
+                  <Mono style={{ marginBottom:"9px", color:"var(--a3)" }}>DAILY TOTALS</Mono>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"6px" }}>
+                    {[{l:"Calories",v:meals.dailyTotals.calories,c:"var(--acc)"},{l:"Protein",v:meals.dailyTotals.protein,c:"var(--tr)"},{l:"Carbs",v:meals.dailyTotals.carbs,c:"var(--a3)"},{l:"Fat",v:meals.dailyTotals.fat,c:"var(--a4)"}].map(s=>(
+                      <div key={s.l} style={{ textAlign:"center", padding:"8px 4px", background:"rgba(255,255,255,.04)", borderRadius:"8px" }}>
+                        <div style={{ fontFamily:"var(--fd)", fontSize:"14px", color:s.c, lineHeight:1 }}>{s.v}</div>
+                        <div style={{ fontSize:"9px", color:"var(--mut)", marginTop:"3px" }}>{s.l}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {/* Meal cards */}
+              {(meals.meals||[]).map((meal,i)=>(
+                <Card key={i} style={{ marginBottom:"9px", overflow:"hidden", border:"1px solid rgba(255,255,255,.08)", animation:`fadeUp .3s ease ${i*.07}s both` }}>
+                  <div style={{ padding:"13px" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px" }}>
+                      <div>
+                        <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--a3)", letterSpacing:"1px", marginBottom:"2px" }}>{meal.mealTime?.toUpperCase()}</div>
+                        <div style={{ fontWeight:700, fontSize:"15px" }}>{meal.name}</div>
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:"var(--acc)" }}>{meal.calories}</div>
+                        <div style={{ fontSize:"9px", color:"var(--mut)" }}>kcal</div>
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", gap:"8px", marginBottom:"9px" }}>
+                      {[{l:"P",v:meal.protein,c:"var(--tr)"},{l:"C",v:meal.carbs,c:"var(--a3)"},{l:"F",v:meal.fat,c:"var(--a4)"}].map(m=>(
+                        <div key={m.l} style={{ padding:"3px 9px", background:m.c+"12", border:`1px solid ${m.c}25`, borderRadius:"50px", fontSize:"11px", color:m.c, fontFamily:"var(--fm)" }}>{m.l}: {m.v}</div>
+                      ))}
+                    </div>
+                    {meal.ingredients?.length>0 && (
+                      <div style={{ marginBottom:"8px" }}>
+                        <Mono style={{ marginBottom:"5px" }}>INGREDIENTS</Mono>
+                        <div style={{ display:"flex", flexWrap:"wrap", gap:"5px" }}>
+                          {meal.ingredients.map((ing,j)=>(
+                            <span key={j} style={{ fontSize:"11px", padding:"2px 8px", background:"rgba(255,255,255,.05)", borderRadius:"5px", color:"rgba(255,255,255,.65)" }}>{ing}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {meal.prep && <div style={{ fontSize:"12px", color:"rgba(255,255,255,.55)", lineHeight:1.6, marginBottom:"5px" }}>{meal.prep}</div>}
+                    {meal.tip && <div style={{ fontSize:"11px", color:"var(--a3)", fontStyle:"italic" }}>💡 {meal.tip}</div>}
+                  </div>
+                </Card>
+              ))}
+
+              {/* Grocery list */}
+              {meals.groceryList?.length>0 && (
+                <Card style={{ padding:"14px", border:"1px solid rgba(124,58,237,.15)" }}>
+                  <Mono style={{ marginBottom:"9px", color:"var(--a4)" }}>🛒 GROCERY LIST</Mono>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:"6px" }}>
+                    {meals.groceryList.map((item,i)=>(
+                      <span key={i} style={{ fontSize:"12px", padding:"4px 10px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"8px", color:"rgba(255,255,255,.7)" }}>{item}</span>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {vw==="macros" && (
         <Card style={{ padding:"13px" }}>
           <div style={{ textAlign:"center", marginBottom:"8px" }}><span style={{ fontFamily:"var(--fd)", fontSize:"28px", color:"var(--acc)" }}>{totalKcal}</span><span style={{ fontSize:"12px", color:"var(--mut)", marginLeft:"5px" }}>kcal/day</span></div>
           <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"12px" }}>
             {Object.entries(diets).map(([n,v])=>(
-              <button key={n} onClick={()=>{ setMacros({...v,fiber:30}); setDiet(n); }} style={{ padding:"6px 11px", background:diet===n?"rgba(168,85,247,.2)":"rgba(255,255,255,.04)", border:`1px solid ${diet===n?"var(--a4)":"rgba(255,255,255,.07)"}`, borderRadius:"50px", color:diet===n?"var(--a4)":"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{n}</button>
+              <button key={n} onClick={()=>{ setMacros({...v,fiber:30}); setDiet(n); }} style={{ padding:"6px 11px", background:diet===n?"rgba(124,58,237,.2)":"rgba(255,255,255,.04)", border:`1px solid ${diet===n?"var(--a4)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:diet===n?"var(--a4)":"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{n}</button>
             ))}
           </div>
           {[{lbl:"PROTEIN",k:"p",min:50,max:300,col:"var(--tr)"},{lbl:"CARBS",k:"c",min:20,max:500,col:"var(--acc)"},{lbl:"FAT",k:"f",min:20,max:200,col:"var(--a3)"},{lbl:"FIBER",k:"fiber",min:10,max:80,col:"var(--a4)"}].map(sl=>(
@@ -820,8 +1019,8 @@ function NutritionHub() {
       )}
       {vw==="water" && (
         <div>
-          <Card style={{ padding:"18px", textAlign:"center", marginBottom:"10px", border:"1px solid rgba(0,229,255,.2)", position:"relative", overflow:"hidden" }}>
-            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:Math.min(100,water/3*100)+"%", background:"linear-gradient(180deg,rgba(0,229,255,.15),rgba(0,229,255,.03))", borderTop:"1px solid rgba(0,229,255,.25)", transition:"height .7s", pointerEvents:"none" }}/>
+          <Card style={{ padding:"18px", textAlign:"center", marginBottom:"10px", border:"1px solid rgba(124,58,237,.2)", position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:Math.min(100,water/3*100)+"%", background:"linear-gradient(180deg,rgba(124,58,237,.15),rgba(124,58,237,.03))", borderTop:"1px solid rgba(124,58,237,.25)", transition:"height .7s", pointerEvents:"none" }}/>
             <div style={{ position:"relative" }}>
               <div style={{ fontSize:"40px", marginBottom:"4px" }}>💧</div>
               <div style={{ fontFamily:"var(--fd)", fontSize:"44px", color:"var(--acc)", lineHeight:1 }}>{water.toFixed(1)}</div>
@@ -830,7 +1029,7 @@ function NutritionHub() {
             </div>
           </Card>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"7px", marginBottom:"9px" }}>
-            {[.25,.5,.75,1].map(a=><button key={a} onClick={()=>setWater(v=>clamp(v+a,0,4))} style={{ padding:"11px 6px", background:"rgba(0,229,255,.07)", border:"1px solid rgba(0,229,255,.18)", borderRadius:"9px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px" }}>+{a}L</button>)}
+            {[.25,.5,.75,1].map(a=><button key={a} onClick={()=>setWater(v=>clamp(v+a,0,4))} style={{ padding:"11px 6px", background:"rgba(124,58,237,.07)", border:"1px solid rgba(124,58,237,.18)", borderRadius:"9px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px" }}>+{a}L</button>)}
           </div>
           <button onClick={()=>setWater(0)} style={{ width:"100%", padding:"10px", background:"transparent", border:"1px solid rgba(255,255,255,.08)", borderRadius:"var(--r)", color:"var(--mut)", cursor:"pointer", fontSize:"13px" }}>Reset</button>
         </div>
@@ -891,19 +1090,19 @@ function AICoach({ user, profile, ctx, onClose, onLimit }) {
   }
 
   function LogoIcon() {
-    return <div style={{ width:"28px", height:"28px", borderRadius:"50%", background:"linear-gradient(135deg,#00e5ff,#0096aa)", display:"flex", alignItems:"center", justifyContent:"center", padding:"4px", flexShrink:0 }}><Logo size={18} col="#001a22"/></div>;
+    return <div style={{ width:"28px", height:"28px", borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#5b21b6)", display:"flex", alignItems:"center", justifyContent:"center", padding:"4px", flexShrink:0 }}><Logo size={18} col="#111111"/></div>;
   }
 
   return (
-    <HeroBg src={IMG.workout} ov="rgba(8,8,16,.97)" style={{ position:"fixed", inset:0, zIndex:500, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto", animation:"fadeIn .25s" }}>
-      <div className="glass" style={{ padding:"12px 15px", borderBottom:"1px solid rgba(255,255,255,.07)", display:"flex", alignItems:"center", gap:"10px", flexShrink:0 }}>
-        <div style={{ width:"37px", height:"37px", borderRadius:"50%", background:"linear-gradient(135deg,#00e5ff,#0096aa)", display:"flex", alignItems:"center", justifyContent:"center", padding:"5px" }}><Logo size={25} col="#001a22"/></div>
+    <HeroBg src={IMG.workout} ov="rgba(10,10,10,.97)" style={{ position:"fixed", inset:0, zIndex:500, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto", animation:"fadeIn .25s" }}>
+      <div className="glass" style={{ padding:"12px 15px", borderBottom:"1px solid rgba(255,255,255,.08)", display:"flex", alignItems:"center", gap:"10px", flexShrink:0 }}>
+        <div style={{ width:"37px", height:"37px", borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#5b21b6)", display:"flex", alignItems:"center", justifyContent:"center", padding:"5px" }}><Logo size={25} col="#111111"/></div>
         <div style={{ flex:1 }}>
           <div style={{ fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"3px", lineHeight:1 }}>AI COACH</div>
           <div style={{ fontSize:"10px", color:"var(--gr)", fontFamily:"var(--fm)", marginTop:"1px", display:"flex", alignItems:"center", gap:"5px" }}>
             <Dot col="var(--gr)"/>ONLINE · Fit2All
-            {ctx && ctx.plan.limits.ai !== Infinity && <span style={{ padding:"1px 6px", background:"rgba(0,229,255,.08)", border:"1px solid rgba(0,229,255,.2)", borderRadius:"4px", color:"var(--acc)", fontSize:"9px" }}>{ctx.aiLeft()}/2 TODAY</span>}
-            {ctx && ctx.plan.limits.ai === Infinity && <span style={{ padding:"1px 6px", background:"rgba(0,229,255,.08)", border:"1px solid rgba(0,229,255,.2)", borderRadius:"4px", color:"var(--acc)", fontSize:"9px" }}>⚡ PRO</span>}
+            {ctx && ctx.plan.limits.ai !== Infinity && <span style={{ padding:"1px 6px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"4px", color:"var(--acc)", fontSize:"9px" }}>{ctx.aiLeft()}/2 TODAY</span>}
+            {ctx && ctx.plan.limits.ai === Infinity && <span style={{ padding:"1px 6px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"4px", color:"var(--acc)", fontSize:"9px" }}>⚡ PRO</span>}
           </div>
         </div>
         <button onClick={onClose} style={{ background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"8px", color:"var(--mut)", cursor:"pointer", padding:"5px 10px", fontSize:"11px", fontFamily:"var(--fm)" }}>✕</button>
@@ -917,8 +1116,8 @@ function AICoach({ user, profile, ctx, onClose, onLimit }) {
               {!isU && <div style={{ marginRight:"5px", alignSelf:"flex-end" }}><LogoIcon/></div>}
               <div style={{ maxWidth:"83%", display:"flex", flexDirection:"column", gap:"3px" }}>
                 {isU
-                  ? <div style={{ padding:"10px 13px", background:"linear-gradient(135deg,rgba(0,229,255,.12),rgba(0,229,255,.06))", border:"1px solid rgba(0,229,255,.18)", borderRadius:"15px 15px 4px 15px", fontSize:"13px", lineHeight:1.6 }}>{msg.content}</div>
-                  : <div className="glass" style={{ padding:"11px 12px", border:"1px solid rgba(255,255,255,.07)", borderRadius:"15px 15px 15px 4px" }}>
+                  ? <div style={{ padding:"10px 13px", background:"linear-gradient(135deg,rgba(124,58,237,.12),rgba(124,58,237,.06))", border:"1px solid rgba(124,58,237,.18)", borderRadius:"15px 15px 4px 15px", fontSize:"13px", lineHeight:1.6 }}>{msg.content}</div>
+                  : <div className="glass" style={{ padding:"11px 12px", border:"1px solid rgba(255,255,255,.08)", borderRadius:"15px 15px 15px 4px" }}>
                       {parts.map((p,j) => p.type==="yt"
                         ? <a key={j} href={p.url} target="_blank" rel="noopener noreferrer" style={{ display:"flex", alignItems:"center", gap:"7px", padding:"7px 9px", background:"rgba(255,0,0,.08)", border:"1px solid rgba(255,0,0,.2)", borderRadius:"8px", textDecoration:"none", color:"var(--txt)", marginTop:"6px" }}>
                             <div style={{ position:"relative", width:"56px", height:"36px", borderRadius:"5px", overflow:"hidden", background:"#000", flexShrink:0 }}>
@@ -942,7 +1141,7 @@ function AICoach({ user, profile, ctx, onClose, onLimit }) {
         {loading && (
           <div style={{ display:"flex", alignItems:"flex-end", gap:"6px", marginBottom:"11px" }}>
             <LogoIcon/>
-            <div className="glass" style={{ padding:"11px 13px", display:"flex", gap:"4px", alignItems:"center", border:"1px solid rgba(255,255,255,.07)", borderRadius:"15px 15px 15px 4px" }}>
+            <div className="glass" style={{ padding:"11px 13px", display:"flex", gap:"4px", alignItems:"center", border:"1px solid rgba(255,255,255,.08)", borderRadius:"15px 15px 15px 4px" }}>
               {[0,1,2].map(i=><div key={i} style={{ width:"6px", height:"6px", borderRadius:"50%", background:"var(--mut)", animation:`pulse 1.2s ease-in-out ${i*.2}s infinite` }}/>)}
             </div>
           </div>
@@ -957,7 +1156,7 @@ function AICoach({ user, profile, ctx, onClose, onLimit }) {
           </div>
         </div>
       )}
-      <div className="glass" style={{ padding:"9px 12px 22px", borderTop:"1px solid rgba(255,255,255,.07)", flexShrink:0 }}>
+      <div className="glass" style={{ padding:"9px 12px 22px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
         <div style={{ display:"flex", gap:"7px", alignItems:"flex-end" }}>
           <div style={{ flex:1, background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"12px", padding:"7px 12px" }}>
             <textarea ref={inpRef} value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); } }} placeholder="Ask about exercises, nutrition..." rows={1} style={{ width:"100%", background:"none", border:"none", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fb)", outline:"none", lineHeight:1.5, maxHeight:"70px", overflowY:"auto" }}/>
@@ -992,7 +1191,7 @@ function TrainerUpgradeScreen({ clientCount, onUpgraded, onClose }) {
 
   return (
     <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:550, overflowY:"auto", animation:"fadeIn .2s" }}>
-      <HeroBg src={IMG.trainer} ov="linear-gradient(180deg,rgba(8,8,16,.1) 0%,rgba(8,8,16,.95) 60%,rgba(8,8,16,1) 100%)" style={{ height:"190px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 20px 20px", position:"relative" }}>
+      <HeroBg src={IMG.trainer} ov="linear-gradient(180deg,rgba(10,10,10,.1) 0%,rgba(10,10,10,.95) 60%,rgba(10,10,10,1) 100%)" style={{ height:"190px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 20px 20px", position:"relative" }}>
         <BackBtn onClick={onClose}/>
         <Mono style={{ color:"var(--tr)", marginBottom:"5px" }}>UPGRADE YOUR PLAN</Mono>
         <div style={{ fontFamily:"var(--fd)", fontSize:"26px", letterSpacing:"2px", lineHeight:1 }}>ADD MORE <span style={{ color:"var(--tr)" }}>CLIENTS</span></div>
@@ -1044,7 +1243,7 @@ function TrainerUpgradeScreen({ clientCount, onUpgraded, onClose }) {
           </div>
           {promoErr && <div style={{ fontSize:"11px", color:"var(--a2)", marginTop:"6px", lineHeight:1.5 }}>{promoErr}</div>}
           {promo && (
-            <div style={{ marginTop:"8px", padding:"8px 11px", background:"rgba(34,212,168,.1)", border:"1px solid rgba(34,212,168,.25)", borderRadius:"8px", display:"flex", alignItems:"center", gap:"7px" }}>
+            <div style={{ marginTop:"8px", padding:"8px 11px", background:"rgba(147,51,234,.1)", border:"1px solid rgba(147,51,234,.25)", borderRadius:"8px", display:"flex", alignItems:"center", gap:"7px" }}>
               <span style={{ fontSize:"15px" }}>🎉</span>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:"13px", color:"var(--a3)", fontWeight:600 }}>{promo.code} applied!</div>
@@ -1182,7 +1381,7 @@ function TrainerCalendar({ clients }) {
   function declineRequest(id) { setRequests(p=>p.map(r=>r.id===id?{...r,status:"declined"}:r)); }
 
   const SlotCard = ({ s, compact }) => (
-    <div onClick={()=>setEditSlot(s)} style={{ padding:compact?"8px 10px":"12px 14px", background:"rgba(20,20,31,.9)", border:`1px solid ${s.color}40`, borderLeft:`3px solid ${s.color}`, borderRadius:"10px", marginBottom:"8px", cursor:"pointer", animation:"fadeUp .3s" }}>
+    <div onClick={()=>setEditSlot(s)} style={{ padding:compact?"8px 10px":"12px 14px", background:"rgba(20,20,20,.9)", border:`1px solid ${s.color}40`, borderLeft:`3px solid ${s.color}`, borderRadius:"10px", marginBottom:"8px", cursor:"pointer", animation:"fadeUp .3s" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:s.color, letterSpacing:"1px", marginBottom:"2px" }}>{formatTime(s.date)} · {s.duration}min</div>
@@ -1190,7 +1389,7 @@ function TrainerCalendar({ clients }) {
           {!compact && <div style={{ fontSize:"11px", color:"var(--mut)" }}>{s.type}{s.maxSpots ? ` · ${s.bookedSpots}/${s.maxSpots} spots` : ""}</div>}
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"4px", flexShrink:0 }}>
-          <div style={{ padding:"2px 8px", background:s.status==="confirmed"?"rgba(34,197,94,.15)":s.status==="pending"?"rgba(251,191,36,.15)":"rgba(255,255,255,.08)", border:`1px solid ${s.status==="confirmed"?"rgba(34,197,94,.3)":s.status==="pending"?"rgba(251,191,36,.3)":"rgba(255,255,255,.1)"}`, borderRadius:"50px", fontSize:"9px", fontFamily:"var(--fm)", color:s.status==="confirmed"?"var(--gr)":s.status==="pending"?"var(--yw)":"var(--mut)", letterSpacing:"1px", textTransform:"uppercase" }}>{s.status}</div>
+          <div style={{ padding:"2px 8px", background:s.status==="confirmed"?"rgba(147,51,234,.15)":s.status==="pending"?"rgba(255,140,0,.15)":"rgba(255,255,255,.08)", border:`1px solid ${s.status==="confirmed"?"rgba(147,51,234,.3)":s.status==="pending"?"rgba(255,140,0,.3)":"rgba(255,255,255,.1)"}`, borderRadius:"50px", fontSize:"9px", fontFamily:"var(--fm)", color:s.status==="confirmed"?"var(--gr)":s.status==="pending"?"var(--yw)":"var(--mut)", letterSpacing:"1px", textTransform:"uppercase" }}>{s.status}</div>
           {s.maxSpots && (
             <div style={{ fontSize:"10px", color:"var(--mut)", fontFamily:"var(--fm)" }}>{s.maxSpots - s.bookedSpots} left</div>
           )}
@@ -1245,7 +1444,7 @@ function TrainerCalendar({ clients }) {
           }
           <div style={{ display:"flex", gap:"8px", marginTop:"14px" }}>
             <button onClick={()=>{ setNewType("1-on-1 Session"); setShowNewSlot(true); }} style={{ flex:1, padding:"11px", background:"rgba(255,112,67,.12)", border:"1px solid rgba(255,112,67,.3)", borderRadius:"10px", color:"var(--tr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>+ SESSION</button>
-            <button onClick={()=>{ setNewType("Group Class"); setShowNewClass(true); }} style={{ flex:1, padding:"11px", background:"rgba(0,229,255,.08)", border:"1px solid rgba(0,229,255,.2)", borderRadius:"10px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>+ CLASS</button>
+            <button onClick={()=>{ setNewType("Group Class"); setShowNewClass(true); }} style={{ flex:1, padding:"11px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"10px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>+ CLASS</button>
           </div>
         </div>
       )}
@@ -1267,7 +1466,7 @@ function TrainerCalendar({ clients }) {
           }
           <div style={{ display:"flex", gap:"8px", marginTop:"4px" }}>
             <button onClick={()=>{ setNewType("1-on-1 Session"); setShowNewSlot(true); }} style={{ flex:1, padding:"11px", background:"rgba(255,112,67,.12)", border:"1px solid rgba(255,112,67,.3)", borderRadius:"10px", color:"var(--tr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>+ SESSION</button>
-            <button onClick={()=>{ setNewType("Group Class"); setShowNewClass(true); }} style={{ flex:1, padding:"11px", background:"rgba(0,229,255,.08)", border:"1px solid rgba(0,229,255,.2)", borderRadius:"10px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>+ CLASS</button>
+            <button onClick={()=>{ setNewType("Group Class"); setShowNewClass(true); }} style={{ flex:1, padding:"11px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"10px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>+ CLASS</button>
           </div>
         </div>
       )}
@@ -1278,26 +1477,26 @@ function TrainerCalendar({ clients }) {
           <div style={{ fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"1px", marginBottom:"12px" }}>BOOKING REQUESTS</div>
           {requests.length===0 && <Card style={{ padding:"20px", textAlign:"center" }}><Mono>No requests yet</Mono></Card>}
           {requests.map((req,i)=>(
-            <Card key={req.id} style={{ padding:"14px", marginBottom:"9px", border:`1px solid ${req.status==="pending"?"rgba(251,191,36,.2)":req.status==="approved"?"rgba(34,197,94,.2)":"rgba(255,61,107,.15)"}`, animation:`fadeUp .3s ease ${i*.06}s both` }}>
+            <Card key={req.id} style={{ padding:"14px", marginBottom:"9px", border:`1px solid ${req.status==="pending"?"rgba(255,140,0,.2)":req.status==="approved"?"rgba(147,51,234,.2)":"rgba(255,61,107,.15)"}`, animation:`fadeUp .3s ease ${i*.06}s both` }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"8px" }}>
                 <div>
                   <div style={{ fontWeight:600, fontSize:"14px", marginBottom:"2px" }}>{req.clientName}</div>
                   <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--acc)", letterSpacing:"1px" }}>{req.type}</div>
                 </div>
-                <div style={{ padding:"3px 9px", background:req.status==="pending"?"rgba(251,191,36,.15)":req.status==="approved"?"rgba(34,197,94,.15)":"rgba(255,61,107,.12)", border:`1px solid ${req.status==="pending"?"rgba(251,191,36,.3)":req.status==="approved"?"rgba(34,197,94,.3)":"rgba(255,61,107,.25)"}`, borderRadius:"50px", fontSize:"10px", fontFamily:"var(--fm)", color:req.status==="pending"?"var(--yw)":req.status==="approved"?"var(--gr)":"var(--a2)", letterSpacing:"1px", textTransform:"uppercase" }}>{req.status}</div>
+                <div style={{ padding:"3px 9px", background:req.status==="pending"?"rgba(255,140,0,.15)":req.status==="approved"?"rgba(147,51,234,.15)":"rgba(255,61,107,.12)", border:`1px solid ${req.status==="pending"?"rgba(255,140,0,.3)":req.status==="approved"?"rgba(147,51,234,.3)":"rgba(255,61,107,.25)"}`, borderRadius:"50px", fontSize:"10px", fontFamily:"var(--fm)", color:req.status==="pending"?"var(--yw)":req.status==="approved"?"var(--gr)":"var(--a2)", letterSpacing:"1px", textTransform:"uppercase" }}>{req.status}</div>
               </div>
               <div style={{ fontSize:"12px", color:"var(--mut)", marginBottom:"4px" }}>Preferred: <span style={{ color:"var(--txt)" }}>{req.preferred}</span></div>
               {req.note && <div style={{ fontSize:"12px", color:"var(--mut)", fontStyle:"italic", marginBottom:"10px" }}>"{req.note}"</div>}
               {req.status==="pending" && (
                 <div style={{ display:"flex", gap:"7px" }}>
-                  <button onClick={()=>approveRequest(req.id)} style={{ flex:1, padding:"8px", background:"rgba(34,197,94,.15)", border:"1px solid rgba(34,197,94,.3)", borderRadius:"8px", color:"var(--gr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>✓ APPROVE</button>
+                  <button onClick={()=>approveRequest(req.id)} style={{ flex:1, padding:"8px", background:"rgba(147,51,234,.15)", border:"1px solid rgba(147,51,234,.3)", borderRadius:"8px", color:"var(--gr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>✓ APPROVE</button>
                   <button onClick={()=>declineRequest(req.id)} style={{ flex:1, padding:"8px", background:"rgba(255,61,107,.08)", border:"1px solid rgba(255,61,107,.2)", borderRadius:"8px", color:"var(--a2)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>✕ DECLINE</button>
                 </div>
               )}
             </Card>
           ))}
           {/* Client booking link info */}
-          <Card style={{ padding:"14px", marginTop:"10px", border:"1px solid rgba(168,85,247,.2)" }}>
+          <Card style={{ padding:"14px", marginTop:"10px", border:"1px solid rgba(124,58,237,.2)" }}>
             <div style={{ fontFamily:"var(--fd)", fontSize:"12px", color:"var(--a4)", letterSpacing:"1px", marginBottom:"5px" }}>📱 CLIENT BOOKING</div>
             <div style={{ fontSize:"12px", color:"var(--mut)", lineHeight:1.7 }}>Clients can request sessions from their profile. Share your trainer link to let them book directly.</div>
           </Card>
@@ -1313,7 +1512,7 @@ function TrainerCalendar({ clients }) {
               <Mono style={{ marginBottom:"8px" }}>TYPE</Mono>
               <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
                 {SESSION_TYPES.filter(t=>showNewClass?["Group Class","Cardio Class","HIIT Class","Yoga Class","Strength Class"].includes(t):["1-on-1 Session","Assessment","Free Consultation"].includes(t)).map(t=>(
-                  <button key={t} onClick={()=>setNewType(t)} style={{ padding:"6px 12px", background:newType===t?(showNewClass?"rgba(0,229,255,.15)":"rgba(255,112,67,.15)"):"rgba(255,255,255,.04)", border:`1px solid ${newType===t?(showNewClass?"var(--acc)":"var(--tr)"):"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:newType===t?(showNewClass?"var(--acc)":"var(--tr)"):"var(--mut)", cursor:"pointer", fontSize:"12px" }}>{t}</button>
+                  <button key={t} onClick={()=>setNewType(t)} style={{ padding:"6px 12px", background:newType===t?(showNewClass?"rgba(124,58,237,.15)":"rgba(255,112,67,.15)"):"rgba(255,255,255,.04)", border:`1px solid ${newType===t?(showNewClass?"var(--acc)":"var(--tr)"):"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:newType===t?(showNewClass?"var(--acc)":"var(--tr)"):"var(--mut)", cursor:"pointer", fontSize:"12px" }}>{t}</button>
                 ))}
               </div>
             </div>
@@ -1375,7 +1574,7 @@ function TrainerCalendar({ clients }) {
               {editSlot.maxSpots && <div style={{ fontSize:"13px", color:"var(--mut)" }}>👥 {editSlot.bookedSpots}/{editSlot.maxSpots} spots booked</div>}
             </Card>
             <div style={{ display:"flex", gap:"8px" }}>
-              <button onClick={()=>setEditSlot(s=>({...s,status:s.status==="confirmed"?"pending":"confirmed"}))} style={{ flex:1, padding:"11px", background:"rgba(251,191,36,.1)", border:"1px solid rgba(251,191,36,.25)", borderRadius:"10px", color:"var(--yw)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>
+              <button onClick={()=>setEditSlot(s=>({...s,status:s.status==="confirmed"?"pending":"confirmed"}))} style={{ flex:1, padding:"11px", background:"rgba(255,140,0,.1)", border:"1px solid rgba(255,140,0,.25)", borderRadius:"10px", color:"var(--yw)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>
                 {editSlot.status==="confirmed"?"MARK PENDING":"CONFIRM"}
               </button>
               <button onClick={()=>deleteSlot(editSlot.id)} style={{ flex:1, padding:"11px", background:"rgba(255,61,107,.1)", border:"1px solid rgba(255,61,107,.25)", borderRadius:"10px", color:"var(--a2)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>DELETE</button>
@@ -1402,7 +1601,7 @@ const MOCK_NOTES = {
   4:[{d:"Mar 11",n:"Hip flexibility improving.",m:"🧘"}],
 };
 
-function TrainerDashboard({ user, tab, setTab }) {
+function TrainerDashboard({ user, tab, setTab, onHome }) {
   const [clients, setClients] = useState(MOCK_CLIENTS);
   const [notes, setNotes] = useState(MOCK_NOTES);
   const [selId, setSelId] = useState(null);
@@ -1428,7 +1627,7 @@ function TrainerDashboard({ user, tab, setTab }) {
     const cNotes = notes[selId] || [];
     return (
       <div style={{ minHeight:"100vh", background:"var(--bg)", paddingBottom:"32px" }}>
-        <HeroBg src={IMG.trainer} ov="linear-gradient(180deg,rgba(8,8,16,.1) 0%,rgba(8,8,16,.9) 100%)" style={{ height:"165px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 18px 13px", position:"relative" }}>
+        <HeroBg src={IMG.trainer} ov="linear-gradient(180deg,rgba(10,10,10,.1) 0%,rgba(10,10,10,.9) 100%)" style={{ height:"165px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 18px 13px", position:"relative" }}>
           <BackBtn onClick={()=>setSelId(null)}/>
           <div style={{ fontFamily:"var(--fd)", fontSize:"21px", letterSpacing:"2px" }}>{cl.name.split(" ")[0].toUpperCase()}</div>
           <div style={{ fontSize:"11px", color:"rgba(255,255,255,.5)", marginTop:"2px" }}>{cl.goal}</div>
@@ -1447,7 +1646,7 @@ function TrainerDashboard({ user, tab, setTab }) {
           </Card>
           {/* Quick schedule button */}
           <div style={{ display:"flex", gap:"8px", marginBottom:"12px" }}>
-            <button onClick={()=>{ setSelId(null); setTab("calendar"); }} style={{ flex:1, padding:"10px", background:"rgba(0,229,255,.08)", border:"1px solid rgba(0,229,255,.2)", borderRadius:"10px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>📅 SCHEDULE SESSION</button>
+            <button onClick={()=>{ setSelId(null); setTab("calendar"); }} style={{ flex:1, padding:"10px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"10px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>📅 SCHEDULE SESSION</button>
             <button onClick={()=>setShowNote(true)} style={{ flex:1, padding:"10px", background:"rgba(255,112,67,.1)", border:"1px solid rgba(255,112,67,.25)", borderRadius:"10px", color:"var(--tr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>📝 ADD NOTE</button>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"9px" }}>
@@ -1478,15 +1677,17 @@ function TrainerDashboard({ user, tab, setTab }) {
       {/* Trainer header */}
       <div style={{ position:"relative", height:"200px" }}>
         <img src={IMG.trainer} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.4) saturate(.7)" }}/>
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(8,8,16,.3) 0%,rgba(8,8,16,.88) 100%)" }}/>
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(10,10,10,.3) 0%,rgba(10,10,10,.88) 100%)" }}/>
         {/* Top row */}
         <div style={{ position:"absolute", top:0, left:0, right:0, padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <Wordmark size={22} col="rgba(255,255,255,.8)"/>
+          <div onClick={onHome} style={{ cursor:"pointer" }}><Wordmark size={22} col="rgba(255,255,255,.9)"/></div>
           <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.15)", borderRadius:"50px", color:"rgba(255,255,255,.7)", cursor:"pointer", padding:"5px 13px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>CONTACT</button>
         </div>
         {/* Trainer info */}
         <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"0 18px 16px", display:"flex", alignItems:"flex-end", gap:"12px" }}>
-          <div style={{ width:"52px", height:"52px", borderRadius:"16px", background:"linear-gradient(135deg,var(--tr),#ff8a50)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"20px", color:"#fff", border:"1.5px solid rgba(255,112,67,.4)", flexShrink:0 }}>{user.name.split(" ").map(w=>w[0]).join("").slice(0,2)}</div>
+          <div style={{ width:"64px", height:"64px", borderRadius:"50%", overflow:"hidden", border:"2.5px solid rgba(255,112,67,.5)", flexShrink:0, boxShadow:"0 4px 16px rgba(255,112,67,.25)" }}>
+            <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&q=80" alt="Trainer" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+          </div>
           <div style={{ flex:1, paddingBottom:"2px" }}>
             <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px", lineHeight:1, color:"var(--txt)" }}>HEY, {user.name.split(" ")[0].toUpperCase()}</div>
             <div style={{ display:"flex", alignItems:"center", gap:"8px", marginTop:"5px" }}>
@@ -1498,7 +1699,7 @@ function TrainerDashboard({ user, tab, setTab }) {
       </div>
       <div style={{ display:"flex", gap:"10px", padding:"14px 18px 0", overflowX:"auto", scrollbarWidth:"none" }}>
         {[{l:"CLIENTS",v:clients.length,i:"👥",c:"var(--tr)"},{l:"THIS WEEK",v:"6",i:"📅",c:"var(--a3)"},{l:"AVG PROGRESS",v:Math.round(clients.reduce((a,c)=>a+c.progress,0)/clients.length)+"%",i:"📈",c:"var(--acc)"}].map(s=>(
-          <div key={s.l} style={{ flexShrink:0, padding:"14px 18px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.07)", borderRadius:"14px", minWidth:"100px", textAlign:"center" }}>
+          <div key={s.l} style={{ flexShrink:0, padding:"14px 18px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"14px", minWidth:"100px", textAlign:"center" }}>
             <div style={{ fontSize:"20px", marginBottom:"5px" }}>{s.i}</div>
             <div style={{ fontFamily:"var(--fd)", fontSize:"22px", color:s.c, lineHeight:1 }}>{s.v}</div>
             <Mono style={{ fontSize:"9px", marginTop:"4px" }}>{s.l}</Mono>
@@ -1526,7 +1727,7 @@ function TrainerDashboard({ user, tab, setTab }) {
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"2px" }}>
                     <span style={{ fontWeight:600, fontSize:"13px" }}>{cl.name}</span>
-                    <span style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--acc)", background:"rgba(0,229,255,.08)", padding:"1px 5px", borderRadius:"4px" }}>🔥 {cl.streak}d</span>
+                    <span style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--acc)", background:"rgba(124,58,237,.08)", padding:"1px 5px", borderRadius:"4px" }}>🔥 {cl.streak}d</span>
                   </div>
                   <Mono style={{ marginBottom:"5px" }}>{cl.goal} · {cl.sessions} sessions</Mono>
                   <div style={{ height:"3px", background:"rgba(255,255,255,.08)", borderRadius:"2px" }}><div style={{ height:"100%", width:cl.progress+"%", background:"linear-gradient(90deg,var(--tr),#ffb74d)", borderRadius:"2px" }}/></div>
@@ -1617,13 +1818,12 @@ function ContactModal({ onClose }) {
               <Mono style={{ marginBottom:"7px" }}>TYPE</Mono>
               <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
                 {["suggestion","bug","feature","praise"].map(t=>(
-                  <button key={t} onClick={()=>setType(t)} style={{ padding:"5px 11px", background:type===t?"rgba(34,212,168,.15)":"rgba(255,255,255,.04)", border:`1px solid ${type===t?"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:type===t?"var(--a3)":"var(--mut)", cursor:"pointer", fontSize:"12px" }}>{t==="suggestion"?"💡":t==="bug"?"🐛":t==="feature"?"✨":"❤️"} {t}</button>
+                  <button key={t} onClick={()=>setType(t)} style={{ padding:"5px 11px", background:type===t?"rgba(147,51,234,.15)":"rgba(255,255,255,.04)", border:`1px solid ${type===t?"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:type===t?"var(--a3)":"var(--mut)", cursor:"pointer", fontSize:"12px" }}>{t==="suggestion"?"💡":t==="bug"?"🐛":t==="feature"?"✨":"❤️"} {t}</button>
                 ))}
               </div>
             </div>
             <Field lbl="MESSAGE" val={msg} set={setMsg} ph="Your message..." acc="var(--a3)" rows={3}/>
             <PBtn onClick={send} disabled={!msg.trim()} col="var(--a3)" style={{ color:"#000" }}>📧 SEND MESSAGE</PBtn>
-            <Mono style={{ textAlign:"center" }}>Jcsc04@gmail.com</Mono>
           </div>
       }
     </Sheet>
@@ -1642,7 +1842,7 @@ function ProfileSetup({ onDone, user }) {
   ];
   if (step >= steps.length) return (
     <div style={{ minHeight:"100vh", background:"var(--bg)" }}>
-      <HeroBg src={IMG.pro} ov="linear-gradient(180deg,rgba(8,8,16,.1) 0%,rgba(8,8,16,.95) 60%,rgba(8,8,16,1) 100%)" style={{ height:"240px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 22px" }}>
+      <HeroBg src={IMG.pro} ov="linear-gradient(180deg,rgba(10,10,10,.1) 0%,rgba(10,10,10,.95) 60%,rgba(10,10,10,1) 100%)" style={{ height:"240px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 22px" }}>
         <div style={{ fontFamily:"var(--fd)", fontSize:"44px", letterSpacing:"4px", lineHeight:.95 }}>YOU'RE<br/><span style={{ color:"var(--rd)" }}>READY.</span></div>
       </HeroBg>
       <div style={{ padding:"22px" }}>
@@ -1654,7 +1854,7 @@ function ProfileSetup({ onDone, user }) {
   const cur = steps[step];
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)" }}>
-      <HeroBg src={cur.img} ov="linear-gradient(180deg,rgba(8,8,16,.05) 0%,rgba(8,8,16,.88) 55%,rgba(8,8,16,1) 100%)" style={{ height:"200px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 20px" }}>
+      <HeroBg src={cur.img} ov="linear-gradient(180deg,rgba(10,10,10,.05) 0%,rgba(10,10,10,.88) 55%,rgba(10,10,10,1) 100%)" style={{ height:"200px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 20px" }}>
         <div style={{ display:"flex", gap:"5px", marginBottom:"9px" }}>{steps.map((_,i)=><div key={i} style={{ height:"3px", flex:1, background:i<=step?"var(--acc)":"rgba(255,255,255,.12)", borderRadius:"2px", transition:"background .3s" }}/>)}</div>
         <Mono style={{ color:"var(--a3)", marginBottom:"5px" }}>STEP {step+1} OF {steps.length}</Mono>
         <div style={{ fontFamily:"var(--fd)", fontSize:"30px", letterSpacing:"3px", lineHeight:1 }}>{cur.lbl}</div>
@@ -1662,7 +1862,7 @@ function ProfileSetup({ onDone, user }) {
       <div style={{ padding:"18px" }}>
         <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
           {cur.opts.map(opt=>(
-            <button key={opt} onClick={()=>{ setData({...data,[cur.key]:opt}); setStep(step+1); }} style={{ padding:"12px 15px", background:data[cur.key]===opt?"rgba(0,229,255,.1)":"rgba(255,255,255,.03)", border:`1px solid ${data[cur.key]===opt?"var(--acc)":"rgba(255,255,255,.07)"}`, borderRadius:"12px", color:"var(--txt)", cursor:"pointer", textAlign:"left", fontSize:"14px", fontFamily:"var(--fb)", fontWeight:500, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <button key={opt} onClick={()=>{ setData({...data,[cur.key]:opt}); setStep(step+1); }} style={{ padding:"12px 15px", background:data[cur.key]===opt?"rgba(124,58,237,.1)":"rgba(255,255,255,.03)", border:`1px solid ${data[cur.key]===opt?"var(--acc)":"rgba(255,255,255,.08)"}`, borderRadius:"12px", color:"var(--txt)", cursor:"pointer", textAlign:"left", fontSize:"14px", fontFamily:"var(--fb)", fontWeight:500, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <span>{opt}</span>{data[cur.key]===opt&&<span style={{ color:"var(--acc)" }}>✓</span>}
             </button>
           ))}
@@ -1674,62 +1874,526 @@ function ProfileSetup({ onDone, user }) {
 
 function GenProg({ profile, user, onDone }) {
   const started = useRef(false);
+  const [phase, setPhase] = useState(0);
+  const phases = ["Analysing your profile...", "Building training splits...", "Calculating progressive overload...", "Adding exercise prescriptions...", "Finalising your plan..."];
+
   useEffect(() => {
     if (started.current) return; started.current = true;
+    const cycler = setInterval(() => setPhase(p => (p + 1) % phases.length), 1800);
+    const goal = (profile.goal || "").replace(/[🔥💪🏃🧘⚡🏆]/g, "").trim();
+    const level = (profile.level || "").replace(/[🌱🌿💪🔥]/g, "").trim();
+    const days = parseInt(profile.days) || 3;
+    const equip = (profile.equipment || "").replace(/[🏠🏋️🌳]/g, "").trim();
+
+    const systemPrompt = `You are an elite certified personal trainer and sports scientist with 15+ years experience. Create advanced, periodized workout programs that deliver real results. You understand progressive overload, periodization, muscle physiology, and evidence-based training principles. Always be specific, practical and professional.`;
+
+    const userPrompt = `Create a comprehensive 4-week progressive training program for:
+- Name: ${user.name}
+- Goal: ${goal}
+- Level: ${level}
+- Training days/week: ${days}
+- Equipment: ${equip}
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "programName": "specific name",
+  "overview": "2-3 sentence professional overview of methodology",
+  "methodology": "e.g. Linear Periodization PPL Split",
+  "weeklyStructure": "brief split explanation",
+  "phases": [
+    {
+      "week": 1,
+      "theme": "Foundation / Adaptation",
+      "focus": "what this week builds",
+      "days": [
+        {
+          "day": "Monday",
+          "sessionName": "e.g. Push Day A",
+          "muscleGroups": ["Chest","Shoulders","Triceps"],
+          "duration": "55 min",
+          "intensity": "Moderate",
+          "warmup": "specific 5-min warmup protocol",
+          "exercises": [
+            {
+              "name": "Exercise Name",
+              "sets": "4",
+              "reps": "8-10",
+              "rest": "90s",
+              "tempo": "3-1-1-0",
+              "rpe": "7",
+              "cues": "2-3 specific technique cues",
+              "progression": "how to progress this exercise",
+              "muscleTarget": "Primary and secondary muscles"
+            }
+          ],
+          "cooldown": "specific 5-min cooldown",
+          "sessionNotes": "key focus for this session"
+        }
+      ]
+    },
+    { "week": 2, "theme": "Progressive Overload", "focus": "increase from week 1", "days": [] },
+    { "week": 3, "theme": "Intensification", "focus": "peak effort", "days": [] },
+    { "week": 4, "theme": "Deload", "focus": "recovery at 60% intensity", "days": [] }
+  ],
+  "progressionProtocol": "week by week overload instructions",
+  "nutritionGuidance": {
+    "preworkout": "specific timing and food advice",
+    "postworkout": "recovery nutrition",
+    "dailyProtein": "g/kg target with food examples",
+    "hydration": "daily target and timing"
+  },
+  "recoveryProtocol": "sleep, mobility, active recovery advice",
+  "weeklyGoals": ["goal1", "goal2", "goal3"],
+  "progressionMarkers": ["marker1", "marker2", "marker3"]
+}
+
+IMPORTANT: Provide FULL day schedules for ALL 4 weeks. Include ${days} training days per week. Make exercises specific to goal "${goal}" and equipment "${equip}". Include 5-6 exercises per session with all fields complete. This is a premium fitness app — be thorough and professional.`;
+
     async function go() {
       try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1600, messages:[{ role:"user", content:`Fitness program JSON for: Name:${user.name}, Goal:${profile.goal}, Level:${profile.level}, Days:${profile.days}, Equipment:${profile.equipment}. Return ONLY JSON: {"programName":"...","overview":"...","weeklySchedule":[{"day":"Monday","focus":"...","exercises":[{"name":"...","sets":"3","reps":"12","rest":"60s","notes":"..."}],"duration":"40 min","intensity":"Moderate"}],"weeklyGoals":["..."]}` }] }) });
-        const d = await res.json(); const raw = d.content?.[0]?.text || "";
-        try { onDone(JSON.parse(raw.replace(/```json|```/g,"").trim())); } catch { onDone(fallback(profile,user)); }
-      } catch { setTimeout(()=>onDone(fallback(profile,user)),900); }
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 8000, system: systemPrompt, messages: [{ role: "user", content: userPrompt }] })
+        });
+        const d = await res.json();
+        const raw = d.content?.[0]?.text || "";
+        clearInterval(cycler);
+        try { onDone(JSON.parse(raw.replace(/```json|```/g, "").trim())); }
+        catch { onDone(advancedFallback(profile, user)); }
+      } catch {
+        clearInterval(cycler);
+        setTimeout(() => onDone(advancedFallback(profile, user)), 900);
+      }
     }
     go();
+    return () => clearInterval(cycler);
   }, []);
+
   return (
-    <HeroBg src={IMG.pro} ov="rgba(8,8,16,.88)" style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"30px", textAlign:"center" }}>
-      <div style={{ width:"58px", height:"58px", borderRadius:"50%", border:"3px solid var(--acc)", borderTopColor:"transparent", animation:"spin 1s linear infinite", marginBottom:"18px" }}/>
-      <div style={{ fontFamily:"var(--fd)", fontSize:"26px", color:"var(--acc)", letterSpacing:"4px", marginBottom:"6px" }}>BUILDING YOUR PROGRAM</div>
-      <p style={{ color:"rgba(255,255,255,.5)", fontSize:"13px" }}>AI crafting your personalized plan...</p>
+    <HeroBg src={IMG.pro} ov="rgba(10,10,10,.92)" style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"30px", textAlign:"center" }}>
+      <div style={{ position:"relative", width:"80px", height:"80px", marginBottom:"24px" }}>
+        <div style={{ position:"absolute", inset:0, borderRadius:"50%", border:"3px solid rgba(124,58,237,.15)" }}/>
+        <div style={{ position:"absolute", inset:0, borderRadius:"50%", border:"3px solid transparent", borderTopColor:"var(--acc)", animation:"spin 1s linear infinite" }}/>
+        <div style={{ position:"absolute", inset:"8px", borderRadius:"50%", border:"2px solid transparent", borderTopColor:"rgba(124,58,237,.4)", animation:"spin 1.5s linear infinite reverse" }}/>
+        <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <Logo size={36} col="var(--acc)"/>
+        </div>
+      </div>
+      <div style={{ fontFamily:"var(--fd)", fontSize:"22px", color:"var(--acc)", letterSpacing:"3px", marginBottom:"10px" }}>BUILDING YOUR PROGRAM</div>
+      <div style={{ fontFamily:"var(--fm)", fontSize:"11px", color:"rgba(255,255,255,.45)", letterSpacing:"1px", marginBottom:"28px", minHeight:"18px" }}>{phases[phase]}</div>
+      <Card style={{ padding:"16px 20px", border:"1px solid rgba(124,58,237,.15)", maxWidth:"280px" }}>
+        <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--acc)", letterSpacing:"1px", marginBottom:"8px" }}>YOUR PLAN INCLUDES</div>
+        {["4-week progressive program","Warm-up & cool-down protocols","Exercise cues & tempo guide","Week-by-week overload plan","Nutrition & recovery guidance"].map((item, i) => (
+          <div key={i} style={{ display:"flex", alignItems:"center", gap:"8px", padding:"4px 0", fontSize:"12px", color:"rgba(255,255,255,.6)" }}>
+            <div style={{ width:"5px", height:"5px", borderRadius:"50%", background:"var(--acc)", flexShrink:0 }}/>
+            {item}
+          </div>
+        ))}
+      </Card>
     </HeroBg>
   );
 }
-const fallback = (p,u) => ({ programName:u.name.split(" ")[0]+"'s Custom Plan", overview:"Personalized "+(p.goal||"").replace(/[🔥💪🏃🧘⚡🏆]/g,"").trim()+" program. "+p.days+" days/week.", weeklySchedule:[{day:"Monday",focus:"Push — Chest & Triceps",exercises:[{name:"Push-ups",sets:"4",reps:"15",rest:"60s",notes:"Core tight"},{name:"Pike Push-ups",sets:"3",reps:"12",rest:"60s",notes:"Shoulders"},{name:"Tricep Dips",sets:"3",reps:"12",rest:"60s",notes:"Full ROM"}],duration:"40 min",intensity:"Moderate"},{day:"Wednesday",focus:"Pull — Back & Biceps",exercises:[{name:"Inverted Rows",sets:"4",reps:"12",rest:"60s",notes:"Table edge"},{name:"Superman Hold",sets:"3",reps:"15",rest:"45s",notes:"3s hold"}],duration:"40 min",intensity:"Moderate"},{day:"Friday",focus:"Legs & Core",exercises:[{name:"Squats",sets:"4",reps:"20",rest:"60s",notes:"Parallel"},{name:"Lunges",sets:"3",reps:"12",rest:"60s",notes:"Control"},{name:"Plank",sets:"3",reps:"45s",rest:"45s",notes:"Neutral"}],duration:"45 min",intensity:"High"}], weeklyGoals:["Complete all sessions","Hit protein target","Log meals"] });
+
+const advancedFallback = (p, u) => {
+  const goal = (p.goal || "").replace(/[🔥💪🏃🧘⚡🏆]/g, "").trim();
+  const days = parseInt(p.days) || 3;
+  const hasGym = (p.equipment || "").toLowerCase().includes("gym");
+
+  const push = { day:"Monday", sessionName:"Push — Chest, Shoulders & Triceps", muscleGroups:["Chest","Shoulders","Triceps"], duration:"55 min", intensity:"Moderate",
+    warmup:"5 min: arm circles 30s each direction, 10 band pull-aparts, 10 scapular push-ups, 30s deep breathing",
+    exercises:[
+      { name:hasGym?"Barbell Bench Press":"Push-ups", sets:"4", reps:"8-10", rest:"90s", tempo:"3-1-1-0", rpe:"7", cues:"Retract scapula, slight arch, drive in straight path", progression:"Add 2.5kg or 1 rep when all sets complete at top of range", muscleTarget:"Primary: Pectoralis major. Secondary: Anterior delt, triceps" },
+      { name:hasGym?"Overhead Press":"Pike Push-ups", sets:"3", reps:"10-12", rest:"75s", tempo:"2-1-1-0", rpe:"7", cues:"Brace core, squeeze glutes, stack wrists over elbows", progression:"Add 2.5kg when all reps clean", muscleTarget:"Primary: Anterior & medial deltoid. Secondary: Triceps" },
+      { name:hasGym?"Incline Dumbbell Press":"Decline Push-ups", sets:"3", reps:"10-12", rest:"75s", tempo:"3-0-1-0", rpe:"7", cues:"Keep shoulder blades pinched, lower to chest", progression:"+1 rep each week until 15, then add weight", muscleTarget:"Primary: Upper chest. Secondary: Front delt" },
+      { name:hasGym?"Lateral Raises":"Plank Shoulder Taps", sets:"3", reps:"15", rest:"60s", tempo:"2-0-2-0", rpe:"6", cues:"Lead with elbows, slight forward lean, no swinging", progression:"Add 1kg every 2 weeks", muscleTarget:"Primary: Medial deltoid" },
+      { name:hasGym?"Tricep Rope Pushdown":"Diamond Push-ups", sets:"3", reps:"12-15", rest:"60s", tempo:"2-1-2-0", rpe:"7", cues:"Keep elbows pinned to sides, full extension at bottom", progression:"+2.5kg when all reps complete", muscleTarget:"Primary: Triceps brachii, all three heads" },
+    ],
+    cooldown:"5 min: doorway chest stretch 30s, cross-body shoulder 30s each, overhead tricep stretch 30s each",
+    sessionNotes:"Track all weights. Focus on feeling the muscle contract, not just moving the weight."
+  };
+
+  const pull = { day:"Wednesday", sessionName:"Pull — Back & Biceps", muscleGroups:["Lats","Rhomboids","Biceps","Rear Delts"], duration:"55 min", intensity:"Moderate",
+    warmup:"5 min: 10 band pull-aparts, 10 scapular retractions, 10 face pulls, 5 dead hangs if possible",
+    exercises:[
+      { name:hasGym?"Deadlift":"Inverted Rows", sets:"4", reps:"6-8", rest:"2min", tempo:"3-1-1-0", rpe:"8", cues:"Hip hinge, neutral spine, bar close to body throughout", progression:"Add 5kg when form is solid for all reps", muscleTarget:"Primary: Erectors, glutes, hamstrings. Secondary: Lats, traps" },
+      { name:hasGym?"Pull-ups or Lat Pulldown":"Australian Pull-ups", sets:"4", reps:"6-10", rest:"90s", tempo:"3-1-1-0", rpe:"8", cues:"Drive elbows to hips, think pulling elbows down not hands up", progression:"Add resistance band or +1 rep per week", muscleTarget:"Primary: Latissimus dorsi. Secondary: Biceps, rear delt" },
+      { name:hasGym?"Seated Cable Row":"Resistance Band Row", sets:"3", reps:"10-12", rest:"75s", tempo:"2-1-2-1", rpe:"7", cues:"Squeeze between shoulder blades at peak, controlled return", progression:"+2.5kg when 12 reps feel manageable", muscleTarget:"Primary: Mid-back, rhomboids. Secondary: Biceps" },
+      { name:hasGym?"Face Pulls":"Band Face Pulls", sets:"3", reps:"15-20", rest:"60s", tempo:"2-1-2-0", rpe:"6", cues:"Pull to nose level, external rotation at end of movement", progression:"Increase band resistance after 3 sessions", muscleTarget:"Primary: Rear delt, rotator cuff — vital for shoulder health" },
+      { name:hasGym?"Barbell Curl":"Chin-ups or Band Curl", sets:"3", reps:"10-12", rest:"60s", tempo:"2-0-2-1", rpe:"7", cues:"Keep elbows fixed, full ROM, hard squeeze at top", progression:"+2.5kg when 12 reps complete across all sets", muscleTarget:"Primary: Biceps brachii. Secondary: Brachialis" },
+    ],
+    cooldown:"5 min: lat stretch with doorframe 30s each, bicep wall stretch 30s each, thoracic rotation 10 each side",
+    sessionNotes:"Deadlifts are the priority movement. Reduce weight before sacrificing form."
+  };
+
+  const legs = { day:"Friday", sessionName:"Legs & Core — Lower Body Power", muscleGroups:["Quads","Hamstrings","Glutes","Calves","Core"], duration:"60 min", intensity:"High",
+    warmup:"8 min: 2 min walk/jog, 10 bodyweight squats, 10 hip circles each leg, 10 glute bridges, 5 single-leg RDLs each",
+    exercises:[
+      { name:hasGym?"Barbell Back Squat":"Goblet Squat", sets:"4", reps:"8-10", rest:"2min", tempo:"3-1-1-0", rpe:"8", cues:"Brace core before descent, knees track toes, depth to parallel or below", progression:"Add 2.5-5kg when all 4 sets complete cleanly", muscleTarget:"Primary: Quads, glutes. Secondary: Hamstrings, erectors" },
+      { name:hasGym?"Romanian Deadlift":"Single-leg RDL", sets:"3", reps:"10-12", rest:"90s", tempo:"3-1-1-0", rpe:"7", cues:"Push hips back, soft knee bend, feel the hamstring stretch", progression:"+5kg when form is solid throughout", muscleTarget:"Primary: Hamstrings, glutes. Secondary: Erectors" },
+      { name:hasGym?"Leg Press":"Bulgarian Split Squat", sets:"3", reps:"12 each leg", rest:"75s", tempo:"3-1-1-0", rpe:"7", cues:"Front foot flat, knee stays behind toe, torso upright", progression:"+2.5kg or +1 rep each week", muscleTarget:"Primary: Quads, glutes. Secondary: Hamstrings" },
+      { name:hasGym?"Calf Raises Machine":"Calf Raises on Step", sets:"4", reps:"15-20", rest:"60s", tempo:"2-1-3-0", rpe:"7", cues:"Full range — heels below platform to toes raised. Pause 1s at top", progression:"+5kg when 20 reps feel comfortable", muscleTarget:"Primary: Gastrocnemius, soleus" },
+      { name:"Plank", sets:"3", reps:"45s", rest:"45s", tempo:"controlled", rpe:"6", cues:"Neutral spine, squeeze glutes, breathe steadily, no hip sag or hike", progression:"Increase to 60s then add movement", muscleTarget:"Primary: Transverse abdominis, obliques" },
+      { name:hasGym?"Hanging Knee Raise":"Ab Wheel Rollout", sets:"3", reps:"10-12", rest:"60s", tempo:"3-0-1-0", rpe:"7", cues:"Control the eccentric, maintain hollow body, exhale on the way up", progression:"+2 reps each week", muscleTarget:"Primary: Rectus abdominis. Secondary: Hip flexors" },
+    ],
+    cooldown:"8 min: pigeon pose 60s each, hamstring stretch 45s each, hip flexor lunge 45s each, quad stretch 30s each",
+    sessionNotes:"Legs drive the most hormonal response — biggest muscle group means biggest results. Never skip."
+  };
+
+  const allDays = [push, pull, legs,
+    { ...push, day:"Tuesday", sessionName:"Upper A — Strength Focus", intensity:"High" },
+    { ...pull, day:"Thursday", sessionName:"Upper B — Hypertrophy Focus" },
+    { ...legs, day:"Saturday", sessionName:"Lower B — Volume Day" }
+  ];
+  const daySched = allDays.slice(0, Math.min(days, 6));
+
+  const makeWeek = (weekNum, theme, focusNote) => ({
+    week: weekNum, theme, focus: focusNote,
+    days: daySched.map(d => ({
+      ...d,
+      exercises: d.exercises.map(ex => ({
+        ...ex,
+        rpe: weekNum === 4 ? "5-6" : String(Math.min(9, 6 + weekNum)),
+        sets: weekNum === 3 ? String(parseInt(ex.sets) + 1) : weekNum === 4 ? "3" : ex.sets,
+        notes: ["Learn the pattern — log your starting weights", "Push harder — add weight where possible", "Peak effort week — this is where gains are made", "Deload — 60% of Week 3 weights, perfect form"][weekNum - 1]
+      }))
+    }))
+  });
+
+  return {
+    programName: `${u.name.split(" ")[0]}'s ${goal} Transformation Program`,
+    overview: `A science-based 4-week periodized program built specifically for ${goal.toLowerCase()}. Every session uses progressive overload — systematically increasing demand each week to force continuous muscle adaptation. Week 4 is a strategic deload to consolidate gains and prepare you for the next training cycle.`,
+    methodology: goal.includes("Muscle") ? "Linear Periodization with Push/Pull/Legs Split" : goal.includes("Fat") ? "Metabolic Resistance Training with Progressive Overload" : goal.includes("Endurance") ? "Block Periodization — Aerobic Base to Threshold" : "General Physical Preparedness (GPP)",
+    weeklyStructure: `${days} training days per week with strategic muscle group sequencing for maximum recovery`,
+    phases: [
+      makeWeek(1, "Foundation", "Master technique and establish baseline weights. Every set logged."),
+      makeWeek(2, "Progressive Overload", "Increase weight or reps on all main lifts from Week 1."),
+      makeWeek(3, "Intensification", "Peak effort. Push RPE 8-9 on primary lifts."),
+      makeWeek(4, "Deload", "Reduce volume 40%, maintain movement quality. Let adaptations consolidate."),
+    ],
+    progressionProtocol: "Week 1: Find working weights @ RPE 7. Week 2: Add 2.5-5kg to barbell, 1-2kg to dumbbells. Week 3: Another 2.5kg or top of rep range all sets. Week 4: Drop to 60% of Week 3, 3 sets. Next cycle: Restart from Week 2 weights.",
+    nutritionGuidance: {
+      preworkout: goal.includes("Fat") ? "Train fasted or light meal 2h prior: banana + black coffee" : "2h before: 40g carbs + 20g protein — oats + whey, or chicken + rice",
+      postworkout: "Within 30 min: 30-40g protein + 40-60g carbs — whey + banana, or Greek yogurt + rice cake",
+      dailyProtein: goal.includes("Muscle") ? "2.0-2.2g per kg bodyweight. 80kg person = 160-176g/day. Sources: chicken, eggs, fish, beef, Greek yogurt" : "1.6-1.8g per kg bodyweight minimum to preserve muscle while losing fat",
+      hydration: "3-4L water daily. 500ml 30min pre-session, 200ml every 20min during, 500ml after. Add electrolytes on heavy sweat sessions."
+    },
+    recoveryProtocol: "7-9 hours sleep is non-negotiable — muscles rebuild during sleep. 10min mobility on rest days. Cold shower post-session reduces DOMS. Avoid alcohol 24h post-training — it significantly blunts protein synthesis.",
+    weeklyGoals: [
+      `Complete all ${days} sessions — consistency beats perfection`,
+      "Log every set, weight and rep in a training journal",
+      goal.includes("Muscle") ? "Eat at 200-300 calorie surplus with 2g/kg bodyweight protein" : goal.includes("Fat") ? "Maintain 300-500 calorie deficit, minimum 1.6g/kg protein" : "Hit 7,500 steps minimum on rest days"
+    ],
+    progressionMarkers: [
+      "Week 2: You should lift more weight or reps than Week 1 on every lift",
+      "Week 3: Noticeably stronger than Week 1 — proof the program works",
+      goal.includes("Muscle") ? "Month end: 1-2kg bodyweight gain, clothes fitting tighter in right places" : goal.includes("Fat") ? "Month end: 2-3kg reduction, waist down 1-2cm" : "Month end: Sessions feel easier, resting heart rate dropping"
+    ]
+  };
+};
+
+// ─── Exercise Image Map ────────────────────────────────────────────────────────
+const EX_IMAGES = {
+  "Barbell Bench Press":     "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=60",
+  "Push-ups":                "https://images.unsplash.com/photo-1598971457999-ca4ef48a9a71?w=400&q=60",
+  "Overhead Press":          "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400&q=60",
+  "Pike Push-ups":           "https://images.unsplash.com/photo-1598971457999-ca4ef48a9a71?w=400&q=60",
+  "Incline Dumbbell Press":  "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=60",
+  "Lateral Raises":          "https://images.unsplash.com/photo-1590487988256-9ed24133863e?w=400&q=60",
+  "Tricep Rope Pushdown":    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60",
+  "Diamond Push-ups":        "https://images.unsplash.com/photo-1598971457999-ca4ef48a9a71?w=400&q=60",
+  "Deadlift":                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60",
+  "Barbell Deadlift":        "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60",
+  "Pull-ups or Lat Pulldown":"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
+  "Pull-ups":                "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
+  "Australian Pull-ups":     "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
+  "Inverted Rows":           "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
+  "Seated Cable Row":        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60",
+  "Barbell Curl":            "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=60",
+  "Barbell Back Squat":      "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=400&q=60",
+  "Goblet Squat":            "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=400&q=60",
+  "Romanian Deadlift":       "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60",
+  "Single-leg RDL":          "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60",
+  "Leg Press":               "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=60",
+  "Bulgarian Split Squat":   "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=400&q=60",
+  "Calf Raises Machine":     "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=60",
+  "Calf Raises on Step":     "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=60",
+  "Plank":                   "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=60",
+  "Ab Wheel Rollout":        "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=60",
+  "Hanging Knee Raise":      "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
+  "default":                 "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&q=60",
+};
+function getExImg(name) {
+  for (const [k, v] of Object.entries(EX_IMAGES)) {
+    if (name && name.toLowerCase().includes(k.toLowerCase())) return v;
+  }
+  return EX_IMAGES.default;
+}
 
 function ProgramView({ prog }) {
-  const [exp, setExp] = useState(0);
+  const [activeWeek, setActiveWeek] = useState(0);
+  const [expDay, setExpDay] = useState(0);
+  const [activeTab, setActiveTab] = useState("schedule");
+
+  // Support both old format (weeklySchedule) and new (phases)
+  const hasPhases = prog.phases && prog.phases.length > 0;
+  const weeks = hasPhases ? prog.phases : [{ week:1, theme:"Program", days: prog.weeklySchedule || [] }];
+  const currentWeek = weeks[activeWeek] || weeks[0];
+  const days = currentWeek?.days || [];
+
+  const intensityColor = (i) => {
+    if (!i) return "var(--acc)";
+    const l = i.toLowerCase();
+    if (l === "high") return "var(--a2)";
+    if (l === "low") return "var(--a3)";
+    return "var(--acc)";
+  };
+
   return (
     <div style={{ animation:"fadeIn .5s" }}>
-      <Card style={{ padding:"13px", marginBottom:"11px", border:"1px solid rgba(0,229,255,.12)" }}>
-        <div style={{ fontFamily:"var(--fd)", fontSize:"15px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"5px" }}>{prog.programName}</div>
-        <p style={{ fontSize:"13px", lineHeight:1.7, color:"rgba(255,255,255,.6)" }}>{prog.overview}</p>
-      </Card>
-      {prog.weeklyGoals?.length>0 && <div style={{ marginBottom:"11px" }}><div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", marginBottom:"7px" }}>THIS WEEK</div>{prog.weeklyGoals.map((g,i)=><Card key={i} style={{ padding:"9px", marginBottom:"5px", display:"flex", alignItems:"center", gap:"8px" }}><div style={{ width:"16px", height:"16px", borderRadius:"50%", border:"2px solid var(--acc)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"9px", color:"var(--acc)", flexShrink:0 }}>✓</div><span style={{ fontSize:"13px" }}>{g}</span></Card>)}</div>}
-      <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", marginBottom:"7px" }}>SCHEDULE</div>
-      {(prog.weeklySchedule||[]).map((day,i)=>(
-        <Card key={i} style={{ marginBottom:"7px", overflow:"hidden", border:`1px solid ${exp===i?"rgba(0,229,255,.25)":"rgba(255,255,255,.06)"}` }}>
-          <div onClick={()=>setExp(exp===i?-1:i)} style={{ padding:"12px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <div><div style={{ fontWeight:600, fontSize:"13px" }}>{day.day}</div><Mono style={{ marginTop:"1px" }}>{day.focus} · {day.duration}</Mono></div>
-            <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-              <span style={{ fontSize:"10px", padding:"2px 8px", borderRadius:"20px", background:day.intensity==="High"?"rgba(255,61,107,.15)":"rgba(0,229,255,.08)", color:day.intensity==="High"?"var(--a2)":"var(--acc)", fontFamily:"var(--fm)" }}>{day.intensity}</span>
-              <span style={{ color:"var(--mut)", fontSize:"14px", transform:exp===i?"rotate(180deg)":"rotate(0)", transition:"transform .2s" }}>⌄</span>
-            </div>
+      {/* Program header card */}
+      <Card style={{ padding:"16px", marginBottom:"12px", border:"1px solid rgba(124,58,237,.15)" }}>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"5px" }}>{prog.programName}</div>
+        <p style={{ fontSize:"13px", lineHeight:1.7, color:"rgba(255,255,255,.65)", marginBottom:"10px" }}>{prog.overview}</p>
+        {prog.methodology && (
+          <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
+            <div style={{ padding:"4px 10px", background:"rgba(124,58,237,.12)", border:"1px solid rgba(124,58,237,.25)", borderRadius:"50px", fontSize:"11px", color:"var(--a4)", fontFamily:"var(--fm)" }}>⚡ {prog.methodology}</div>
+            {prog.weeklyStructure && <div style={{ padding:"4px 10px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"50px", fontSize:"11px", color:"var(--mut)", fontFamily:"var(--fm)" }}>📅 {prog.weeklyStructure}</div>}
           </div>
-          {exp===i && <div style={{ padding:"0 12px 12px", borderTop:"1px solid rgba(255,255,255,.05)", animation:"fadeIn .2s" }}>
-            {(day.exercises||[]).map((ex,j)=>(
-              <div key={j} style={{ display:"grid", gridTemplateColumns:"1fr auto auto auto", gap:"6px", alignItems:"center", padding:"7px 0", borderBottom:j<day.exercises.length-1?"1px solid rgba(255,255,255,.04)":"none" }}>
-                <div><div style={{ fontSize:"13px", fontWeight:500 }}>{ex.name}</div>{ex.notes&&<Mono style={{ marginTop:"1px" }}>{ex.notes}</Mono>}</div>
-                {[{v:ex.sets,l:"sets"},{v:ex.reps,l:"reps"},{v:ex.rest,l:"rest"}].map((x,k)=><div key={k} style={{ textAlign:"center" }}><div style={{ fontFamily:"var(--fm)", fontSize:"12px", color:"var(--acc)" }}>{x.v}</div><Mono style={{ fontSize:"9px" }}>{x.l}</Mono></div>)}
+        )}
+      </Card>
+
+      {/* Tab nav */}
+      <div style={{ display:"flex", gap:"6px", marginBottom:"12px", overflowX:"auto", scrollbarWidth:"none" }}>
+        {[["schedule","💪 Schedule"],["nutrition","🥗 Nutrition"],["progression","📈 Progression"],["goals","🎯 Goals"]].map(([t,lbl])=>(
+          <button key={t} onClick={()=>setActiveTab(t)} style={{ padding:"7px 13px", background:activeTab===t?"var(--acc)":"rgba(255,255,255,.04)", border:`1px solid ${activeTab===t?"var(--acc)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:activeTab===t?"#000":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fb)", fontWeight:activeTab===t?700:400, whiteSpace:"nowrap", flexShrink:0 }}>{lbl}</button>
+        ))}
+      </div>
+
+      {/* SCHEDULE TAB */}
+      {activeTab==="schedule" && (
+        <div>
+          {/* Week selector — only show if multiple weeks */}
+          {weeks.length > 1 && (
+            <div style={{ display:"flex", gap:"6px", marginBottom:"12px", overflowX:"auto", scrollbarWidth:"none" }}>
+              {weeks.map((w, i) => (
+                <button key={i} onClick={()=>{ setActiveWeek(i); setExpDay(0); }} style={{ flexShrink:0, padding:"8px 14px", background:activeWeek===i?"rgba(124,58,237,.12)":"rgba(255,255,255,.03)", border:`1px solid ${activeWeek===i?"var(--acc)":"rgba(255,255,255,.06)"}`, borderRadius:"10px", cursor:"pointer", textAlign:"left", minWidth:"100px" }}>
+                  <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:activeWeek===i?"var(--acc)":"var(--mut)", letterSpacing:"1px", marginBottom:"2px" }}>WEEK {w.week}</div>
+                  <div style={{ fontFamily:"var(--fd)", fontSize:"11px", color:activeWeek===i?"var(--acc)":"var(--txt)", letterSpacing:"1px" }}>{w.theme}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Week focus */}
+          {currentWeek.focus && (
+            <div style={{ padding:"10px 13px", background:"rgba(124,58,237,.05)", border:"1px solid rgba(124,58,237,.12)", borderRadius:"10px", marginBottom:"12px", fontSize:"12px", color:"rgba(255,255,255,.6)", lineHeight:1.6 }}>
+              <span style={{ color:"var(--acc)", fontFamily:"var(--fm)", fontSize:"10px", letterSpacing:"1px", marginRight:"6px" }}>WEEK FOCUS:</span>{currentWeek.focus}
+            </div>
+          )}
+
+          {/* Weekly goals if available */}
+          {prog.weeklyGoals?.length > 0 && activeWeek === 0 && (
+            <div style={{ marginBottom:"12px" }}>
+              <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", marginBottom:"7px" }}>THIS CYCLE'S GOALS</div>
+              {prog.weeklyGoals.map((g, i) => (
+                <Card key={i} style={{ padding:"9px 12px", marginBottom:"5px", display:"flex", alignItems:"flex-start", gap:"9px" }}>
+                  <div style={{ width:"18px", height:"18px", borderRadius:"50%", border:"2px solid var(--acc)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"9px", color:"var(--acc)", flexShrink:0, marginTop:"1px" }}>✓</div>
+                  <span style={{ fontSize:"13px", lineHeight:1.5 }}>{g}</span>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Day cards */}
+          <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", marginBottom:"8px" }}>
+            {days.length} SESSIONS THIS WEEK
+          </div>
+          {days.map((day, i) => (
+            <Card key={i} style={{ marginBottom:"8px", overflow:"hidden", border:`1px solid ${expDay===i?"rgba(124,58,237,.3)":"rgba(255,255,255,.06)"}` }}>
+              {/* Day header */}
+              <div onClick={()=>setExpDay(expDay===i?-1:i)} style={{ padding:"13px 14px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:600, fontSize:"14px", marginBottom:"2px" }}>{day.day}</div>
+                  <div style={{ fontSize:"12px", color:"var(--acc)", fontFamily:"var(--fm)", letterSpacing:"1px", marginBottom:"2px" }}>{day.sessionName || day.focus}</div>
+                  {day.muscleGroups && <div style={{ display:"flex", gap:"5px", flexWrap:"wrap" }}>{day.muscleGroups.map(mg=><span key={mg} style={{ fontSize:"10px", padding:"1px 7px", background:"rgba(255,255,255,.05)", borderRadius:"4px", color:"var(--mut)" }}>{mg}</span>)}</div>}
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:"7px", flexShrink:0 }}>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontSize:"10px", padding:"3px 9px", borderRadius:"20px", background:intensityColor(day.intensity)+"18", color:intensityColor(day.intensity), fontFamily:"var(--fm)", letterSpacing:"1px" }}>{day.intensity || "Moderate"}</div>
+                    {day.duration && <div style={{ fontSize:"10px", color:"var(--mut)", marginTop:"3px", fontFamily:"var(--fm)" }}>⏱ {day.duration}</div>}
+                  </div>
+                  <span style={{ color:"var(--mut)", fontSize:"14px", transform:expDay===i?"rotate(180deg)":"rotate(0)", transition:"transform .2s" }}>⌄</span>
+                </div>
               </div>
-            ))}
-          </div>}
-        </Card>
-      ))}
+
+              {/* Expanded content */}
+              {expDay===i && (
+                <div style={{ borderTop:"1px solid rgba(255,255,255,.05)", animation:"fadeIn .2s" }}>
+                  {/* Warmup */}
+                  {day.warmup && (
+                    <div style={{ padding:"10px 14px", background:"rgba(147,51,234,.05)", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
+                      <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--a3)", letterSpacing:"1px", marginBottom:"3px" }}>🔥 WARM-UP</div>
+                      <div style={{ fontSize:"12px", color:"rgba(255,255,255,.6)", lineHeight:1.6 }}>{day.warmup}</div>
+                    </div>
+                  )}
+
+                  {/* Exercises */}
+                  <div style={{ padding:"0 14px" }}>
+                    {(day.exercises || []).map((ex, j) => (
+                      <div key={j} style={{ padding:"12px 0", borderBottom:j<(day.exercises.length-1)?"1px solid rgba(255,255,255,.04)":"none" }}>
+                        {/* Exercise image */}
+                        <div style={{ height:"110px", borderRadius:"10px", overflow:"hidden", marginBottom:"9px", position:"relative" }}>
+                          <img src={getExImg(ex.name)} alt={ex.name} style={{ width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.7) saturate(.8)" }} onError={e=>{ e.target.src=EX_IMAGES.default; }}/>
+                          <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,transparent 40%,rgba(10,10,10,.85) 100%)" }}/>
+                          <div style={{ position:"absolute", bottom:"8px", left:"10px", right:"10px" }}>
+                            <div style={{ fontSize:"13px", fontWeight:700, color:"#fff", letterSpacing:".5px" }}>{ex.name}</div>
+                          </div>
+                        </div>
+                        {/* Exercise name row */}
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px" }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:"12px", fontWeight:500, color:"var(--mut)", marginBottom:"2px" }}>{ex.name}</div>
+                            {ex.muscleTarget && <div style={{ fontSize:"11px", color:"var(--mut)", lineHeight:1.4 }}>{ex.muscleTarget}</div>}
+                          </div>
+                          {ex.rpe && <div style={{ padding:"2px 8px", background:"rgba(255,61,107,.1)", border:"1px solid rgba(255,61,107,.2)", borderRadius:"6px", fontSize:"10px", color:"var(--a2)", fontFamily:"var(--fm)", flexShrink:0, marginLeft:"8px" }}>RPE {ex.rpe}</div>}
+                        </div>
+                        {/* Stats row */}
+                        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"6px", marginBottom:"6px" }}>
+                          {[{v:ex.sets,l:"sets"},{v:ex.reps,l:"reps"},{v:ex.rest,l:"rest"},{v:ex.tempo,l:"tempo"}].map((x,k)=>x.v?(
+                            <div key={k} style={{ textAlign:"center", padding:"6px 4px", background:"rgba(255,255,255,.04)", borderRadius:"7px" }}>
+                              <div style={{ fontFamily:"var(--fm)", fontSize:"12px", color:"var(--acc)" }}>{x.v}</div>
+                              <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--mut)", marginTop:"1px" }}>{x.l}</div>
+                            </div>
+                          ):null)}
+                        </div>
+                        {/* Cues */}
+                        {ex.cues && (
+                          <div style={{ padding:"7px 10px", background:"rgba(124,58,237,.05)", border:"1px solid rgba(124,58,237,.1)", borderRadius:"7px", marginBottom:"4px" }}>
+                            <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--acc)", letterSpacing:"1px", marginBottom:"2px" }}>TECHNIQUE CUES</div>
+                            <div style={{ fontSize:"12px", color:"rgba(255,255,255,.7)", lineHeight:1.5 }}>{ex.cues}</div>
+                          </div>
+                        )}
+                        {/* Progression */}
+                        {ex.progression && (
+                          <div style={{ display:"flex", alignItems:"center", gap:"5px", fontSize:"11px", color:"var(--a3)" }}>
+                            <span>📈</span><span>{ex.progression}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Cooldown */}
+                  {day.cooldown && (
+                    <div style={{ padding:"10px 14px", background:"rgba(124,58,237,.05)", borderTop:"1px solid rgba(255,255,255,.04)" }}>
+                      <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--a4)", letterSpacing:"1px", marginBottom:"3px" }}>❄️ COOL-DOWN</div>
+                      <div style={{ fontSize:"12px", color:"rgba(255,255,255,.6)", lineHeight:1.6 }}>{day.cooldown}</div>
+                    </div>
+                  )}
+
+                  {/* Session notes */}
+                  {day.sessionNotes && (
+                    <div style={{ padding:"10px 14px", borderTop:"1px solid rgba(255,255,255,.04)", background:"rgba(255,255,255,.02)" }}>
+                      <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--yw)", letterSpacing:"1px", marginBottom:"3px" }}>💡 COACH NOTES</div>
+                      <div style={{ fontSize:"12px", color:"rgba(255,255,255,.55)", lineHeight:1.6 }}>{day.sessionNotes}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* NUTRITION TAB */}
+      {activeTab==="nutrition" && prog.nutritionGuidance && (
+        <div style={{ animation:"fadeIn .3s" }}>
+          {[
+            {title:"PRE-WORKOUT", icon:"⚡", content:prog.nutritionGuidance.preworkout, col:"var(--yw)"},
+            {title:"POST-WORKOUT", icon:"💪", content:prog.nutritionGuidance.postworkout, col:"var(--a3)"},
+            {title:"DAILY PROTEIN", icon:"🥩", content:prog.nutritionGuidance.dailyProtein, col:"var(--a2)"},
+            {title:"HYDRATION", icon:"💧", content:prog.nutritionGuidance.hydration, col:"var(--acc)"},
+          ].map(item => item.content && (
+            <Card key={item.title} style={{ padding:"14px", marginBottom:"10px", border:`1px solid ${item.col}20` }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"8px" }}>
+                <span style={{ fontSize:"18px" }}>{item.icon}</span>
+                <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:item.col, letterSpacing:"1px" }}>{item.title}</div>
+              </div>
+              <div style={{ fontSize:"13px", color:"rgba(255,255,255,.7)", lineHeight:1.7 }}>{item.content}</div>
+            </Card>
+          ))}
+          {prog.recoveryProtocol && (
+            <Card style={{ padding:"14px", border:"1px solid rgba(124,58,237,.2)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"8px" }}>
+                <span style={{ fontSize:"18px" }}>😴</span>
+                <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--a4)", letterSpacing:"1px" }}>RECOVERY PROTOCOL</div>
+              </div>
+              <div style={{ fontSize:"13px", color:"rgba(255,255,255,.7)", lineHeight:1.7 }}>{prog.recoveryProtocol}</div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* PROGRESSION TAB */}
+      {activeTab==="progression" && (
+        <div style={{ animation:"fadeIn .3s" }}>
+          {prog.progressionProtocol && (
+            <Card style={{ padding:"14px", marginBottom:"12px", border:"1px solid rgba(124,58,237,.15)" }}>
+              <div style={{ fontFamily:"var(--fm)", fontSize:"10px", color:"var(--acc)", letterSpacing:"1px", marginBottom:"10px" }}>📈 OVERLOAD PROTOCOL</div>
+              <div style={{ fontSize:"13px", color:"rgba(255,255,255,.7)", lineHeight:1.8 }}>{prog.progressionProtocol}</div>
+            </Card>
+          )}
+          {weeks.length > 1 && (
+            <div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", marginBottom:"9px" }}>WEEKLY PROGRESSION MAP</div>
+              {weeks.map((w, i) => (
+                <div key={i} style={{ display:"flex", gap:"12px", marginBottom:"10px", alignItems:"flex-start" }}>
+                  <div style={{ width:"32px", height:"32px", borderRadius:"50%", background:i===3?"rgba(124,58,237,.2)":i===2?"rgba(255,61,107,.2)":"rgba(124,58,237,.12)", border:`1px solid ${i===3?"var(--a4)":i===2?"var(--a2)":"var(--acc)"}`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"12px", color:i===3?"var(--a4)":i===2?"var(--a2)":"var(--acc)", flexShrink:0 }}>{w.week}</div>
+                  <Card style={{ flex:1, padding:"11px 13px", border:`1px solid ${i===3?"rgba(124,58,237,.15)":i===2?"rgba(255,61,107,.15)":"rgba(255,255,255,.06)"}` }}>
+                    <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", color:i===3?"var(--a4)":i===2?"var(--a2)":"var(--acc)", marginBottom:"3px" }}>{w.theme}</div>
+                    <div style={{ fontSize:"12px", color:"rgba(255,255,255,.55)", lineHeight:1.5 }}>{w.focus}</div>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* GOALS TAB */}
+      {activeTab==="goals" && (
+        <div style={{ animation:"fadeIn .3s" }}>
+          {prog.weeklyGoals?.length > 0 && (
+            <div style={{ marginBottom:"16px" }}>
+              <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", marginBottom:"9px" }}>YOUR TARGETS</div>
+              {prog.weeklyGoals.map((g, i) => (
+                <Card key={i} style={{ padding:"12px 14px", marginBottom:"7px", display:"flex", alignItems:"flex-start", gap:"10px", border:"1px solid rgba(124,58,237,.1)" }}>
+                  <div style={{ width:"20px", height:"20px", borderRadius:"50%", border:"2px solid var(--acc)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"10px", color:"var(--acc)", flexShrink:0, marginTop:"1px" }}>{i+1}</div>
+                  <span style={{ fontSize:"13px", lineHeight:1.6 }}>{g}</span>
+                </Card>
+              ))}
+            </div>
+          )}
+          {prog.progressionMarkers?.length > 0 && (
+            <div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", marginBottom:"9px" }}>HOW TO KNOW IT'S WORKING</div>
+              {prog.progressionMarkers.map((m, i) => (
+                <Card key={i} style={{ padding:"12px 14px", marginBottom:"7px", display:"flex", alignItems:"flex-start", gap:"10px", border:"1px solid rgba(147,51,234,.12)" }}>
+                  <span style={{ fontSize:"16px", flexShrink:0 }}>📊</span>
+                  <span style={{ fontSize:"13px", lineHeight:1.6, color:"rgba(255,255,255,.75)" }}>{m}</span>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Member Dashboard ──────────────────────────────────────────────────────────
-function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade }) {
+function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
   const [showGen, setShowGen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [prog, setProg] = useState(null);
@@ -1743,19 +2407,21 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade }) {
       {/* Header */}
       <div style={{ position:"relative", height:"200px" }}>
         <img src={sub?.id==="pro"?IMG.pro:IMG.free} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.45) saturate(.7)" }}/>
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(8,8,16,.3) 0%,rgba(8,8,16,.85) 100%)" }}/>
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(10,10,10,.3) 0%,rgba(10,10,10,.85) 100%)" }}/>
         {/* Top row */}
         <div style={{ position:"absolute", top:0, left:0, right:0, padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <Wordmark size={22} col="rgba(255,255,255,.8)"/>
+          <div onClick={onHome} style={{ cursor:"pointer" }}><Wordmark size={22} col="rgba(255,255,255,.9)"/></div>
           <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.15)", borderRadius:"50px", color:"rgba(255,255,255,.7)", cursor:"pointer", padding:"5px 13px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>CONTACT</button>
         </div>
         {/* User info row */}
         <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"0 18px 16px", display:"flex", alignItems:"flex-end", gap:"12px" }}>
-          <div style={{ width:"52px", height:"52px", borderRadius:"16px", background:`linear-gradient(135deg,var(--acc),#006b80)`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"20px", color:"#000", border:"1.5px solid rgba(0,229,255,.4)", flexShrink:0 }}>{user.name.charAt(0)}</div>
+          <div style={{ width:"64px", height:"64px", borderRadius:"50%", overflow:"hidden", border:"2.5px solid rgba(124,58,237,.5)", flexShrink:0, boxShadow:"0 4px 16px rgba(124,58,237,.2)" }}>
+            <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&q=80" alt="Member" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+          </div>
           <div style={{ flex:1, paddingBottom:"2px" }}>
             <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px", lineHeight:1, color:"var(--txt)" }}>HEY, {user.name.split(" ")[0].toUpperCase()}</div>
             <div style={{ display:"flex", alignItems:"center", gap:"8px", marginTop:"5px" }}>
-              <div style={{ padding:"2px 9px", background:sub?.id==="pro"?"rgba(0,229,255,.15)":"rgba(34,212,168,.12)", border:`1px solid ${sub?.id==="pro"?"rgba(0,229,255,.3)":"rgba(34,212,168,.3)"}`, borderRadius:"50px", fontSize:"10px", fontFamily:"var(--fm)", color:sub?.id==="pro"?"var(--acc)":"var(--a3)", letterSpacing:"1px" }}>
+              <div style={{ padding:"2px 9px", background:sub?.id==="pro"?"rgba(124,58,237,.15)":"rgba(147,51,234,.12)", border:`1px solid ${sub?.id==="pro"?"rgba(124,58,237,.3)":"rgba(147,51,234,.3)"}`, borderRadius:"50px", fontSize:"10px", fontFamily:"var(--fm)", color:sub?.id==="pro"?"var(--acc)":"var(--a3)", letterSpacing:"1px" }}>
                 {sub?.id==="pro"?"⚡ PRO":"🎁 FREE TRIAL"}
               </div>
               <div style={{ fontSize:"11px", color:"rgba(255,255,255,.4)" }}>{(profile?.goal||"").replace(/[🔥💪🏃🧘⚡🏆]/g,"").trim()} · Week 1</div>
@@ -1775,9 +2441,9 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade }) {
         })}
       </div>
       {sub && ctx && (
-        <div onClick={()=>onUpgrade("trial_expired")} style={{ margin:"0 18px 11px", padding:"9px 13px", background:ctx.daysLeft()<=7?"rgba(255,61,107,.07)":"rgba(0,229,255,.05)", border:`1px solid ${ctx.daysLeft()<=7?"rgba(255,61,107,.25)":"rgba(0,229,255,.18)"}`, borderRadius:"12px", cursor:"pointer", display:sub.id==="free"?"block":"none" }}>
+        <div onClick={()=>onUpgrade("trial_expired")} style={{ margin:"0 18px 11px", padding:"9px 13px", background:ctx.daysLeft()<=7?"rgba(255,61,107,.07)":"rgba(124,58,237,.05)", border:`1px solid ${ctx.daysLeft()<=7?"rgba(255,61,107,.25)":"rgba(124,58,237,.18)"}`, borderRadius:"12px", cursor:"pointer", display:sub.id==="free"?"block":"none" }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"4px" }}><Mono style={{ color:ctx.daysLeft()<=7?"var(--a2)":"var(--a3)" }}>{ctx.daysLeft()<=7?"⚠️ TRIAL ENDING":"🎁 FREE TRIAL"}</Mono><Mono>{ctx.daysLeft()}d left</Mono></div>
-          <div style={{ height:"3px", background:"rgba(255,255,255,.07)", borderRadius:"2px", overflow:"hidden" }}><div style={{ height:"100%", width:Math.min(100,(30-ctx.daysLeft())/30*100)+"%", background:ctx.daysLeft()<=7?"var(--a2)":"var(--a3)", transition:"width .5s" }}/></div>
+          <div style={{ height:"3px", background:"rgba(255,255,255,.08)", borderRadius:"2px", overflow:"hidden" }}><div style={{ height:"100%", width:Math.min(100,(30-ctx.daysLeft())/30*100)+"%", background:ctx.daysLeft()<=7?"var(--a2)":"var(--a3)", transition:"width .5s" }}/></div>
           <div style={{ marginTop:"4px", fontSize:"11px", color:ctx.daysLeft()<=7?"var(--a2)":"var(--a3)", textDecoration:"underline" }}>Upgrade to Pro →</div>
         </div>
       )}
@@ -1802,7 +2468,7 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade }) {
               <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"11px" }}>
                 <div style={{ width:"42px", height:"42px", borderRadius:"11px", background:ctx.plan.color+"15", border:`1px solid ${ctx.plan.color}30`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px" }}>{sub.id==="pro"?"⚡":"🎁"}</div>
                 <div style={{ flex:1 }}><div style={{ fontFamily:"var(--fd)", fontSize:"17px", color:ctx.plan.color, letterSpacing:"2px" }}>{ctx.plan.name}</div><Mono>{ctx.plan.price} {ctx.plan.period}</Mono></div>
-                {sub.id==="pro" && <div style={{ padding:"4px 9px", background:"rgba(0,229,255,.1)", border:"1px solid rgba(0,229,255,.25)", borderRadius:"7px", fontSize:"10px", color:"var(--acc)", fontFamily:"var(--fm)" }}>ACTIVE</div>}
+                {sub.id==="pro" && <div style={{ padding:"4px 9px", background:"rgba(124,58,237,.1)", border:"1px solid rgba(124,58,237,.25)", borderRadius:"7px", fontSize:"10px", color:"var(--acc)", fontFamily:"var(--fm)" }}>ACTIVE</div>}
               </div>
               {sub.id==="free" && (
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"7px", marginBottom:"11px" }}>
@@ -1836,7 +2502,7 @@ function PlanScreen({ onSelect, onBack }) {
   const [showPP, setShowPP] = useState(false);
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", overflowY:"auto" }}>
-      <HeroBg src={sel==="pro"?IMG.pro:IMG.free} ov="linear-gradient(180deg,rgba(8,8,16,.15) 0%,rgba(8,8,16,.92) 55%,rgba(8,8,16,1) 100%)" style={{ height:"205px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 20px", position:"relative" }}>
+      <HeroBg src={sel==="pro"?IMG.pro:IMG.free} ov="linear-gradient(180deg,rgba(10,10,10,.15) 0%,rgba(10,10,10,.92) 55%,rgba(10,10,10,1) 100%)" style={{ height:"205px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 20px", position:"relative" }}>
         <BackBtn onClick={onBack}/>
         <Mono style={{ color:"var(--a3)", marginBottom:"5px" }}>CHOOSE YOUR FIT2ALL PLAN</Mono>
         <div style={{ fontFamily:"var(--fd)", fontSize:"30px", letterSpacing:"3px", lineHeight:1 }}>START YOUR <span style={{ color:"var(--acc)" }}>JOURNEY</span></div>
@@ -1918,12 +2584,12 @@ function SplashScreen({ onContinue, onAdminHold }) {
       {/* Full-bleed hero image - top third */}
       <div style={{ position:"relative", height:"20vh", flexShrink:0 }}>
         <img src={IMG.splash} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 30%", filter:"brightness(.55) saturate(.75)" }}/>
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg, rgba(8,8,16,0) 0%, rgba(8,8,16,.2) 70%, rgba(8,8,16,1) 100%)" }}/>
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,.2) 70%, rgba(10,10,10,1) 100%)" }}/>
 
         {/* Top bar */}
         <div style={{ position:"absolute", top:0, left:0, right:0, padding:"16px 22px", display:"flex", justifyContent:"space-between", alignItems:"center", zIndex:10 }}>
           <div onMouseDown={startHold} onMouseUp={endHold} onMouseLeave={endHold} onTouchStart={startHold} onTouchEnd={endHold} style={{ position:"relative", userSelect:"none" }}>
-            <Wordmark size={26} col="rgba(255,255,255,.9)"/>
+            <Wordmark size={38} col="#ffffff"/>
             {holdProg > 0 && (
               <div style={{ position:"absolute", bottom:"-3px", left:0, right:0, height:"2px", background:"rgba(255,255,255,.15)", borderRadius:"1px", overflow:"hidden" }}>
                 <div style={{ height:"100%", width:holdProg+"%", background:"var(--rd)", borderRadius:"1px", transition:"width .05s linear" }}/>
@@ -1940,8 +2606,8 @@ function SplashScreen({ onContinue, onAdminHold }) {
         {/* Brand heading + all content */}
         <div style={{ opacity:visible?1:0, transform:visible?"translateY(0)":"translateY(24px)", transition:"all .65s cubic-bezier(.16,1,.3,1)" }}>
           {/* AI badge — tight under image */}
-          <div style={{ display:"inline-flex", alignItems:"center", gap:"6px", padding:"4px 12px", background:"rgba(0,229,255,.08)", border:"1px solid rgba(0,229,255,.22)", borderRadius:"50px", marginBottom:"12px" }}>
-            <Dot/><span style={{ fontFamily:"var(--fm)", fontSize:"10px", letterSpacing:"2px", color:"var(--acc)" }}>AI-POWERED FITNESS</span>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:"6px", padding:"4px 12px", background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.3)", borderRadius:"50px", marginBottom:"12px" }}>
+            <Dot col="#ffffff"/><span style={{ fontFamily:"var(--fm)", fontSize:"10px", letterSpacing:"2px", color:"#ffffff" }}>AI-POWERED FITNESS</span>
           </div>
           <div style={{ fontFamily:"var(--fd)", fontWeight:900, fontSize:"clamp(46px,13vw,68px)", letterSpacing:"5px", lineHeight:.85, marginBottom:"8px" }}>
             <span style={{ color:"var(--txt)" }}>FIT</span><span style={{ color:"var(--rd)" }}>2</span><span style={{ color:"var(--txt)" }}>ALL</span>
@@ -1949,21 +2615,28 @@ function SplashScreen({ onContinue, onAdminHold }) {
           <Mono style={{ color:"rgba(255,255,255,.35)", letterSpacing:"3px", marginBottom:"22px" }}>MOVE BETTER · LIVE STRONGER</Mono>
 
           {/* Role selector cards - side by side */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px", marginBottom:"20px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px", marginBottom:"40px" }}>
             {[
-              {role:"trainer",  icon:"🏋️", title:"TRAINER",  sub:"Manage clients",        border:"rgba(255,112,67,.35)", col:"var(--tr)",  glow:"rgba(255,112,67,.08)"},
-              {role:"enthusiast",icon:"⚡", title:"MEMBER",   sub:"Start your journey",    border:"rgba(0,229,255,.35)",  col:"var(--acc)", glow:"rgba(0,229,255,.08)"}
+              {role:"trainer",  img:IMG.trainer, title:"TRAINER",  sub:"Manage clients",     border:"rgba(255,112,67,.4)", col:"var(--tr)",  glow:"rgba(255,112,67,.06)"},
+              {role:"enthusiast",img:IMG.workout, title:"MEMBER",  sub:"Start your journey", border:"rgba(124,58,237,.4)",  col:"var(--acc)", glow:"rgba(124,58,237,.06)"}
             ].map(item=>(
               <button key={item.role} onClick={()=>onContinue(item.role)} style={{ all:"unset", cursor:"pointer", display:"block" }}>
-                <div style={{ padding:"18px 14px 16px", background:item.glow, border:`1px solid ${item.border}`, borderRadius:"16px", textAlign:"center", transition:"transform .15s", backdropFilter:"blur(4px)" }}
+                <div style={{ border:`1px solid ${item.border}`, borderRadius:"20px", overflow:"hidden", transition:"transform .15s" }}
                   onMouseEnter={e=>e.currentTarget.style.transform="scale(1.02)"}
                   onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-                  <div style={{ fontSize:"28px", marginBottom:"10px" }}>{item.icon}</div>
-                  <div style={{ fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"2px", color:item.col, marginBottom:"4px" }}>{item.title}</div>
-                  <div style={{ fontSize:"11px", color:"rgba(255,255,255,.4)", lineHeight:1.4 }}>{item.sub}</div>
-                  <div style={{ marginTop:"12px", display:"inline-flex", alignItems:"center", gap:"4px", padding:"4px 12px", background:item.col+"15", border:`1px solid ${item.col}30`, borderRadius:"50px" }}>
-                    <span style={{ fontSize:"11px", color:item.col, fontFamily:"var(--fm)", letterSpacing:"1px" }}>GET STARTED</span>
-                    <span style={{ color:item.col, fontSize:"12px" }}>→</span>
+                  {/* Full image */}
+                  <div style={{ position:"relative", height:"130px", overflow:"hidden" }}>
+                    <img src={item.img} alt={item.title} style={{ width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.6) saturate(.8)" }}/>
+                    <div style={{ position:"absolute", inset:0, background:`linear-gradient(180deg, transparent 40%, ${item.glow.replace(".06","0.7")} 100%)` }}/>
+                  </div>
+                  {/* Label area */}
+                  <div style={{ padding:"11px 12px 13px", background:item.glow, textAlign:"center" }}>
+                    <div style={{ fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"2px", color:item.col, marginBottom:"3px" }}>{item.title}</div>
+                    <div style={{ fontSize:"11px", color:"rgba(255,255,255,.4)", lineHeight:1.4, marginBottom:"10px" }}>{item.sub}</div>
+                    <div style={{ display:"inline-flex", alignItems:"center", gap:"4px", padding:"4px 12px", background:item.col+"18", border:`1px solid ${item.col}35`, borderRadius:"50px" }}>
+                      <span style={{ fontSize:"11px", color:item.col, fontFamily:"var(--fm)", letterSpacing:"1px" }}>GET STARTED</span>
+                      <span style={{ color:item.col, fontSize:"11px" }}>→</span>
+                    </div>
                   </div>
                 </div>
               </button>
@@ -1972,11 +2645,20 @@ function SplashScreen({ onContinue, onAdminHold }) {
 
           {/* Plan pills */}
           <div style={{ display:"flex", gap:"6px" }}>
-            {[["🎁","Free","30-day trial","var(--a3)"],["⚡","Pro","$4.99/mo","var(--acc)"],["🏋️","Trainer","From free","var(--tr)"]].map(([ic,n,d,c])=>(
-              <div key={n} style={{ flex:1, padding:"9px 6px", background:"rgba(255,255,255,.03)", border:`1px solid ${c}20`, borderRadius:"10px", textAlign:"center" }}>
-                <div style={{ fontSize:"14px", marginBottom:"3px" }}>{ic}</div>
-                <div style={{ fontFamily:"var(--fd)", fontSize:"10px", letterSpacing:"1px", color:c, marginBottom:"1px" }}>{n}</div>
-                <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"rgba(255,255,255,.3)" }}>{d}</div>
+            {[
+              { img:"https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=200&q=60", n:"Free", d:"30-day trial", c:"var(--a3)" },
+              { img:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&q=60", n:"Pro", d:"$4.99/mo", c:"var(--acc)" },
+              { img:"https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&q=60", n:"Trainer", d:"From free", c:"var(--tr)" },
+            ].map(item=>(
+              <div key={item.n} style={{ flex:1, background:"rgba(255,255,255,.03)", border:`1px solid ${item.c}20`, borderRadius:"10px", overflow:"hidden", textAlign:"center" }}>
+                <div style={{ height:"52px", overflow:"hidden", position:"relative" }}>
+                  <img src={item.img} alt={item.n} style={{ width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.6) saturate(.7)" }}/>
+                  <div style={{ position:"absolute", inset:0, background:`linear-gradient(180deg,transparent 0%,rgba(10,10,10,.6) 100%)` }}/>
+                </div>
+                <div style={{ padding:"6px 4px 7px" }}>
+                  <div style={{ fontFamily:"var(--fd)", fontSize:"10px", letterSpacing:"1px", color:item.c, marginBottom:"1px" }}>{item.n}</div>
+                  <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"rgba(255,255,255,.3)" }}>{item.d}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -1991,17 +2673,32 @@ function SplashScreen({ onContinue, onAdminHold }) {
 function AuthScreen({ role, onLogin, onBack }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [ownerErr, setOwnerErr] = useState("");
   const isT = role==="trainer"; const col = isT?"var(--tr)":"var(--acc)";
+  const isOwnerEmail = email.trim().toLowerCase() === OWNER.email.toLowerCase();
+
+  function handleLogin() {
+    // Owner access — check password
+    if (isOwnerEmail) {
+      if (password !== OWNER.password) { setOwnerErr("Incorrect password"); setTimeout(()=>setOwnerErr(""), 2500); return; }
+      // Owner gets unlimited sub + trainer plan
+      const s = mkMemberSub("pro"); saveMemberSub(s);
+      saveTrainerSub(mkTrainerSub("unlimited"));
+      onLogin({ name:OWNER.name, email:OWNER.email, role, isOwner:true });
+      return;
+    }
+    onLogin({ name:name||(isT?"Coach":"Athlete"), email, role });
+  }
+
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column" }}>
       {/* Hero */}
       <div style={{ position:"relative", height:"40vh", flexShrink:0 }}>
         <img src={isT?IMG.trainer:IMG.workout} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.5) saturate(.7)" }}/>
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(8,8,16,0) 0%,rgba(8,8,16,1) 100%)" }}/>
-        <div style={{ position:"absolute", top:"16px", left:"16px" }}>
-          <BackBtn onClick={onBack}/>
-        </div>
-        {/* Centred role icon in hero */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(10,10,10,0) 0%,rgba(10,10,10,1) 100%)" }}/>
+        <BackBtn onClick={onBack}/>
         <div style={{ position:"absolute", bottom:"28px", left:0, right:0, display:"flex", flexDirection:"column", alignItems:"center", gap:"8px" }}>
           <div style={{ width:"60px", height:"60px", borderRadius:"18px", background:col+"18", border:`1.5px solid ${col}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"26px", backdropFilter:"blur(8px)" }}>{isT?"🏋️":"⚡"}</div>
           <Mono style={{ color:col, letterSpacing:"2px" }}>{isT?"TRAINER ACCESS":"JOIN FIT2ALL"}</Mono>
@@ -2015,15 +2712,30 @@ function AuthScreen({ role, onLogin, onBack }) {
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", gap:"13px" }}>
-          <Field lbl="FULL NAME" val={name} set={setName} ph="Your name" acc={col}/>
-          <Field lbl="EMAIL ADDRESS" val={email} set={setEmail} ph="your@email.com" acc={col} type="email"/>
-          {isT && <Field lbl="CERTIFICATION ID" val="" set={()=>{}} ph="e.g. NASM-12345" acc={col}/>}
+          {!isOwnerEmail && <Field lbl="FULL NAME" val={name} set={setName} ph="Your name" acc={col}/>}
+          <Field lbl="EMAIL ADDRESS" val={email} set={v=>{ setEmail(v); setOwnerErr(""); }} ph="your@email.com" acc={col} type="email"/>
+          {/* Show password field only for owner email */}
+          {isOwnerEmail && (
+            <div>
+              <Mono style={{ marginBottom:"7px", color:ownerErr?"var(--rd)":"var(--mut)" }}>PASSWORD</Mono>
+              <div style={{ position:"relative" }}>
+                <input type={showPass?"text":"password"} value={password} onChange={e=>{ setPassword(e.target.value); setOwnerErr(""); }} onKeyDown={e=>e.key==="Enter"&&handleLogin()} placeholder="Enter your password" style={{ width:"100%", padding:"12px 40px 12px 14px", background:"rgba(255,255,255,.04)", border:`1px solid ${ownerErr?"var(--rd)":"rgba(255,255,255,.1)"}`, borderRadius:"10px", color:"var(--txt)", fontSize:"14px", fontFamily:"var(--fm)", outline:"none", letterSpacing:"2px" }}/>
+                <button onClick={()=>setShowPass(s=>!s)} style={{ position:"absolute", right:"11px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:"var(--mut)", cursor:"pointer", fontSize:"14px" }}>{showPass?"🙈":"👁️"}</button>
+              </div>
+              {ownerErr && <div style={{ fontSize:"12px", color:"var(--rd)", marginTop:"5px", fontFamily:"var(--fm)" }}>{ownerErr}</div>}
+              <div style={{ marginTop:"8px", padding:"8px 11px", background:"rgba(124,58,237,.08)", border:"1px solid rgba(124,58,237,.2)", borderRadius:"8px", display:"flex", alignItems:"center", gap:"6px" }}>
+                <span style={{ fontSize:"14px" }}>👑</span>
+                <span style={{ fontSize:"12px", color:"var(--acc)" }}>Owner access — unlimited everything</span>
+              </div>
+            </div>
+          )}
+          {isT && !isOwnerEmail && <Field lbl="CERTIFICATION ID" val="" set={()=>{}} ph="e.g. NASM-12345" acc={col}/>}
         </div>
 
         <div style={{ marginTop:"auto" }}>
-          <button onClick={()=>onLogin({ name:name||(isT?"Coach":"Athlete"), email, role })}
-            style={{ width:"100%", padding:"16px", background:col, border:"none", borderRadius:"var(--r)", color:"#000", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px", boxShadow:`0 8px 28px ${col}30`, marginBottom:"12px" }}>
-            {isT?"ENTER DASHBOARD →":"LET'S GO →"}
+          <button onClick={handleLogin} disabled={isOwnerEmail&&!password.trim()}
+            style={{ width:"100%", padding:"16px", background:isOwnerEmail&&!password.trim()?"rgba(255,255,255,.08)":col, border:"none", borderRadius:"var(--r)", color:isOwnerEmail&&!password.trim()?"var(--mut)":"#000", cursor:isOwnerEmail&&!password.trim()?"default":"pointer", fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px", boxShadow:isOwnerEmail&&!password.trim()?"none":`0 8px 28px ${col}30`, marginBottom:"12px" }}>
+            {isOwnerEmail ? "👑 OWNER LOGIN" : isT?"ENTER DASHBOARD →":"LET'S GO →"}
           </button>
           <Mono style={{ textAlign:"center" }}>By continuing you agree to our Terms of Service</Mono>
         </div>
@@ -2040,7 +2752,7 @@ function BottomNav({ role, tab, setTab }) {
   return (
     <div style={{ position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", zIndex:50 }}>
       {/* Frosted pill nav */}
-      <div style={{ margin:"0 16px 12px", background:"rgba(18,18,28,.92)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderRadius:"20px", border:"1px solid rgba(255,255,255,.1)", padding:"6px 8px", display:"flex", justifyContent:"space-around", boxShadow:"0 8px 32px rgba(0,0,0,.4)" }}>
+      <div style={{ margin:"0 16px 12px", background:"rgba(18,18,18,.92)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderRadius:"20px", border:"1px solid rgba(255,255,255,.1)", padding:"6px 8px", display:"flex", justifyContent:"space-around", boxShadow:"0 8px 32px rgba(0,0,0,.4)" }}>
         {tabs.map(([t, icon, lbl])=>{
           const isActive = tab === t;
           return (
@@ -2059,8 +2771,8 @@ function FAB({ onClick }) {
   const [popped, setPopped] = useState(true);
   useEffect(() => { const t = setTimeout(()=>setPopped(false),3000); return ()=>clearTimeout(t); }, []);
   return (
-    <button onClick={onClick} style={{ position:"fixed", bottom:"88px", right:"18px", width:"54px", height:"54px", borderRadius:"16px", background:"linear-gradient(135deg,#00e5ff 0%,#006b80 100%)", border:"1px solid rgba(0,229,255,.35)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 24px rgba(0,229,255,.35), 0 2px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15)", zIndex:100, padding:"7px", animation:popped?"pop .5s ease":"none", transform:"translateZ(0)" }}>
-      <Logo size={36} col="#001a22"/>
+    <button onClick={onClick} style={{ position:"fixed", bottom:"88px", right:"18px", width:"54px", height:"54px", borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed 0%,#5b21b6 100%)", border:"1px solid rgba(124,58,237,.35)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 24px rgba(124,58,237,.35), 0 2px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15)", zIndex:100, padding:"7px", animation:popped?"pop .5s ease":"none", transform:"translateZ(0)" }}>
+      <Logo size={36} col="#111111"/>
     </button>
   );
 }
@@ -2082,7 +2794,16 @@ export default function App() {
 
   function goRole(r) { setRole(r); if (r==="enthusiast"&&!sub) setScreen("plan"); else setScreen("auth"); }
   function goPlan(id) { const s = mkMemberSub(id); setSub(s); setScreen("auth"); }
-  function goLogin(u) { setUser(u); setScreen("app"); setTab(u.role==="trainer"?"clients":"program"); }
+  function goLogin(u) {
+    setUser(u);
+    if (u.isOwner) {
+      // Ensure owner has pro member sub + unlimited trainer sub
+      if (!sub || sub.id !== "pro") { const s = mkMemberSub("pro"); setSub(s); }
+      saveTrainerSub({ id:"unlimited", start: new Date().toISOString() });
+    }
+    setScreen("app");
+    setTab(u.role==="trainer"?"clients":"program");
+  }
   function openAI() {
     if (role==="enthusiast"&&ctx) {
       if (ctx.expired()) { setUpgradeReason("trial_expired"); return; }
@@ -2100,8 +2821,8 @@ export default function App() {
       {screen==="app" && user && (
         <>
           {role==="trainer"
-            ? <TrainerDashboard user={user} tab={tab} setTab={setTab}/>
-            : <MemberDashboard user={user} tab={tab} setTab={setTab} sub={sub} ctx={ctx} onUpgrade={r=>setUpgradeReason(r)}/>
+            ? <TrainerDashboard user={user} tab={tab} setTab={setTab} onHome={()=>setScreen("splash")}/>
+            : <MemberDashboard user={user} tab={tab} setTab={setTab} sub={sub} ctx={ctx} onUpgrade={r=>setUpgradeReason(r)} onHome={()=>setScreen("splash")}/>
           }
           <BottomNav role={role} tab={tab} setTab={setTab}/>
           {!showAI && <FAB onClick={openAI}/>}
