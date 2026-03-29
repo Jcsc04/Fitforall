@@ -1518,7 +1518,7 @@ function ClientProfile({ client, notes, onBack, onUpdate, onDelete, onSuspend, p
           <div>
             <BeforeAfterPhotos storageKey={"photos_client_"+client.id}/>
             <div style={{ height:"1px", background:"rgba(255,255,255,.07)", margin:"20px 0" }}/>
-            <ProgressTracker storageKey={"progress_client_"+client.id}/>
+            <ProgressTracker storageKey={"progress_client_"+client.id} user={{name:client.name,email:client.email||client.id}}/>
           </div>
         )}
 
@@ -2375,6 +2375,7 @@ See you in the gym! 💪
           </div>
         </Sheet>
       )}
+      {showExLib && <ExerciseLibrary onClose={()=>setShowExLib(false)}/>}
       {showPackages && (
         <PackagesManager
           packages={packages}
@@ -2384,7 +2385,6 @@ See you in the gym! 💪
           onClose={()=>setShowPackages(false)}
         />
       )}
-      {showExLib && <ExerciseLibrary onClose={()=>setShowExLib(false)}/>}
     </div>
   );
 }
@@ -2742,43 +2742,65 @@ const advancedFallback = (p, u) => {
   };
 };
 
-// ─── Exercise Image Map ────────────────────────────────────────────────────────
-const EX_IMAGES = {
-  "Barbell Bench Press":     "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=60",
-  "Push-ups":                "https://images.unsplash.com/photo-1598971457999-ca4ef48a9a71?w=400&q=60",
-  "Overhead Press":          "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400&q=60",
-  "Pike Push-ups":           "https://images.unsplash.com/photo-1598971457999-ca4ef48a9a71?w=400&q=60",
-  "Incline Dumbbell Press":  "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=60",
-  "Lateral Raises":          "https://images.unsplash.com/photo-1590487988256-9ed24133863e?w=400&q=60",
-  "Tricep Rope Pushdown":    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60",
-  "Diamond Push-ups":        "https://images.unsplash.com/photo-1598971457999-ca4ef48a9a71?w=400&q=60",
-  "Deadlift":                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60",
-  "Barbell Deadlift":        "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60",
-  "Pull-ups or Lat Pulldown":"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
-  "Pull-ups":                "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
-  "Australian Pull-ups":     "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
-  "Inverted Rows":           "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
-  "Seated Cable Row":        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60",
-  "Barbell Curl":            "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=60",
-  "Barbell Back Squat":      "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=400&q=60",
-  "Goblet Squat":            "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=400&q=60",
-  "Romanian Deadlift":       "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60",
-  "Single-leg RDL":          "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60",
-  "Leg Press":               "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=60",
-  "Bulgarian Split Squat":   "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=400&q=60",
-  "Calf Raises Machine":     "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=60",
-  "Calf Raises on Step":     "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=60",
-  "Plank":                   "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=60",
-  "Ab Wheel Rollout":        "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=60",
-  "Hanging Knee Raise":      "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60",
-  "default":                 "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&q=60",
-};
-function getExImg(name) {
-  for (const [k, v] of Object.entries(EX_IMAGES)) {
-    if (name && name.toLowerCase().includes(k.toLowerCase())) return v;
-  }
-  return EX_IMAGES.default;
+// ─── Exercise Image: Live lookup via ExerciseDB API ───────────────────────────
+const EDB_IMG_BASE = "https://exercisedb-api.vercel.app/api/v1";
+const exImgCache = {};
+
+function ExerciseImage({ name, style }) {
+  const [imgSrc, setImgSrc] = useState(null);
+  const [tried, setTried] = useState(false);
+
+  useEffect(() => {
+    if (!name || tried) return;
+    setTried(true);
+    // Check cache first
+    if (exImgCache[name]) { setImgSrc(exImgCache[name]); return; }
+    // Search ExerciseDB for this exercise
+    const query = encodeURIComponent(name.toLowerCase().replace(/[^a-z0-9 ]/g,""));
+    fetch(`${EDB_IMG_BASE}/exercises/search?name=${query}&limit=1`)
+      .then(r => r.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data.exercises || data.data || []);
+        const ex = list[0];
+        if (ex) {
+          const url = ex.gifUrl || (ex.imageUrl ? (ex.imageUrl.startsWith("http") ? ex.imageUrl : `${EDB_IMG_BASE}/images/${ex.imageUrl}`) : null);
+          if (url) { exImgCache[name] = url; setImgSrc(url); }
+        }
+      })
+      .catch(() => {});
+  }, [name]);
+
+  // Fallback Unsplash image by muscle/keyword
+  const fallback = (() => {
+    const n = (name||"").toLowerCase();
+    if (n.includes("squat")) return "https://images.unsplash.com/photo-1566241440091-ec10de8db2e1?w=400&q=60";
+    if (n.includes("bench")||n.includes("press")) return "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=60";
+    if (n.includes("deadlift")) return "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=60";
+    if (n.includes("pull")||n.includes("row")) return "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=60";
+    if (n.includes("curl")||n.includes("bicep")) return "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=60";
+    if (n.includes("lunge")||n.includes("leg")) return "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=60";
+    if (n.includes("plank")||n.includes("abs")||n.includes("crunch")) return "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=60";
+    if (n.includes("run")||n.includes("cardio")) return "https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400&q=60";
+    return "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&q=60";
+  })();
+
+  return (
+    <div style={{ height:"110px", borderRadius:"10px", overflow:"hidden", marginBottom:"9px", position:"relative", background:"rgba(255,255,255,.04)", ...style }}>
+      <img
+        src={imgSrc || fallback}
+        alt={name}
+        style={{ width:"100%", height:"100%", objectFit:"cover", filter:imgSrc?"brightness(.75)":"brightness(.6) saturate(.7)" }}
+        onError={e=>{ e.target.src=fallback; }}
+      />
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,transparent 35%,rgba(8,8,16,.88) 100%)" }}/>
+      <div style={{ position:"absolute", bottom:"8px", left:"10px", right:"10px" }}>
+        <div style={{ fontSize:"13px", fontWeight:700, color:"#fff", letterSpacing:".5px" }}>{name}</div>
+        {imgSrc && <div style={{ fontSize:"9px", color:"rgba(255,255,255,.45)", fontFamily:"var(--fm)", marginTop:"1px" }}>ExerciseDB</div>}
+      </div>
+    </div>
+  );
 }
+
 
 function ProgramView({ prog }) {
   const [activeWeek, setActiveWeek] = useState(0);
@@ -2892,14 +2914,8 @@ function ProgramView({ prog }) {
                   <div style={{ padding:"0 14px" }}>
                     {(day.exercises || []).map((ex, j) => (
                       <div key={j} style={{ padding:"12px 0", borderBottom:j<(day.exercises.length-1)?"1px solid rgba(255,255,255,.04)":"none" }}>
-                        {/* Exercise image */}
-                        <div style={{ height:"110px", borderRadius:"10px", overflow:"hidden", marginBottom:"9px", position:"relative" }}>
-                          <img src={getExImg(ex.name)} alt={ex.name} style={{ width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.7) saturate(.8)" }} onError={e=>{ e.target.src=EX_IMAGES.default; }}/>
-                          <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,transparent 40%,rgba(10,10,10,.85) 100%)" }}/>
-                          <div style={{ position:"absolute", bottom:"8px", left:"10px", right:"10px" }}>
-                            <div style={{ fontSize:"13px", fontWeight:700, color:"#fff", letterSpacing:".5px" }}>{ex.name}</div>
-                          </div>
-                        </div>
+                        {/* Exercise image — live from ExerciseDB */}
+                        <ExerciseImage name={ex.name}/>
                         {/* Exercise name row */}
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px" }}>
                           <div style={{ flex:1 }}>
@@ -3073,7 +3089,7 @@ function ExerciseQA() {
     <div style={{ animation:"fadeIn .3s" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"11px" }}>
         <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"1px" }}>🎥 EXERCISE Q&A</div>
-        <button onClick={()=>setShowLib(true)} style={{ padding:"6px 13px", background:"rgba(14,165,233,.12)", border:"1px solid rgba(14,165,233,.25)", borderRadius:"8px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>💪 BROWSE 691+ EXERCISES</button>
+        <button onClick={()=>setShowLib(true)} style={{ padding:"6px 12px", background:"rgba(255,31,31,.12)", border:"1px solid rgba(255,31,31,.25)", borderRadius:"8px", color:"var(--tr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>💪 EXERCISES</button>
       </div>
       {showLib && <ExerciseLibrary onClose={()=>setShowLib(false)}/>}
       <div style={{ display:"flex", gap:"7px", marginBottom:"11px" }}>
@@ -3135,8 +3151,8 @@ function MemberExLibBtn() {
   const [show, setShow] = useState(false);
   return (
     <>
-      <button onClick={()=>setShow(true)} style={{ width:"100%", padding:"13px", background:"rgba(14,165,233,.08)", border:"1px solid rgba(14,165,233,.2)", borderRadius:"12px", color:"var(--acc)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px", marginTop:"14px" }}>
-        💪 EXERCISE LIBRARY — 691+ EXERCISES
+      <button onClick={()=>setShow(true)} style={{ width:"100%", padding:"13px", background:"rgba(255,31,31,.08)", border:"1px solid rgba(255,31,31,.2)", borderRadius:"12px", color:"var(--tr)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px", marginTop:"14px" }}>
+        💪 EXERCISE LIBRARY
       </button>
       {show && <ExerciseLibrary onClose={()=>setShow(false)}/>}
     </>
@@ -3149,6 +3165,8 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
   const [profile, setProfile] = useState(null);
   const [prog, setProg] = useState(null);
   const [showContact, setShowContact] = useState(false);
+  const [showBioAgeTest, setShowBioAgeTest] = useState(false);
+  const bioAgeDone = (() => { try { return !!localStorage.getItem("bioage_done_"+user.email); } catch { return false; } })();
 
   // Trainer client: skip profile setup, use trainer-assigned program
   if (user.isTrainerClient) {
@@ -3206,8 +3224,23 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
           <div style={{ marginTop:"4px", fontSize:"11px", color:ctx.daysLeft()<=7?"var(--a2)":"var(--a3)", textDecoration:"underline" }}>Upgrade to Pro →</div>
         </div>
       )}
+      {/* Bio Age reminder banner */}
+      {!bioAgeDone && (
+        <div onClick={()=>setShowBioAgeTest(true)} style={{ margin:"0 18px 11px", padding:"11px 13px", background:"rgba(139,92,246,.08)", border:"1px solid rgba(139,92,246,.3)", borderRadius:"12px", cursor:"pointer", display:"flex", alignItems:"center", gap:"10px" }}>
+          <span style={{ fontSize:"22px" }}>🧬</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", color:"#a78bfa", marginBottom:"2px" }}>DISCOVER YOUR FITNESS AGE</div>
+            <div style={{ fontSize:"11px", color:"rgba(255,255,255,.5)" }}>Take the 3-minute Bio Age test to personalise your plan →</div>
+          </div>
+        </div>
+      )}
       <div style={{ padding:"0 18px" }}>
-        {tab==="program" && prog && <ProgramView prog={prog}/>}
+        {tab==="program" && prog && (
+          <div>
+            <ProgramView prog={prog}/>
+            <MemberExLibBtn/>
+          </div>
+        )}
         {tab==="nutrition" && <NutritionHub/>}
         {tab==="wearables" && <WearablesHub/>}
         {tab==="exercises" && (
@@ -3225,7 +3258,7 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
               ))}
             </div>
             {/* Progress tracker with charts */}
-            <ProgressTracker storageKey={"progress_"+user.email}/>
+            <ProgressTracker storageKey={"progress_"+user.email} user={user}/>
             <div style={{ height:"1px", background:"rgba(255,255,255,.07)", margin:"20px 0" }}/>
             {/* Before & After photos */}
             <BeforeAfterPhotos storageKey={"photos_"+user.email}/>
@@ -3236,6 +3269,14 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
         )}
       </div>
       {showContact && <ContactModal onClose={()=>setShowContact(false)}/>}
+      {showBioAgeTest && (
+        <div style={{ position:"fixed", inset:0, zIndex:600, overflowY:"auto", background:"var(--bg)" }}>
+          <BioAgeTest user={user} onComplete={result=>{
+            try { localStorage.setItem("bioage_done_"+user.email,"1"); } catch {}
+            setShowBioAgeTest(false);
+          }}/>
+        </div>
+      )}
     </div>
   );
 }
@@ -3323,7 +3364,7 @@ function BeforeAfterPhotos({ storageKey }) {
 }
 
 // ─── Progress Tracker with Charts ─────────────────────────────────────────────
-function ProgressTracker({ storageKey }) {
+function ProgressTracker({ storageKey, user }) {
   const load = () => { try { return JSON.parse(localStorage.getItem(storageKey+"_prog")||"null"); } catch { return null; } };
   const defaultData = {
     weight:    [{ date:"Week 1", v:80 }, { date:"Week 2", v:79.2 }, { date:"Week 3", v:78.5 }, { date:"Week 4", v:77.8 }],
@@ -3336,6 +3377,7 @@ function ProgressTracker({ storageKey }) {
   const [showAdd, setShowAdd] = useState(false);
   const [newVal, setNewVal] = useState("");
   const [newWeek, setNewWeek] = useState("");
+  const [showBioAgeQuiz, setShowBioAgeQuiz] = useState(false);
 
   function addEntry() {
     if (!newVal || !newWeek) return;
@@ -3397,8 +3439,8 @@ function ProgressTracker({ storageKey }) {
       {/* Metric selector */}
       <div style={{ display:"flex", gap:"7px", marginBottom:"14px", overflowX:"auto", scrollbarWidth:"none" }}>
         {Object.entries(metrics).map(([k,m])=>(
-          <button key={k} onClick={()=>setMetric(k)} style={{ flexShrink:0, padding:"8px 14px", background:metric===k?m.col+"20":"rgba(255,255,255,.04)", border:`1.5px solid ${metric===k?m.col:"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:metric===k?m.col:"var(--mut)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fb)", fontWeight:metric===k?700:400, display:"flex", alignItems:"center", gap:"5px" }}>
-            <span>{m.icon}</span>{m.label}
+          <button key={k} onClick={()=>{ if(k==="bioAge"){ setMetric(k); setShowBioAgeQuiz(true); } else setMetric(k); }} style={{ flexShrink:0, padding:"8px 14px", background:metric===k?m.col+"20":"rgba(255,255,255,.04)", border:`1.5px solid ${metric===k?m.col:"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:metric===k?m.col:"var(--mut)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fb)", fontWeight:metric===k?700:400, display:"flex", alignItems:"center", gap:"5px" }}>
+            <span>{m.icon}</span>{m.label}{k==="bioAge"&&<span style={{fontSize:"9px",opacity:.6}}> ↗</span>}
           </button>
         ))}
       </div>
@@ -3842,131 +3884,183 @@ export default function App() {
 }
 
 
-// ─── Exercise Library (powered by wger/exercemus open database) ──────────────
-const EXERCISE_DB_URL = "https://raw.githubusercontent.com/exercemus/exercises/minified/minified-exercises.json";
+
+// ─── Exercise Library (ExerciseDB API — 1300+ exercises) ─────────────────────
+// Open source API: https://github.com/exercisedb/exercisedb-api
+// Data: name, body parts, target muscles, equipment, GIF images, instructions
+const EDB_BASE = "https://exercisedb-api.vercel.app/api/v1";
 
 function ExerciseLibrary({ onClose }) {
-  const [db, setDb] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [exercises, setExercises] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
-  const [filterMuscle, setFilterMuscle] = useState("all");
-  const [filterCat, setFilterCat] = useState("all");
-  const [filterEquip, setFilterEquip] = useState("all");
+  const [bodyPart, setBodyPart] = useState("all");
+  const [equipment, setEquipment] = useState("all");
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(0);
-  const PER_PAGE = 20;
+  const [searching, setSearching] = useState(false);
+  const PER = 20;
+  const searchTimer = useRef(null);
 
-  useEffect(() => {
-    fetch(EXERCISE_DB_URL)
-      .then(r => r.json())
-      .then(data => { setDb(data); setLoading(false); })
-      .catch(() => { setError("Couldn't load exercise database. Check your connection."); setLoading(false); });
-  }, []);
+  const BODY_PARTS = ["all","back","cardio","chest","lower arms","lower legs","neck","shoulders","upper arms","upper legs","waist"];
+  const EQUIPMENT  = ["all","barbell","dumbbell","cable","machine","kettlebell","band","ez barbell","body weight","assisted","weighted","sled machine","roller","leverage machine","rope","bosu ball","tire","trap bar","wheel roller"];
 
-  const MUSCLE_GROUPS = [
-    "all","abs","chest","shoulders","triceps","biceps","forearms","brachialis",
-    "lats","middle back","lower back","traps","neck",
-    "quads","hamstrings","glutes","calves","adductors","abductors",
-  ];
-  const CATS = ["all","strength","stretching","cardio","plyometrics","calisthenics","strongman","olympic weightlifting","crossfit"];
-  const EQUIPS = ["all","none","barbell","dumbbell","cable","machine","kettlebell","bands","pull-up bar","bench","gym mat","exercise ball","medicine ball","foam roll"];
-
-  const MUSCLE_COLS = {
-    abs:"#ff6b6b", chest:"#ffa07a", shoulders:"#dda0dd", triceps:"#87ceeb",
-    biceps:"#98fb98", forearms:"#f0e68c", lats:"#87cefa", "middle back":"#9370db",
-    "lower back":"#cd853f", traps:"#ff8c00", quads:"#00ced1", hamstrings:"#228b22",
-    glutes:"#ff69b4", calves:"#40e0d0", adductors:"#da70d6", abductors:"#7b68ee",
+  const COLS = {
+    back:"#60a5fa", chest:"#f87171", shoulders:"#c084fc", "upper arms":"#34d399",
+    "lower arms":"#a3e635", "upper legs":"#fb923c", "lower legs":"#22d3ee",
+    waist:"#fbbf24", cardio:"#f472b6", neck:"#94a3b8",
   };
 
-  const filtered = !db ? [] : db.exercises.filter(ex => {
-    const q = search.toLowerCase();
-    const nameMatch = ex.name.toLowerCase().includes(q);
-    const muscleMatch = filterMuscle === "all" || ex.primary_muscles?.includes(filterMuscle) || ex.secondary_muscles?.includes(filterMuscle);
-    const catMatch = filterCat === "all" || ex.category === filterCat;
-    const equipMatch = filterEquip === "all" || ex.equipment?.includes(filterEquip);
-    return nameMatch && muscleMatch && catMatch && equipMatch;
-  });
+  // Fetch by body part or all
+  async function loadExercises(bp) {
+    setLoading(true); setError(null); setPage(0); setSearch("");
+    try {
+      const url = bp && bp !== "all"
+        ? `${EDB_BASE}/exercises/bodyPart/${encodeURIComponent(bp)}?limit=200&offset=0`
+        : `${EDB_BASE}/exercises?limit=200&offset=0`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("API error "+res.status);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.exercises || data.data || data.results || []);
+      setExercises(list);
+    } catch(e) {
+      setError("Couldn't reach ExerciseDB API. Check your connection.");
+      setExercises([]);
+    }
+    setLoading(false);
+  }
 
-  const pages = Math.ceil(filtered.length / PER_PAGE);
-  const visible = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+  // Search by name
+  async function doSearch(q) {
+    if (!q.trim()) { loadExercises(bodyPart); return; }
+    setSearching(true); setError(null);
+    try {
+      const res = await fetch(`${EDB_BASE}/exercises/search?name=${encodeURIComponent(q)}&limit=100`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.exercises || data.data || []);
+      setExercises(list); setPage(0);
+    } catch {
+      setError("Search failed. Try browsing by body part.");
+    }
+    setSearching(false);
+  }
 
-  function resetPage() { setPage(0); }
+  useEffect(() => { loadExercises("all"); }, []);
 
-  // ── Selected Exercise Detail ───────────────────────────────────────────────
+  function onBodyPartChange(bp) {
+    setBodyPart(bp); setSearch(""); loadExercises(bp);
+  }
+
+  function onSearchChange(v) {
+    setSearch(v);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => doSearch(v), 500);
+  }
+
+  // Client-side equipment filter
+  const filtered = equipment === "all"
+    ? exercises
+    : exercises.filter(ex => (ex.equipment||"").toLowerCase().includes(equipment.replace(" ","").toLowerCase()) ||
+        (ex.equipments||[]).some(e => e.toLowerCase().includes(equipment.toLowerCase())));
+
+  const pages = Math.ceil(filtered.length / PER);
+  const visible = filtered.slice(page*PER, (page+1)*PER);
+
+  // Helper to build image URL — ExerciseDB serves GIF images
+  function imgUrl(ex) {
+    if (!ex) return null;
+    // gifUrl is absolute in RapidAPI version
+    if (ex.gifUrl) return ex.gifUrl;
+    // imageUrl may be relative in open-source version
+    if (ex.imageUrl) return ex.imageUrl.startsWith("http") ? ex.imageUrl : `${EDB_BASE}/images/${ex.imageUrl}`;
+    return null;
+  }
+
+  // ── Selected Exercise Detail ──────────────────────────────────────────────
   if (selected) {
-    const ytId = selected.video ? selected.video.match(/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]{11})/)?.[1] : null;
+    const img = imgUrl(selected);
+    const muscles = selected.targetMuscles || selected.target ? [selected.target].filter(Boolean) : [];
+    const secondary = selected.secondaryMuscles || [];
+    const instructions = selected.instructions || [];
+    const col = COLS[selected.bodyPart||selected.bodyParts?.[0]?.toLowerCase()] || "var(--acc)";
+
     return (
-      <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:700, display:"flex", flexDirection:"column", animation:"fadeIn .2s" }}>
-        <div style={{ padding:"14px 18px", background:"rgba(15,15,15,.98)", borderBottom:"1px solid rgba(255,255,255,.08)", display:"flex", alignItems:"center", gap:"11px", flexShrink:0 }}>
+      <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:800, display:"flex", flexDirection:"column", animation:"fadeIn .2s" }}>
+        <div style={{ padding:"14px 18px", background:"rgba(10,10,10,.98)", borderBottom:"1px solid rgba(255,255,255,.08)", display:"flex", alignItems:"center", gap:"11px", flexShrink:0 }}>
           <button onClick={()=>setSelected(null)} style={{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--mut)", cursor:"pointer", padding:"6px 13px", fontSize:"11px", fontFamily:"var(--fm)" }}>← BACK</button>
-          <div style={{ flex:1, fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px", color:"var(--acc)" }}>{selected.name.toUpperCase()}</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px", color:col }}>{selected.name?.toUpperCase()}</div>
+            <Mono>{selected.bodyPart || selected.bodyParts?.[0] || ""} · {selected.equipment || selected.equipments?.[0] || ""}</Mono>
+          </div>
         </div>
-        <div style={{ flex:1, overflowY:"auto", padding:"16px 18px" }}>
-          {/* YouTube thumbnail */}
-          {ytId && (
-            <a href={selected.video} target="_blank" rel="noopener noreferrer"
-              style={{ display:"block", position:"relative", borderRadius:"14px", overflow:"hidden", marginBottom:"14px", border:"1px solid rgba(255,255,255,.08)" }}>
-              <img src={"https://img.youtube.com/vi/"+ytId+"/maxresdefault.jpg"} alt={selected.name}
-                style={{ width:"100%", aspectRatio:"16/9", objectFit:"cover", filter:"brightness(.7)" }}
-                onError={e=>{ e.target.src="https://img.youtube.com/vi/"+ytId+"/mqdefault.jpg"; }}/>
-              <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <div style={{ width:"60px", height:"60px", borderRadius:"50%", background:"rgba(255,0,0,.9)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"22px" }}>▶</div>
-              </div>
-              <div style={{ position:"absolute", bottom:"10px", left:"12px", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px", color:"#fff", background:"rgba(0,0,0,.6)", padding:"4px 10px", borderRadius:"6px" }}>▶ WATCH ON YOUTUBE</div>
-            </a>
+        <div style={{ flex:1, overflowY:"auto", padding:"16px 18px 80px" }}>
+          {/* Exercise GIF / image */}
+          {img && (
+            <div style={{ borderRadius:"14px", overflow:"hidden", marginBottom:"14px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", maxHeight:"260px", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <img src={img} alt={selected.name} style={{ width:"100%", maxHeight:"260px", objectFit:"contain" }}
+                onError={e=>{ e.target.style.display="none"; }}/>
+            </div>
           )}
 
           {/* Tags */}
           <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"14px" }}>
-            {selected.category && <div style={{ padding:"4px 11px", background:"rgba(14,165,233,.12)", border:"1px solid rgba(14,165,233,.3)", borderRadius:"50px", fontSize:"11px", color:"var(--acc)", fontFamily:"var(--fm)" }}>{selected.category}</div>}
-            {selected.equipment?.map(e=><div key={e} style={{ padding:"4px 11px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"50px", fontSize:"11px", color:"var(--mut)", fontFamily:"var(--fm)" }}>🏋️ {e}</div>)}
+            {[selected.bodyPart||selected.bodyParts?.[0], selected.equipment||selected.equipments?.[0], selected.exerciseType].filter(Boolean).map((t,i)=>(
+              <div key={i} style={{ padding:"4px 11px", background:col+"18", border:`1px solid ${col}35`, borderRadius:"50px", fontSize:"11px", color:col, fontFamily:"var(--fm)" }}>{t}</div>
+            ))}
           </div>
 
           {/* Muscles */}
-          {(selected.primary_muscles?.length > 0 || selected.secondary_muscles?.length > 0) && (
+          {(muscles.length > 0 || secondary.length > 0) && (
             <Card style={{ padding:"13px", marginBottom:"12px" }}>
               <Mono style={{ marginBottom:"9px", color:"var(--tr)" }}>MUSCLES TARGETED</Mono>
-              {selected.primary_muscles?.length > 0 && (
-                <div style={{ marginBottom:"7px" }}>
+              {muscles.length > 0 && (
+                <div style={{ marginBottom:"8px" }}>
                   <div style={{ fontSize:"11px", color:"var(--mut)", marginBottom:"5px" }}>PRIMARY</div>
                   <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
-                    {selected.primary_muscles.map(m=>(
-                      <div key={m} style={{ padding:"4px 11px", background:(MUSCLE_COLS[m]||"#888")+"22", border:`1px solid ${(MUSCLE_COLS[m]||"#888")}50`, borderRadius:"50px", fontSize:"12px", color:MUSCLE_COLS[m]||"var(--txt)", fontWeight:600 }}>{m}</div>
-                    ))}
+                    {muscles.map((m,i)=><div key={i} style={{ padding:"4px 11px", background:col+"20", border:`1px solid ${col}40`, borderRadius:"50px", fontSize:"12px", color:col, fontWeight:600 }}>{m}</div>)}
                   </div>
                 </div>
               )}
-              {selected.secondary_muscles?.length > 0 && (
+              {secondary.length > 0 && (
                 <div>
                   <div style={{ fontSize:"11px", color:"var(--mut)", marginBottom:"5px" }}>SECONDARY</div>
                   <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
-                    {selected.secondary_muscles.map(m=>(
-                      <div key={m} style={{ padding:"3px 10px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"50px", fontSize:"11px", color:"var(--mut)" }}>{m}</div>
-                    ))}
+                    {secondary.slice(0,5).map((m,i)=><div key={i} style={{ padding:"3px 9px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"50px", fontSize:"11px", color:"var(--mut)" }}>{m}</div>)}
                   </div>
                 </div>
               )}
             </Card>
           )}
 
-          {/* Description */}
-          {selected.description && (
+          {/* Overview */}
+          {selected.overview && (
             <Card style={{ padding:"13px", marginBottom:"12px" }}>
               <Mono style={{ marginBottom:"8px" }}>ABOUT</Mono>
-              <div style={{ fontSize:"14px", color:"rgba(255,255,255,.7)", lineHeight:1.7 }}>{selected.description}</div>
+              <div style={{ fontSize:"14px", color:"rgba(255,255,255,.7)", lineHeight:1.75 }}>{selected.overview}</div>
             </Card>
           )}
 
           {/* Instructions */}
-          {selected.instructions?.length > 0 && (
+          {instructions.length > 0 && (
             <Card style={{ padding:"13px", marginBottom:"12px" }}>
               <Mono style={{ marginBottom:"10px", color:"var(--acc)" }}>HOW TO PERFORM</Mono>
-              {selected.instructions.map((step, i) => (
-                <div key={i} style={{ display:"flex", gap:"12px", marginBottom:"10px", paddingBottom:"10px", borderBottom:i<selected.instructions.length-1?"1px solid rgba(255,255,255,.05)":"none" }}>
+              {instructions.map((step, i)=>(
+                <div key={i} style={{ display:"flex", gap:"12px", marginBottom:"10px", paddingBottom:"10px", borderBottom:i<instructions.length-1?"1px solid rgba(255,255,255,.05)":"none" }}>
                   <div style={{ width:"26px", height:"26px", borderRadius:"50%", background:"var(--acc)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"11px", color:"#000", flexShrink:0, marginTop:"1px" }}>{i+1}</div>
-                  <div style={{ fontSize:"14px", color:"rgba(255,255,255,.8)", lineHeight:1.65, flex:1 }}>{step}</div>
+                  <div style={{ fontSize:"14px", color:"rgba(255,255,255,.8)", lineHeight:1.7, flex:1 }}>{step}</div>
                 </div>
+              ))}
+            </Card>
+          )}
+
+          {/* Variations */}
+          {selected.variations?.length > 0 && (
+            <Card style={{ padding:"13px" }}>
+              <Mono style={{ marginBottom:"9px" }}>VARIATIONS</Mono>
+              {selected.variations.slice(0,4).map((v,i)=>(
+                <div key={i} style={{ fontSize:"13px", color:"rgba(255,255,255,.65)", padding:"6px 0", borderBottom:i<3?"1px solid rgba(255,255,255,.05)":"none", lineHeight:1.6 }}>• {v}</div>
               ))}
             </Card>
           )}
@@ -3975,103 +4069,105 @@ function ExerciseLibrary({ onClose }) {
     );
   }
 
-  // ── Main Library View ─────────────────────────────────────────────────────
+  // ── Main Library List ─────────────────────────────────────────────────────
   return (
-    <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:650, display:"flex", flexDirection:"column", animation:"fadeIn .2s" }}>
+    <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:750, display:"flex", flexDirection:"column", animation:"fadeIn .2s" }}>
       {/* Header */}
-      <div style={{ padding:"14px 18px 0", background:"rgba(10,10,10,.98)", flexShrink:0 }}>
+      <div style={{ padding:"14px 18px 0", background:"rgba(10,10,10,.98)", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"12px" }}>
           <button onClick={onClose} style={{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--mut)", cursor:"pointer", padding:"6px 13px", fontSize:"11px", fontFamily:"var(--fm)" }}>← BACK</button>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"2px", color:"var(--acc)" }}>💪 EXERCISE LIBRARY</div>
-            <Mono>{loading?"Loading...":filtered.length+" exercises"}</Mono>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"2px", color:"var(--tr)" }}>💪 EXERCISE LIBRARY</div>
+            <Mono>{loading||searching ? "Loading..." : filtered.length+" exercises · ExerciseDB"}</Mono>
           </div>
         </div>
 
-        {/* Search */}
-        <input value={search} onChange={e=>{ setSearch(e.target.value); resetPage(); }}
-          placeholder="Search exercises..."
+        {/* Search bar */}
+        <input value={search} onChange={e=>onSearchChange(e.target.value)}
+          placeholder="Search exercises by name..."
           style={{ width:"100%", padding:"11px 14px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"10px", color:"var(--txt)", fontSize:"14px", fontFamily:"var(--fb)", outline:"none", marginBottom:"10px" }}/>
 
-        {/* Filters */}
-        <div style={{ display:"flex", gap:"7px", overflowX:"auto", scrollbarWidth:"none", marginBottom:"12px" }}>
-          {/* Category */}
-          <select value={filterCat} onChange={e=>{ setFilterCat(e.target.value); resetPage(); }}
-            style={{ flexShrink:0, padding:"6px 10px", background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--txt)", fontSize:"12px", fontFamily:"var(--fm)", cursor:"pointer" }}>
-            {CATS.map(c=><option key={c} value={c}>{c==="all"?"All types":c}</option>)}
-          </select>
-          {/* Muscle */}
-          <select value={filterMuscle} onChange={e=>{ setFilterMuscle(e.target.value); resetPage(); }}
-            style={{ flexShrink:0, padding:"6px 10px", background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:filterMuscle!=="all"?(MUSCLE_COLS[filterMuscle]||"var(--acc)"):"var(--txt)", fontSize:"12px", fontFamily:"var(--fm)", cursor:"pointer" }}>
-            {MUSCLE_GROUPS.map(m=><option key={m} value={m}>{m==="all"?"All muscles":m}</option>)}
-          </select>
-          {/* Equipment */}
-          <select value={filterEquip} onChange={e=>{ setFilterEquip(e.target.value); resetPage(); }}
-            style={{ flexShrink:0, padding:"6px 10px", background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--txt)", fontSize:"12px", fontFamily:"var(--fm)", cursor:"pointer" }}>
-            {EQUIPS.map(e=><option key={e} value={e}>{e==="all"?"All equipment":e}</option>)}
+        {/* Body part pills */}
+        <div style={{ display:"flex", gap:"6px", overflowX:"auto", scrollbarWidth:"none", paddingBottom:"12px" }}>
+          {BODY_PARTS.map(bp=>(
+            <button key={bp} onClick={()=>onBodyPartChange(bp)}
+              style={{ flexShrink:0, padding:"6px 13px", background:bodyPart===bp?(COLS[bp]||"var(--tr)")+"22":"rgba(255,255,255,.05)", border:`1.5px solid ${bodyPart===bp?(COLS[bp]||"var(--tr)"):"rgba(255,255,255,.1)"}`, borderRadius:"50px", color:bodyPart===bp?(COLS[bp]||"var(--tr)"):"var(--mut)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fb)", fontWeight:bodyPart===bp?700:400, whiteSpace:"nowrap" }}>
+              {bp==="all"?"All":bp}
+            </button>
+          ))}
+        </div>
+
+        {/* Equipment filter */}
+        <div style={{ paddingBottom:"11px" }}>
+          <select value={equipment} onChange={e=>{ setEquipment(e.target.value); setPage(0); }}
+            style={{ width:"100%", padding:"9px 12px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"9px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fm)", cursor:"pointer" }}>
+            {EQUIPMENT.map(e=><option key={e} value={e}>{e==="all"?"All equipment":e}</option>)}
           </select>
         </div>
       </div>
 
       {/* Content */}
       <div style={{ flex:1, overflowY:"auto", padding:"0 18px 80px" }}>
-        {loading && (
+        {(loading||searching) && (
           <div style={{ textAlign:"center", padding:"40px 0" }}>
-            <div style={{ width:"44px", height:"44px", borderRadius:"50%", border:"3px solid var(--acc)", borderTopColor:"transparent", animation:"spin 1s linear infinite", margin:"0 auto 14px" }}/>
-            <Mono style={{ color:"var(--acc)" }}>Loading 691+ exercises...</Mono>
-            <Mono style={{ marginTop:"4px" }}>Powered by wger open database</Mono>
+            <div style={{ width:"44px", height:"44px", borderRadius:"50%", border:"3px solid var(--tr)", borderTopColor:"transparent", animation:"spin 1s linear infinite", margin:"0 auto 14px" }}/>
+            <Mono style={{ color:"var(--tr)" }}>Loading exercises...</Mono>
           </div>
         )}
-        {error && <Card style={{ padding:"20px", textAlign:"center", marginTop:"20px" }}><div style={{ color:"var(--rd)", marginBottom:"8px" }}>⚠️</div><Mono>{error}</Mono></Card>}
 
-        {!loading && !error && visible.length === 0 && (
-          <Card style={{ padding:"24px", textAlign:"center", marginTop:"16px" }}>
-            <div style={{ fontSize:"32px", marginBottom:"10px" }}>🔍</div>
-            <Mono>No exercises found. Try adjusting your filters.</Mono>
+        {error && (
+          <Card style={{ padding:"20px", textAlign:"center", marginTop:"16px", border:"1px solid rgba(255,31,31,.2)" }}>
+            <div style={{ fontSize:"28px", marginBottom:"10px" }}>⚠️</div>
+            <Mono style={{ color:"var(--rd)", marginBottom:"8px" }}>{error}</Mono>
+            <button onClick={()=>loadExercises(bodyPart)} style={{ padding:"8px 18px", background:"var(--tr)", border:"none", borderRadius:"8px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px" }}>RETRY</button>
           </Card>
         )}
 
-        {!loading && visible.map((ex, i) => {
-          const primaryCol = MUSCLE_COLS[ex.primary_muscles?.[0]] || "var(--acc)";
-          const ytId = ex.video ? ex.video.match(/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]{11})/)?.[1] : null;
+        {!loading && !searching && !error && visible.length === 0 && (
+          <Card style={{ padding:"24px", textAlign:"center", marginTop:"16px" }}>
+            <div style={{ fontSize:"32px", marginBottom:"10px" }}>🔍</div>
+            <Mono>No exercises found. Try different filters.</Mono>
+          </Card>
+        )}
+
+        {!loading && !searching && visible.map((ex, i)=>{
+          const img = imgUrl(ex);
+          const bp = ex.bodyPart || ex.bodyParts?.[0]?.toLowerCase() || "";
+          const col = COLS[bp] || "var(--tr)";
           return (
-            <div key={i} onClick={()=>setSelected(ex)}
-              style={{ padding:"12px 14px", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:"12px", marginBottom:"8px", cursor:"pointer", display:"flex", alignItems:"center", gap:"12px", transition:"all .15s" }}>
-              {/* Thumbnail or muscle colour indicator */}
-              <div style={{ width:"48px", height:"48px", borderRadius:"10px", background:primaryCol+"18", border:`1.5px solid ${primaryCol}35`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:"20px" }}>
-                {ex.category==="strength"?"💪":ex.category==="stretching"?"🧘":ex.category==="cardio"?"🏃":ex.category==="plyometrics"?"⚡":ex.category==="calisthenics"?"🤸":"🏋️"}
+            <div key={ex.exerciseId||ex.id||i} onClick={()=>setSelected(ex)}
+              style={{ display:"flex", alignItems:"center", gap:"12px", padding:"11px 12px", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:"12px", marginBottom:"8px", cursor:"pointer" }}>
+              {/* Thumbnail */}
+              <div style={{ width:"54px", height:"54px", borderRadius:"10px", background:"rgba(255,255,255,.06)", border:`1.5px solid ${col}30`, overflow:"hidden", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                {img
+                  ? <img src={img} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{ e.target.style.display="none"; }}/>
+                  : <span style={{ fontSize:"20px" }}>💪</span>
+                }
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:700, fontSize:"14px", marginBottom:"3px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ex.name}</div>
                 <div style={{ display:"flex", gap:"5px", flexWrap:"wrap" }}>
-                  {ex.primary_muscles?.slice(0,2).map(m=>(
-                    <span key={m} style={{ fontSize:"10px", padding:"1px 7px", background:primaryCol+"15", border:`1px solid ${primaryCol}30`, borderRadius:"50px", color:primaryCol, fontFamily:"var(--fm)" }}>{m}</span>
-                  ))}
-                  {ex.equipment?.slice(0,1).map(e=>(
-                    <span key={e} style={{ fontSize:"10px", padding:"1px 7px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"50px", color:"var(--mut)", fontFamily:"var(--fm)" }}>{e}</span>
-                  ))}
+                  {bp && <span style={{ fontSize:"10px", padding:"2px 8px", background:col+"15", border:`1px solid ${col}30`, borderRadius:"50px", color:col, fontFamily:"var(--fm)" }}>{bp}</span>}
+                  {(ex.equipment||ex.equipments?.[0]) && <span style={{ fontSize:"10px", padding:"2px 8px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"50px", color:"var(--mut)", fontFamily:"var(--fm)" }}>{ex.equipment||ex.equipments?.[0]}</span>}
+                  {ex.exerciseType && <span style={{ fontSize:"10px", padding:"2px 8px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"50px", color:"var(--mut)", fontFamily:"var(--fm)" }}>{ex.exerciseType.replace("_"," ")}</span>}
                 </div>
               </div>
-              <div style={{ display:"flex", alignItems:"center", gap:"6px", flexShrink:0 }}>
-                {ytId && <div style={{ fontSize:"12px" }}>▶</div>}
-                <div style={{ color:"var(--mut)", fontSize:"16px" }}>›</div>
-              </div>
+              <div style={{ color:"var(--mut)", fontSize:"16px", flexShrink:0 }}>›</div>
             </div>
           );
         })}
 
         {/* Pagination */}
-        {!loading && pages > 1 && (
+        {!loading && !searching && pages > 1 && (
           <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"10px", padding:"16px 0" }}>
             <button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={page===0}
-              style={{ padding:"8px 16px", background:page===0?"rgba(255,255,255,.04)":"var(--acc)", border:"none", borderRadius:"8px", color:page===0?"var(--mut)":"#000", cursor:page===0?"default":"pointer", fontFamily:"var(--fd)", fontSize:"12px" }}>← PREV</button>
+              style={{ padding:"8px 18px", background:page===0?"rgba(255,255,255,.04)":"var(--tr)", border:"none", borderRadius:"8px", color:page===0?"var(--mut)":"#fff", cursor:page===0?"default":"pointer", fontFamily:"var(--fd)", fontSize:"12px" }}>← PREV</button>
             <Mono>{page+1} / {pages}</Mono>
             <button onClick={()=>setPage(p=>Math.min(pages-1,p+1))} disabled={page===pages-1}
-              style={{ padding:"8px 16px", background:page===pages-1?"rgba(255,255,255,.04)":"var(--acc)", border:"none", borderRadius:"8px", color:page===pages-1?"var(--mut)":"#000", cursor:page===pages-1?"default":"pointer", fontFamily:"var(--fd)", fontSize:"12px" }}>NEXT →</button>
+              style={{ padding:"8px 18px", background:page===pages-1?"rgba(255,255,255,.04)":"var(--tr)", border:"none", borderRadius:"8px", color:page===pages-1?"var(--mut)":"#fff", cursor:page===pages-1?"default":"pointer", fontFamily:"var(--fd)", fontSize:"12px" }}>NEXT →</button>
           </div>
         )}
-
-        {!loading && <Mono style={{ textAlign:"center", marginTop:"10px" }}>Data: wger open database (CC-BY-SA) · exercemus/exercises</Mono>}
+        {!loading && exercises.length > 0 && <Mono style={{ textAlign:"center", marginTop:"8px" }}>ExerciseDB Open Source API · exercisedb-api</Mono>}
       </div>
     </div>
   );
