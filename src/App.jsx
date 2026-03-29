@@ -75,10 +75,14 @@ const OWNER = { name:"Joao", email:"Jcsc04@gmail.com", password:"Fit2All2024" };
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 const store = {
-  get: key => { try { const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } },
-  set: (key, val) => { try { sessionStorage.setItem(key, JSON.stringify(val)); } catch {} },
+  get: key => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set: (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} },
+  del: key => { try { localStorage.removeItem(key); } catch {} },
 };
 const loadMemberSub = () => store.get("f2a_mem");
+const loadSession = () => store.get("f2a_session");
+const saveSession = s => store.set("f2a_session", s);
+const clearSession = () => { store.del("f2a_session"); store.del("f2a_mem"); store.del("f2a_tr"); };
 const saveMemberSub = s => store.set("f2a_mem", s);
 const mkMemberSub = id => { const s = { id, start: new Date().toISOString(), aiToday: 0, aiDate: new Date().toDateString() }; saveMemberSub(s); return s; };
 const loadTrainerSub = () => store.get("f2a_tr");
@@ -1489,7 +1493,7 @@ function ClientProfile({ client, notes, onBack, onUpdate, onDelete, onSuspend, p
                     <button onClick={sendProgram} disabled={!client.email} style={{ flex:1, padding:"9px", background:client.email?"rgba(14,165,233,.15)":"rgba(255,255,255,.05)", border:`1px solid ${client.email?"rgba(14,165,233,.3)":"rgba(255,255,255,.1)"}`, borderRadius:"9px", color:client.email?"var(--acc)":"var(--mut)", cursor:client.email?"pointer":"default", fontFamily:"var(--fd)", fontSize:"11px", letterSpacing:"1px" }}>📧 SEND TO CLIENT</button>
                   </div>
                 </Card>
-                <ProgramView prog={prog}/>
+                <ProgramView prog={prog} userEmail={user?.email}/>
               </div>
             ) : (
               <Card style={{ padding:"24px", textAlign:"center", border:"1px solid rgba(255,255,255,.08)" }}>
@@ -2112,7 +2116,7 @@ const MOCK_NOTES = {
   4:[{d:"Mar 11",n:"Hip flexibility improving.",m:"🧘"}],
 };
 
-function TrainerDashboard({ user, tab, setTab, onHome }) {
+function TrainerDashboard({ user, tab, setTab, onHome, onLogout }) {
   const [clients, setClients] = useState(MOCK_CLIENTS);
   const [notes, setNotes] = useState(MOCK_NOTES);
   const [selId, setSelId] = useState(null);
@@ -2182,7 +2186,10 @@ function TrainerDashboard({ user, tab, setTab, onHome }) {
         {/* Top row */}
         <div style={{ position:"absolute", top:0, left:0, right:0, padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div onClick={onHome} style={{ cursor:"pointer" }}><Wordmark size={22} col="rgba(255,255,255,.9)"/></div>
-          <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.15)", borderRadius:"50px", color:"rgba(255,255,255,.7)", cursor:"pointer", padding:"5px 13px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>CONTACT</button>
+          <div style={{ display:"flex", gap:"7px" }}>
+            <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"50px", color:"rgba(255,255,255,.6)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>CONTACT</button>
+            <button onClick={onLogout} style={{ background:"rgba(255,31,31,.12)", border:"1px solid rgba(255,31,31,.3)", borderRadius:"50px", color:"var(--rd)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>LOG OUT</button>
+          </div>
         </div>
         {/* Trainer info */}
         <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"0 18px 16px", display:"flex", alignItems:"flex-end", gap:"12px" }}>
@@ -2545,8 +2552,13 @@ function ProfileSetup({ onDone, user }) {
   const cur = steps[step];
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)" }}>
-      <HeroBg src={cur.img} ov="linear-gradient(180deg,rgba(10,10,10,.05) 0%,rgba(10,10,10,.88) 55%,rgba(10,10,10,1) 100%)" style={{ height:"210px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 20px", position:"relative" }}>
-        {step > 0 && <button onClick={()=>setStep(step-1)} style={{ position:"absolute", top:"14px", left:"14px", background:"rgba(0,0,0,.5)", border:"1px solid rgba(255,255,255,.15)", borderRadius:"8px", color:"rgba(255,255,255,.7)", cursor:"pointer", padding:"6px 11px", fontSize:"11px", fontFamily:"var(--fm)" }}>← BACK</button>}
+      {/* Back button — outside hero so it's always visible */}
+      {step > 0 && (
+        <div style={{ position:"fixed", top:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", zIndex:200, padding:"14px 18px", pointerEvents:"none" }}>
+          <button onClick={()=>setStep(step-1)} style={{ pointerEvents:"all", background:"rgba(10,10,10,.75)", border:"1px solid rgba(255,255,255,.2)", borderRadius:"10px", color:"rgba(255,255,255,.85)", cursor:"pointer", padding:"8px 14px", fontSize:"12px", fontFamily:"var(--fm)", backdropFilter:"blur(8px)" }}>← BACK</button>
+        </div>
+      )}
+      <HeroBg src={cur.img} ov="linear-gradient(180deg,rgba(10,10,10,.05) 0%,rgba(10,10,10,.88) 55%,rgba(10,10,10,1) 100%)" style={{ height:"210px", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 22px 20px" }}>
         <div style={{ display:"flex", gap:"5px", marginBottom:"10px" }}>{steps.map((_,i)=><div key={i} style={{ height:"4px", flex:1, background:i<=step?"var(--acc)":"rgba(255,255,255,.12)", borderRadius:"2px", transition:"background .3s" }}/>)}</div>
         <Mono style={{ color:"var(--acc)", marginBottom:"6px" }}>STEP {step+1} OF {steps.length}</Mono>
         <div style={{ fontFamily:"var(--fd)", fontSize:"clamp(22px,7vw,30px)", letterSpacing:"2px", lineHeight:1.1 }}>{cur.lbl}</div>
@@ -2802,10 +2814,293 @@ function ExerciseImage({ name, style }) {
 }
 
 
-function ProgramView({ prog }) {
+
+// ─── Exercise Detail Modal with Weight Logging ───────────────────────────────
+function ExerciseDetailModal({ exercise, userEmail, onClose }) {
+  const key = "exlog_" + (userEmail||"user") + "_" + (exercise.name||"").replace(/\s+/g,"_").toLowerCase();
+  const loadLogs = () => { try { return JSON.parse(localStorage.getItem(key)||"[]"); } catch { return []; } };
+  const [logs, setLogs] = useState(loadLogs);
+  const [weight, setWeight] = useState("");
+  const [reps, setReps] = useState(exercise.reps||"");
+  const [sets, setSets] = useState(exercise.sets||"3");
+  const [note, setNote] = useState("");
+  const [view, setView] = useState("detail"); // detail | log | progress
+  const [exData, setExData] = useState(null);
+  const [imgSrc, setImgSrc] = useState(null);
+  const FREE_EX_URL = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
+  const FREE_EX_IMG = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+
+  // Fetch exercise details from library
+  useEffect(() => {
+    fetch(FREE_EX_URL)
+      .then(r => r.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : [];
+        const q = (exercise.name||"").toLowerCase();
+        const match = list.find(e => e.name.toLowerCase() === q) ||
+                      list.find(e => q.includes(e.name.toLowerCase().split(" ")[0]) || e.name.toLowerCase().includes(q.split(" ")[0]));
+        if (match) {
+          setExData(match);
+          if (match.images?.length) setImgSrc(FREE_EX_IMG + encodeURIComponent(match.id) + "/" + match.images[0]);
+        }
+      }).catch(()=>{});
+  }, [exercise.name]);
+
+  function saveLog() {
+    if (!weight) return;
+    const entry = {
+      date: new Date().toISOString(),
+      dateLabel: new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}),
+      weight: parseFloat(weight),
+      reps: reps,
+      sets: sets,
+      note: note,
+      volume: parseFloat(weight) * parseInt(sets||1) * parseInt(reps?.split("-")[0]||1),
+    };
+    const updated = [...logs, entry];
+    setLogs(updated);
+    try { localStorage.setItem(key, JSON.stringify(updated)); } catch {}
+    setWeight(""); setNote(""); setView("progress");
+  }
+
+  // Group logs by week/month for chart
+  const byDate = logs.slice(-12).map(l=>({ date:l.dateLabel, v:l.weight, vol:l.volume }));
+  const maxW = byDate.length ? Math.max(...byDate.map(l=>l.v)) : 0;
+  const minW = byDate.length ? Math.min(...byDate.map(l=>l.v)) : 0;
+  const latestW = logs.length ? logs[logs.length-1].weight : null;
+  const firstW = logs.length ? logs[0].weight : null;
+  const pr = logs.length ? Math.max(...logs.map(l=>l.weight)) : null;
+
+  const primaryMuscle = exData?.primaryMuscles?.[0] || exercise.muscleTarget?.split(".")?.[0] || "";
+  const MCOLS = { chest:"#f87171",back:"#60a5fa",shoulders:"#c084fc",biceps:"#34d399",triceps:"#a3e635",quadriceps:"#fb923c",hamstrings:"#22d3ee",glutes:"#f472b6",abdominals:"#fbbf24",calves:"#4ade80" };
+  const mcol = MCOLS[primaryMuscle] || "var(--acc)";
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:800, display:"flex", flexDirection:"column", animation:"fadeIn .2s" }}>
+      {/* Header */}
+      <div style={{ padding:"14px 18px", background:"rgba(10,10,10,.98)", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"10px" }}>
+          <button onClick={onClose} style={{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--mut)", cursor:"pointer", padding:"6px 13px", fontSize:"11px", fontFamily:"var(--fm)" }}>← BACK</button>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px", color:mcol }}>{exercise.name}</div>
+            <Mono>{primaryMuscle || exercise.muscleTarget}</Mono>
+          </div>
+          {pr && <div style={{ textAlign:"right" }}><div style={{ fontFamily:"var(--fd)", fontSize:"18px", color:"var(--a3)" }}>{pr}kg</div><Mono style={{fontSize:"9px"}}>PB</Mono></div>}
+        </div>
+        <div style={{ display:"flex", gap:"6px" }}>
+          {[["detail","📋 Details"],["log","⚖️ Log"],["progress","📈 Progress"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setView(v)} style={{ flex:1, padding:"7px", background:view===v?"var(--tr)":"rgba(255,255,255,.05)", border:`1px solid ${view===v?"var(--tr)":"rgba(255,255,255,.08)"}`, borderRadius:"8px", color:view===v?"#fff":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fb)", fontWeight:600 }}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ flex:1, overflowY:"auto", padding:"14px 18px 40px" }}>
+
+        {/* ── DETAIL VIEW ── */}
+        {view==="detail" && (
+          <div>
+            {/* Image */}
+            <div style={{ borderRadius:"14px", overflow:"hidden", marginBottom:"14px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", height:"200px", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              {imgSrc
+                ? <img src={imgSrc} alt={exercise.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{ e.target.style.display="none"; }}/>
+                : <div style={{ textAlign:"center" }}><div style={{ fontSize:"40px", marginBottom:"8px" }}>💪</div><Mono>Loading image...</Mono></div>
+              }
+            </div>
+
+            {/* Workout prescription */}
+            <Card style={{ padding:"14px", marginBottom:"12px", border:`1px solid ${mcol}25` }}>
+              <Mono style={{ color:mcol, marginBottom:"10px" }}>PRESCRIPTION</Mono>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"8px", marginBottom:"10px" }}>
+                {[{l:"Sets",v:exercise.sets},{l:"Reps",v:exercise.reps},{l:"Rest",v:exercise.rest},{l:"Tempo",v:exercise.tempo},{l:"RPE",v:exercise.rpe}].filter(x=>x.v).map(x=>(
+                  <div key={x.l} style={{ textAlign:"center", padding:"8px 4px", background:"rgba(255,255,255,.04)", borderRadius:"8px" }}>
+                    <div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:mcol, lineHeight:1 }}>{x.v}</div>
+                    <Mono style={{ fontSize:"9px", marginTop:"3px" }}>{x.l}</Mono>
+                  </div>
+                ))}
+              </div>
+              {exercise.cues && (
+                <div style={{ padding:"9px 11px", background:"rgba(14,165,233,.06)", border:"1px solid rgba(14,165,233,.15)", borderRadius:"9px", marginBottom:"8px" }}>
+                  <Mono style={{ color:"var(--acc)", marginBottom:"4px" }}>TECHNIQUE CUES</Mono>
+                  <div style={{ fontSize:"14px", color:"rgba(255,255,255,.8)", lineHeight:1.7 }}>{exercise.cues}</div>
+                </div>
+              )}
+              {exercise.progression && <div style={{ fontSize:"12px", color:"var(--a3)", lineHeight:1.6 }}>📈 {exercise.progression}</div>}
+            </Card>
+
+            {/* From exercise library */}
+            {exData && (
+              <Card style={{ padding:"14px", marginBottom:"12px" }}>
+                <Mono style={{ marginBottom:"10px", color:"var(--acc)" }}>MUSCLES WORKED</Mono>
+                {exData.primaryMuscles?.length > 0 && (
+                  <div style={{ marginBottom:"8px" }}>
+                    <div style={{ fontSize:"11px", color:"var(--mut)", marginBottom:"5px" }}>PRIMARY</div>
+                    <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
+                      {exData.primaryMuscles.map(m=><div key={m} style={{ padding:"4px 11px", background:mcol+"20", border:`1px solid ${mcol}40`, borderRadius:"50px", fontSize:"12px", color:mcol, fontWeight:600 }}>{m}</div>)}
+                    </div>
+                  </div>
+                )}
+                {exData.secondaryMuscles?.length > 0 && (
+                  <div style={{ marginBottom:"10px" }}>
+                    <div style={{ fontSize:"11px", color:"var(--mut)", marginBottom:"5px" }}>SECONDARY</div>
+                    <div style={{ display:"flex", gap:"5px", flexWrap:"wrap" }}>
+                      {exData.secondaryMuscles.slice(0,4).map(m=><div key={m} style={{ padding:"3px 9px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"50px", fontSize:"11px", color:"var(--mut)" }}>{m}</div>)}
+                    </div>
+                  </div>
+                )}
+                {exData.instructions?.length > 0 && (
+                  <>
+                    <Mono style={{ marginBottom:"8px", color:"var(--acc)" }}>HOW TO PERFORM</Mono>
+                    {exData.instructions.slice(0,4).map((step,i)=>(
+                      <div key={i} style={{ display:"flex", gap:"10px", marginBottom:"8px", paddingBottom:"8px", borderBottom:i<Math.min(3,exData.instructions.length-1)?"1px solid rgba(255,255,255,.05)":"none" }}>
+                        <div style={{ width:"22px", height:"22px", borderRadius:"50%", background:"var(--tr)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--fd)", fontSize:"10px", color:"#fff", flexShrink:0 }}>{i+1}</div>
+                        <div style={{ fontSize:"13px", color:"rgba(255,255,255,.75)", lineHeight:1.65, flex:1 }}>{step}</div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </Card>
+            )}
+
+            <button onClick={()=>setView("log")} style={{ width:"100%", padding:"14px", background:"var(--tr)", border:"none", borderRadius:"var(--r)", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"2px" }}>⚖️ LOG THIS WORKOUT</button>
+          </div>
+        )}
+
+        {/* ── LOG VIEW ── */}
+        {view==="log" && (
+          <div>
+            <Card style={{ padding:"15px", marginBottom:"12px", border:"1px solid rgba(255,31,31,.2)" }}>
+              <Mono style={{ color:"var(--tr)", marginBottom:"12px" }}>LOG WORKOUT — {new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</Mono>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"9px", marginBottom:"12px" }}>
+                <div>
+                  <Mono style={{ marginBottom:"6px" }}>WEIGHT (kg)</Mono>
+                  <input type="number" value={weight} onChange={e=>setWeight(e.target.value)} placeholder="60" inputMode="decimal"
+                    style={{ width:"100%", padding:"11px 10px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,31,31,.3)", borderRadius:"9px", color:"var(--txt)", fontSize:"18px", fontFamily:"var(--fd)", outline:"none", textAlign:"center", letterSpacing:"1px" }}/>
+                </div>
+                <div>
+                  <Mono style={{ marginBottom:"6px" }}>SETS</Mono>
+                  <input type="number" value={sets} onChange={e=>setSets(e.target.value)} placeholder="3" inputMode="numeric"
+                    style={{ width:"100%", padding:"11px 10px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"9px", color:"var(--txt)", fontSize:"18px", fontFamily:"var(--fd)", outline:"none", textAlign:"center" }}/>
+                </div>
+                <div>
+                  <Mono style={{ marginBottom:"6px" }}>REPS</Mono>
+                  <input type="text" value={reps} onChange={e=>setReps(e.target.value)} placeholder="10"
+                    style={{ width:"100%", padding:"11px 10px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"9px", color:"var(--txt)", fontSize:"18px", fontFamily:"var(--fd)", outline:"none", textAlign:"center" }}/>
+                </div>
+              </div>
+              <Field lbl="NOTE (optional)" val={note} set={setNote} ph="How it felt, form notes..." acc="var(--tr)"/>
+              <PBtn onClick={saveLog} disabled={!weight} col="var(--tr)" style={{ marginTop:"12px", color:"#fff" }}>SAVE SESSION</PBtn>
+            </Card>
+
+            {/* Recent logs */}
+            {logs.length > 0 && (
+              <div>
+                <Mono style={{ marginBottom:"9px" }}>RECENT SESSIONS</Mono>
+                {logs.slice().reverse().slice(0,5).map((l,i)=>(
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 12px", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:"10px", marginBottom:"7px" }}>
+                    <div>
+                      <div style={{ fontFamily:"var(--fm)", fontSize:"11px", color:"var(--mut)", marginBottom:"2px" }}>{l.dateLabel}</div>
+                      <div style={{ fontSize:"13px", fontWeight:600 }}>{l.weight}kg × {l.sets} sets × {l.reps} reps</div>
+                      {l.note && <div style={{ fontSize:"11px", color:"var(--mut)", marginTop:"2px" }}>{l.note}</div>}
+                    </div>
+                    <div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:"var(--a3)" }}>{l.volume ? Math.round(l.volume)+"kg" : ""}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── PROGRESS VIEW ── */}
+        {view==="progress" && (
+          <div>
+            {logs.length === 0 ? (
+              <Card style={{ padding:"30px", textAlign:"center" }}>
+                <div style={{ fontSize:"40px", marginBottom:"12px" }}>📈</div>
+                <div style={{ fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"1px", marginBottom:"8px" }}>NO DATA YET</div>
+                <div style={{ fontSize:"13px", color:"var(--mut)", marginBottom:"18px", lineHeight:1.6 }}>Log your first session to start tracking progress.</div>
+                <PBtn onClick={()=>setView("log")} col="var(--tr)" style={{ color:"#fff" }}>⚖️ LOG FIRST SESSION</PBtn>
+              </Card>
+            ) : (
+              <div>
+                {/* Summary cards */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"8px", marginBottom:"14px" }}>
+                  {[
+                    {l:"Sessions",v:logs.length,c:"var(--acc)"},
+                    {l:"Personal Best",v:pr+"kg",c:"var(--a3)"},
+                    {l:"Progress",v:firstW&&latestW?(latestW-firstW>0?"+":"")+(latestW-firstW).toFixed(1)+"kg":"—",c:firstW&&latestW&&latestW>firstW?"var(--a3)":"var(--rd)"},
+                  ].map(s=>(
+                    <Card key={s.l} style={{ padding:"11px", textAlign:"center" }}>
+                      <div style={{ fontFamily:"var(--fd)", fontSize:"20px", color:s.c, lineHeight:1 }}>{s.v}</div>
+                      <Mono style={{ fontSize:"9px", marginTop:"3px" }}>{s.l}</Mono>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Weight chart */}
+                {byDate.length >= 2 && (
+                  <Card style={{ padding:"14px", marginBottom:"12px" }}>
+                    <Mono style={{ marginBottom:"12px", color:"var(--tr)" }}>WEIGHT OVER TIME</Mono>
+                    <div style={{ position:"relative", height:"80px", marginBottom:"8px" }}>
+                      <svg width="100%" height="80" viewBox={`0 0 ${Math.max(byDate.length*50,200)} 80`} preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--tr)" stopOpacity="0.3"/>
+                            <stop offset="100%" stopColor="var(--tr)" stopOpacity="0"/>
+                          </linearGradient>
+                        </defs>
+                        {byDate.length >= 2 && (() => {
+                          const W = Math.max(byDate.length*50,200), H = 80;
+                          const range = maxW - minW || 1;
+                          const xs = byDate.map((_,i)=>(i/(byDate.length-1))*W);
+                          const ys = byDate.map(d=>H - ((d.v-minW)/range)*(H-10) - 5);
+                          const pathD = xs.map((x,i)=>(i===0?"M":"L")+x.toFixed(0)+","+ys[i].toFixed(0)).join(" ");
+                          const areaD = pathD+" L"+W+","+H+" L0,"+H+" Z";
+                          return (
+                            <>
+                              <path d={areaD} fill="url(#wg)"/>
+                              <path d={pathD} stroke="var(--tr)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                              {xs.map((x,i)=><circle key={i} cx={x} cy={ys[i]} r="4" fill="var(--tr)" stroke="var(--bg)" strokeWidth="2"/>)}
+                            </>
+                          );
+                        })()}
+                      </svg>
+                    </div>
+                    <div style={{ display:"flex", justifyContent:"space-between" }}>
+                      {byDate.slice(0,6).map((d,i)=><Mono key={i} style={{ fontSize:"8px", textAlign:"center" }}>{d.date.split(" ").slice(0,2).join(" ")}</Mono>)}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Full session history */}
+                <Mono style={{ marginBottom:"9px" }}>ALL SESSIONS ({logs.length})</Mono>
+                {logs.slice().reverse().map((l,i)=>(
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"10px 12px", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.06)", borderRadius:"9px", marginBottom:"6px" }}>
+                    <div>
+                      <Mono style={{ marginBottom:"2px" }}>{l.dateLabel}</Mono>
+                      <div style={{ fontSize:"14px", fontWeight:600 }}>{l.weight}kg × {l.sets} × {l.reps}</div>
+                      {l.note && <div style={{ fontSize:"11px", color:"var(--mut)", marginTop:"1px" }}>{l.note}</div>}
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontFamily:"var(--fd)", fontSize:"15px", color:"var(--a3)" }}>{Math.round(l.volume||0)}</div>
+                      <Mono style={{ fontSize:"9px" }}>vol kg</Mono>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+function ProgramView({ prog, userEmail }) {
   const [activeWeek, setActiveWeek] = useState(0);
   const [expDay, setExpDay] = useState(0);
   const [activeTab, setActiveTab] = useState("schedule");
+  const [selectedEx, setSelectedEx] = useState(null);
 
   // Support both old format (weeklySchedule) and new (phases)
   const hasPhases = prog.phases && prog.phases.length > 0;
@@ -2823,6 +3118,8 @@ function ProgramView({ prog }) {
 
   return (
     <div style={{ animation:"fadeIn .5s" }}>
+      {/* Exercise detail modal */}
+      {selectedEx && <ExerciseDetailModal exercise={selectedEx} userEmail={userEmail} onClose={()=>setSelectedEx(null)}/>}
       {/* Program header card */}
       <Card style={{ padding:"16px", marginBottom:"12px", border:"1px solid rgba(14,165,233,.15)" }}>
         <div style={{ fontFamily:"var(--fd)", fontSize:"20px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"8px" }}>{prog.programName}</div>
@@ -2913,7 +3210,8 @@ function ProgramView({ prog }) {
                   {/* Exercises */}
                   <div style={{ padding:"0 14px" }}>
                     {(day.exercises || []).map((ex, j) => (
-                      <div key={j} style={{ padding:"12px 0", borderBottom:j<(day.exercises.length-1)?"1px solid rgba(255,255,255,.04)":"none" }}>
+                      <div key={j} onClick={()=>setSelectedEx(ex)} style={{ padding:"12px 0", borderBottom:j<(day.exercises.length-1)?"1px solid rgba(255,255,255,.04)":"none", cursor:"pointer", position:"relative" }}>
+                        <div style={{ position:"absolute", top:"12px", right:"0", fontSize:"10px", color:"var(--mut)", fontFamily:"var(--fm)" }}>TAP FOR DETAIL →</div>
                         {/* Exercise image — live from ExerciseDB */}
                         <ExerciseImage name={ex.name}/>
                         {/* Exercise name row */}
@@ -2937,7 +3235,7 @@ function ProgramView({ prog }) {
                         {ex.cues && (
                           <div style={{ padding:"7px 10px", background:"rgba(14,165,233,.05)", border:"1px solid rgba(14,165,233,.1)", borderRadius:"7px", marginBottom:"4px" }}>
                             <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--acc)", letterSpacing:"1px", marginBottom:"2px" }}>TECHNIQUE CUES</div>
-                            <div style={{ fontSize:"14px", color:"rgba(255,255,255,.8)", lineHeight:1.6 }}>{ex.cues}</div>
+                            <div style={{ fontSize:"16px", color:"rgba(255,255,255,.88)", lineHeight:1.7 }}>{ex.cues}</div>
                           </div>
                         )}
                         {/* Progression */}
@@ -2965,6 +3263,8 @@ function ProgramView({ prog }) {
                       <div style={{ fontSize:"12px", color:"rgba(255,255,255,.55)", lineHeight:1.6 }}>{day.sessionNotes}</div>
                     </div>
                   )}
+                  {/* Complete workout button */}
+                  <CompleteWorkoutBtn dayKey={(currentWeek?.week||1)+"-"+i} userEmail={userEmail}/>
                 </div>
               )}
             </Card>
@@ -3147,6 +3447,178 @@ function MemberPackages({ user }) {
 }
 
 
+// ─── Complete Workout Button ───────────────────────────────────────────────────
+function CompleteWorkoutBtn({ dayKey, userEmail }) {
+  const storageKey = "completed_workouts_" + (userEmail||"user");
+  const load = () => { try { return JSON.parse(localStorage.getItem(storageKey)||"{}"); } catch { return {}; } };
+  const [done, setDone] = useState(() => !!load()[dayKey]);
+  const [popped, setPopped] = useState(false);
+
+  function toggle() {
+    const current = load();
+    if (done) {
+      delete current[dayKey];
+    } else {
+      const today = new Date();
+      current[dayKey] = {
+        date: today.toISOString(),
+        dateLabel: today.toLocaleDateString("en-GB",{year:"numeric",month:"2-digit",day:"2-digit"}),
+        dayKey,
+      };
+      setPopped(true);
+      setTimeout(()=>setPopped(false), 1500);
+    }
+    try { localStorage.setItem(storageKey, JSON.stringify(current)); } catch {}
+    setDone(!done);
+  }
+
+  return (
+    <div style={{ padding:"12px 14px", borderTop:"1px solid rgba(255,255,255,.06)", background:"rgba(255,255,255,.02)" }}>
+      <button onClick={toggle} style={{ width:"100%", padding:"13px", background:done?"rgba(34,197,94,.12)":"var(--tr)", border:done?"2px solid rgba(34,197,94,.4)":"none", borderRadius:"12px", color:done?"#22c55e":"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px", transition:"all .3s", position:"relative", overflow:"hidden" }}>
+        {done ? "✅ WORKOUT COMPLETED" : "💪 MARK AS COMPLETE"}
+      </button>
+      {popped && (
+        <div style={{ textAlign:"center", marginTop:"8px", animation:"pop .4s ease" }}>
+          <span style={{ fontSize:"28px" }}>🎉</span>
+          <div style={{ fontFamily:"var(--fd)", fontSize:"12px", color:"#22c55e", letterSpacing:"1px", marginTop:"3px" }}>GREAT WORK!</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Workout Calendar View ─────────────────────────────────────────────────────
+function WorkoutCalendar({ userEmail }) {
+  const storageKey = "completed_workouts_" + (userEmail||"user");
+  const load = () => { try { return JSON.parse(localStorage.getItem(storageKey)||"{}"); } catch { return {}; } };
+  const [completed, setCompleted] = useState(load);
+
+  // Reload on focus
+  useEffect(() => {
+    const refresh = () => setCompleted(load());
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, []);
+
+  const now = new Date();
+  const [viewMonth, setViewMonth] = useState(now.getMonth());
+  const [viewYear, setViewYear] = useState(now.getFullYear());
+
+  const monthName = new Date(viewYear, viewMonth, 1).toLocaleString("en-GB",{month:"long",year:"numeric"});
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+
+  // Build set of completed date strings "dd/mm/yyyy"
+  const completedDates = new Set(
+    Object.values(completed).map(c => c.dateLabel).filter(Boolean)
+  );
+
+  function fmt(d) {
+    return String(d).padStart(2,"0") + "/" + String(viewMonth+1).padStart(2,"0") + "/" + viewYear;
+  }
+
+  const totalDone = Object.keys(completed).length;
+  const thisMonthDone = Object.values(completed).filter(c=>c.dateLabel&&c.dateLabel.endsWith("/"+String(viewMonth+1).padStart(2,"0")+"/"+viewYear)).length;
+
+  return (
+    <div style={{ animation:"fadeIn .3s" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"14px" }}>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"1px" }}>🗓 WORKOUT CALENDAR</div>
+        <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+          <button onClick={()=>{ let m=viewMonth-1; let y=viewYear; if(m<0){m=11;y--;} setViewMonth(m); setViewYear(y); }} style={{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--txt)", cursor:"pointer", padding:"5px 10px", fontSize:"14px" }}>‹</button>
+          <button onClick={()=>{ let m=viewMonth+1; let y=viewYear; if(m>11){m=0;y++;} setViewMonth(m); setViewYear(y); }} style={{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--txt)", cursor:"pointer", padding:"5px 10px", fontSize:"14px" }}>›</button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"9px", marginBottom:"14px" }}>
+        <Card style={{ padding:"13px", textAlign:"center" }}>
+          <div style={{ fontFamily:"var(--fd)", fontSize:"28px", color:"#22c55e", lineHeight:1 }}>{thisMonthDone}</div>
+          <Mono style={{ marginTop:"4px" }}>This month</Mono>
+        </Card>
+        <Card style={{ padding:"13px", textAlign:"center" }}>
+          <div style={{ fontFamily:"var(--fd)", fontSize:"28px", color:"var(--acc)", lineHeight:1 }}>{totalDone}</div>
+          <Mono style={{ marginTop:"4px" }}>All time</Mono>
+        </Card>
+      </div>
+
+      {/* Month calendar */}
+      <Card style={{ padding:"14px", marginBottom:"14px" }}>
+        <div style={{ fontFamily:"var(--fd)", fontSize:"13px", letterSpacing:"1px", textAlign:"center", marginBottom:"12px", color:"var(--acc)" }}>{monthName.toUpperCase()}</div>
+
+        {/* Day headers */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", marginBottom:"6px" }}>
+          {["S","M","T","W","T","F","S"].map((d,i)=>(
+            <div key={i} style={{ textAlign:"center", fontFamily:"var(--fm)", fontSize:"10px", color:"var(--mut)", padding:"3px 0" }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Days grid */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:"3px" }}>
+          {/* Empty cells for first week offset */}
+          {Array(firstDay).fill(null).map((_,i)=><div key={"e"+i}/>)}
+          {/* Day cells */}
+          {Array(daysInMonth).fill(null).map((_,i)=>{
+            const day = i + 1;
+            const dateStr = fmt(day);
+            const isCompleted = completedDates.has(dateStr);
+            const isToday = day===now.getDate() && viewMonth===now.getMonth() && viewYear===now.getFullYear();
+            const isPast = new Date(viewYear, viewMonth, day) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            return (
+              <div key={day} style={{
+                aspectRatio:"1",
+                borderRadius:"8px",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                background: isCompleted ? "rgba(34,197,94,.2)" : isToday ? "rgba(14,165,233,.15)" : "transparent",
+                border: isCompleted ? "1.5px solid rgba(34,197,94,.5)" : isToday ? "1.5px solid var(--acc)" : "1px solid rgba(255,255,255,.05)",
+                position:"relative",
+              }}>
+                <span style={{ fontFamily:"var(--fb)", fontSize:"12px", fontWeight:isToday||isCompleted?700:400, color: isCompleted ? "#22c55e" : isToday ? "var(--acc)" : isPast ? "rgba(255,255,255,.4)" : "var(--txt)" }}>{day}</span>
+                {isCompleted && <div style={{ position:"absolute", bottom:"2px", left:"50%", transform:"translateX(-50%)", width:"4px", height:"4px", borderRadius:"50%", background:"#22c55e" }}/>}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Legend */}
+      <div style={{ display:"flex", gap:"16px", justifyContent:"center", marginBottom:"14px" }}>
+        {[["#22c55e","Completed"],["var(--acc)","Today"]].map(([c,l])=>(
+          <div key={l} style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+            <div style={{ width:"12px", height:"12px", borderRadius:"3px", background:c+"30", border:`1.5px solid ${c}` }}/>
+            <Mono style={{ fontSize:"10px" }}>{l}</Mono>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent completions */}
+      {Object.keys(completed).length > 0 && (
+        <div>
+          <Mono style={{ marginBottom:"9px" }}>COMPLETED SESSIONS ({Object.keys(completed).length})</Mono>
+          {Object.values(completed).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10).map((c,i)=>(
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:"10px", padding:"9px 12px", background:"rgba(34,197,94,.06)", border:"1px solid rgba(34,197,94,.15)", borderRadius:"10px", marginBottom:"7px" }}>
+              <span style={{ fontSize:"16px" }}>✅</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:"13px", fontWeight:600 }}>Session completed</div>
+                <Mono style={{ marginTop:"2px" }}>{c.dateLabel}</Mono>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {Object.keys(completed).length === 0 && (
+        <Card style={{ padding:"24px", textAlign:"center" }}>
+          <div style={{ fontSize:"36px", marginBottom:"10px" }}>🏋️</div>
+          <div style={{ fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px", marginBottom:"8px" }}>NO WORKOUTS YET</div>
+          <div style={{ fontSize:"13px", color:"var(--mut)", lineHeight:1.6 }}>Complete your first workout to see it appear here in green.</div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+
 function MemberExLibBtn() {
   const [show, setShow] = useState(false);
   return (
@@ -3160,7 +3632,7 @@ function MemberExLibBtn() {
 }
 
 // ─── Member Dashboard ──────────────────────────────────────────────────────────
-function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
+function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome, onLogout }) {
   const [showGen, setShowGen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [prog, setProg] = useState(null);
@@ -3185,7 +3657,10 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
         {/* Top row */}
         <div style={{ position:"absolute", top:0, left:0, right:0, padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div onClick={onHome} style={{ cursor:"pointer" }}><Wordmark size={22} col="rgba(255,255,255,.9)"/></div>
-          <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.15)", borderRadius:"50px", color:"rgba(255,255,255,.7)", cursor:"pointer", padding:"5px 13px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>CONTACT</button>
+          <div style={{ display:"flex", gap:"7px" }}>
+            <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"50px", color:"rgba(255,255,255,.6)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>CONTACT</button>
+            <button onClick={onLogout} style={{ background:"rgba(255,31,31,.12)", border:"1px solid rgba(255,31,31,.3)", borderRadius:"50px", color:"var(--rd)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>LOG OUT</button>
+          </div>
         </div>
         {/* User info row */}
         <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"0 18px 16px", display:"flex", alignItems:"flex-end", gap:"12px" }}>
@@ -3237,7 +3712,7 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
       <div style={{ padding:"0 18px" }}>
         {tab==="program" && prog && (
           <div>
-            <ProgramView prog={prog}/>
+            <ProgramView prog={prog} userEmail={user.email}/>
             <MemberExLibBtn/>
           </div>
         )}
@@ -3248,6 +3723,12 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome }) {
         )}
         {tab==="packages" && (
           <MemberPackages user={user}/>
+        )}
+        {tab==="calendar" && (
+          <WorkoutCalendar userEmail={user.email}/>
+        )}
+        {tab==="calendar" && (
+          <WorkoutCalendar userEmail={user.email}/>
         )}
         {tab==="stats" && (
           <div style={{ animation:"fadeIn .4s" }}>
@@ -3526,8 +4007,8 @@ function UpgradeBtn({ onUpgrade }) {
 }
 
 // ─── Plan Selection ────────────────────────────────────────────────────────────
-function PlanScreen({ onSelect, onBack }) {
-  const [sel, setSel] = useState("free");
+function PlanScreen({ onSelect, onBack, defaultPlan }) {
+  const [sel, setSel] = useState(defaultPlan||"free");
   const [showPP, setShowPP] = useState(false);
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", overflowY:"auto" }}>
@@ -3589,7 +4070,7 @@ function UpgradeModal({ reason, onUpgrade, onClose }) {
 }
 
 // ─── Splash + Auth ─────────────────────────────────────────────────────────────
-function SplashScreen({ onContinue, onAdminHold }) {
+function SplashScreen({ onContinue, onPlanPill, onAdminHold }) {
   const [visible, setVisible] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [holdProg, setHoldProg] = useState(0);
@@ -3675,11 +4156,11 @@ function SplashScreen({ onContinue, onAdminHold }) {
           {/* Plan pills */}
           <div style={{ display:"flex", gap:"6px" }}>
             {[
-              { img:"https://images.unsplash.com/photo-1539794830467-1f1755804d13?w=400&q=80", n:"Free", d:"30-day trial", c:"var(--a3)" },
-              { img:"https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=80", n:"Pro", d:"$4.99/mo", c:"var(--acc)" },
-              { img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80", n:"Trainer", d:"From free", c:"var(--tr)" },
+              { img:"https://images.unsplash.com/photo-1539794830467-1f1755804d13?w=400&q=80", n:"Free", d:"30-day trial", c:"var(--a3)", action:"free" },
+              { img:"https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=80", n:"Pro", d:"$4.99/mo", c:"var(--acc)", action:"pro" },
+              { img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80", n:"Trainer", d:"From free", c:"var(--tr)", action:"trainer" },
             ].map(item=>(
-              <div key={item.n} style={{ flex:1, background:"rgba(255,255,255,.03)", border:`1px solid ${item.c}20`, borderRadius:"10px", overflow:"hidden", textAlign:"center" }}>
+              <div key={item.n} onClick={()=>onPlanPill&&onPlanPill(item.action)} style={{ flex:1, background:"rgba(255,255,255,.03)", border:`1px solid ${item.c}20`, borderRadius:"10px", overflow:"hidden", textAlign:"center", cursor:"pointer" }}>
                 <div style={{ height:"62px", overflow:"hidden", position:"relative" }}>
                   <img src={item.img} alt={item.n} style={{ width:"100%", height:"100%", objectFit:"cover", filter:"brightness(.75) saturate(.9)" }}/>
                   <div style={{ position:"absolute", inset:0, background:`linear-gradient(180deg,transparent 0%,rgba(10,10,10,.5) 100%)` }}/>
@@ -3773,21 +4254,32 @@ function AuthScreen({ role, onLogin, onBack }) {
   );
 }
 
+function NavIcon({ id, active }) {
+  const s = active ? "#fff" : "rgba(255,255,255,.4)";
+  const w = 22;
+  if (id==="program")   return <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>;
+  if (id==="wearables") return <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M12 6v6l3-2"/></svg>;
+  if (id==="nutrition") return <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 2C11 2 6 6 6 12a6 6 0 0012 0c0-6-5-10-7-10z"/><path d="M11 2v10"/></svg>;
+  if (id==="calendar")  return <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><rect x="7" y="13" width="3" height="3" rx=".5" fill={s} stroke="none"/><rect x="14" y="13" width="3" height="3" rx=".5" fill={s} stroke="none"/></svg>;
+  if (id==="clients")   return <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>;
+  if (id==="profile")   return <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>;
+  return null;
+}
+
 function BottomNav({ role, tab, setTab }) {
   const tabs = role==="trainer"
-    ? [["clients","👥","Clients"],["calendar","📅","Calendar"],["profile","👤","Profile"]]
-    : [["program","📋","Program"],["wearables","⌚","Wearables"],["nutrition","🥗","Nutrition"]];
+    ? [["clients","Clients"],["calendar","Calendar"],["profile","Profile"]]
+    : [["program","Program"],["wearables","Wearables"],["nutrition","Nutrition"],["calendar","Calendar"]];
   const col = role==="trainer" ? "var(--tr)" : "var(--acc)";
   return (
     <div style={{ position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", zIndex:50 }}>
-      {/* Frosted pill nav */}
-      <div style={{ margin:"0 16px 12px", background:"rgba(18,18,18,.92)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderRadius:"20px", border:"1px solid rgba(255,255,255,.1)", padding:"6px 8px", display:"flex", justifyContent:"space-around", boxShadow:"0 8px 32px rgba(0,0,0,.4)" }}>
-        {tabs.map(([t, icon, lbl])=>{
+      <div style={{ margin:"0 12px 12px", background:"rgba(12,12,12,.96)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", borderRadius:"22px", border:"1px solid rgba(255,255,255,.1)", padding:"6px 4px", display:"flex", justifyContent:"space-around", boxShadow:"0 8px 32px rgba(0,0,0,.5)" }}>
+        {tabs.map(([t, lbl])=>{
           const isActive = tab === t;
           return (
-            <button key={t} onClick={()=>setTab(t)} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"3px", background:isActive?col+"18":"transparent", border:isActive?`1px solid ${col}30`:"1px solid transparent", borderRadius:"14px", cursor:"pointer", padding:"8px 18px", transition:"all .2s", flex:1, margin:"0 2px" }}>
-              <span style={{ fontSize:"20px", filter:isActive?"none":"grayscale(.6) opacity(.6)", transition:"filter .2s" }}>{icon}</span>
-              <span style={{ fontSize:"9px", fontFamily:"var(--fm)", letterSpacing:"1px", color:isActive?col:"var(--mut)", transition:"color .2s" }}>{lbl}</span>
+            <button key={t} onClick={()=>setTab(t)} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"4px", background:isActive?col+"20":"transparent", border:isActive?`1px solid ${col}35`:"1px solid transparent", borderRadius:"16px", cursor:"pointer", padding:"9px 10px", transition:"all .2s", flex:1, margin:"0 2px" }}>
+              <NavIcon id={t} active={isActive}/>
+              <span style={{ fontSize:"11px", fontFamily:"var(--fb)", fontWeight:isActive?700:500, color:isActive?col:"rgba(255,255,255,.45)", letterSpacing:"0px" }}>{lbl}</span>
             </button>
           );
         })}
@@ -3795,6 +4287,7 @@ function BottomNav({ role, tab, setTab }) {
     </div>
   );
 }
+
 
 function FAB({ onClick }) {
   const [popped, setPopped] = useState(true);
@@ -3808,10 +4301,12 @@ function FAB({ onClick }) {
 
 // ─── Root App ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [screen, setScreen] = useState("splash");
-  const [role, setRole] = useState(null);
-  const [user, setUser] = useState(null);
-  const [tab, setTab] = useState("program");
+  // Restore session from localStorage on load
+  const savedSession = loadSession();
+  const [screen, setScreen] = useState(savedSession ? "app" : "splash");
+  const [role, setRole] = useState(savedSession?.role || null);
+  const [user, setUser] = useState(savedSession?.user || null);
+  const [tab, setTab] = useState(savedSession?.role==="trainer" ? "clients" : "program");
   const [showAI, setShowAI] = useState(false);
   const [profile, setProfile] = useState(null);
   const [sub, setSub] = useState(()=>loadMemberSub());
@@ -3827,12 +4322,15 @@ export default function App() {
   function goPlan(id) { const s = mkMemberSub(id); setSub(s); setScreen("auth"); }
   function goLogin(u) {
     setUser(u);
+    setRole(u.role);
     if (u.isOwner) {
       if (!sub || sub.id !== "pro") { const s = mkMemberSub("pro"); setSub(s); }
       saveTrainerSub({ id:"unlimited", start: new Date().toISOString() });
     }
+    // Persist session
+    saveSession({ user: u, role: u.role });
     setTab(u.role==="trainer"?"clients":"program");
-    // Show Bio Age test for new member registrations (check by email key)
+    // Show Bio Age test for new member registrations
     let hasCompletedBioAge = false;
     try { hasCompletedBioAge = !!localStorage.getItem("bioage_done_"+u.email); } catch {}
     if (u.role === "enthusiast" && !u.isOwner && !hasCompletedBioAge) {
@@ -3840,6 +4338,12 @@ export default function App() {
     } else {
       setScreen("app");
     }
+  }
+  function doLogout() {
+    clearSession();
+    setUser(null); setRole(null); setSub(null);
+    setScreen("splash"); setTab("program");
+    setShowAI(false); setUpgradeReason(null);
   }
   function openAI() {
     if (role==="enthusiast"&&ctx) {
@@ -3852,8 +4356,9 @@ export default function App() {
 
   return (
     <div style={{ maxWidth:"480px", margin:"0 auto", minHeight:"100vh", position:"relative" }}>
-      {screen==="splash" && <SplashScreen onContinue={goRole} onAdminHold={()=>setShowAdminLogin(true)}/>}
+      {screen==="splash" && <SplashScreen onContinue={goRole} onPlanPill={plan=>{ if(plan==="trainer"){ goRole("trainer"); } else if(plan==="pro"){ setRole("enthusiast"); setScreen("plan_pro"); } else { goRole("enthusiast"); } }} onAdminHold={()=>setShowAdminLogin(true)}/>}
       {screen==="plan"   && <PlanScreen onSelect={goPlan} onBack={()=>setScreen("splash")}/>}
+      {screen==="plan_pro" && <PlanScreen onSelect={goPlan} defaultPlan="pro" onBack={()=>setScreen("splash")}/>}
       {screen==="auth"   && <AuthScreen role={role} onLogin={goLogin} onBack={()=>setScreen(role==="enthusiast"&&!sub?"plan":"splash")}/>}
       {screen==="bioage" && user && (
         <BioAgeTest
@@ -3868,8 +4373,8 @@ export default function App() {
       {screen==="app" && user && (
         <>
           {role==="trainer"
-            ? <TrainerDashboard user={user} tab={tab} setTab={setTab} onHome={()=>setScreen("splash")}/>
-            : <MemberDashboard user={user} tab={tab} setTab={setTab} sub={sub} ctx={ctx} onUpgrade={r=>setUpgradeReason(r)} onHome={()=>setScreen("splash")}/>
+            ? <TrainerDashboard user={user} tab={tab} setTab={setTab} onHome={()=>setScreen("splash")} onLogout={doLogout}/>
+            : <MemberDashboard user={user} tab={tab} setTab={setTab} sub={sub} ctx={ctx} onUpgrade={r=>setUpgradeReason(r)} onHome={()=>setScreen("splash")} onLogout={doLogout}/>
           }
           <BottomNav role={role} tab={tab} setTab={setTab}/>
           {!showAI && <FAB onClick={openAI}/>}
@@ -3885,106 +4390,65 @@ export default function App() {
 
 
 
-// ─── Exercise Library (ExerciseDB API — 1300+ exercises) ─────────────────────
-// Open source API: https://github.com/exercisedb/exercisedb-api
-// Data: name, body parts, target muscles, equipment, GIF images, instructions
-const EDB_BASE = "https://exercisedb-api.vercel.app/api/v1";
+// ─── Exercise Library (free-exercise-db — 800+ exercises, always available) ───
+// Source: https://github.com/yuhonas/free-exercise-db (public domain)
+// Images hosted on GitHub raw + exercisedb-api GIFs as bonus fallback
+const FREE_EX_URL = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
+const FREE_EX_IMG = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 
 function ExerciseLibrary({ onClose }) {
   const [exercises, setExercises] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
-  const [bodyPart, setBodyPart] = useState("all");
+  const [category, setCategory] = useState("all");
   const [equipment, setEquipment] = useState("all");
+  const [muscle, setMuscle] = useState("all");
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(0);
-  const [searching, setSearching] = useState(false);
   const PER = 20;
-  const searchTimer = useRef(null);
 
-  const BODY_PARTS = ["all","back","cardio","chest","lower arms","lower legs","neck","shoulders","upper arms","upper legs","waist"];
-  const EQUIPMENT  = ["all","barbell","dumbbell","cable","machine","kettlebell","band","ez barbell","body weight","assisted","weighted","sled machine","roller","leverage machine","rope","bosu ball","tire","trap bar","wheel roller"];
+  const CATS = ["all","strength","stretching","cardio","plyometrics","strongman","powerlifting","olympic_weightlifting"];
+  const EQUIPS = ["all","barbell","dumbbell","cable","machine","kettlebell","bands","body only","other"];
+  const MUSCLES = ["all","chest","back","shoulders","biceps","triceps","forearms","abdominals","quadriceps","hamstrings","glutes","calves","traps","lats"];
 
   const COLS = {
-    back:"#60a5fa", chest:"#f87171", shoulders:"#c084fc", "upper arms":"#34d399",
-    "lower arms":"#a3e635", "upper legs":"#fb923c", "lower legs":"#22d3ee",
-    waist:"#fbbf24", cardio:"#f472b6", neck:"#94a3b8",
+    chest:"#f87171", back:"#60a5fa", shoulders:"#c084fc", biceps:"#34d399",
+    triceps:"#a3e635", forearms:"#94a3b8", abdominals:"#fbbf24", quadriceps:"#fb923c",
+    hamstrings:"#22d3ee", glutes:"#f472b6", calves:"#4ade80", traps:"#818cf8", lats:"#38bdf8",
   };
 
-  // Fetch by body part or all
-  async function loadExercises(bp) {
-    setLoading(true); setError(null); setPage(0); setSearch("");
-    try {
-      const url = bp && bp !== "all"
-        ? `${EDB_BASE}/exercises/bodyPart/${encodeURIComponent(bp)}?limit=200&offset=0`
-        : `${EDB_BASE}/exercises?limit=200&offset=0`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("API error "+res.status);
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.exercises || data.data || data.results || []);
-      setExercises(list);
-    } catch(e) {
-      setError("Couldn't reach ExerciseDB API. Check your connection.");
-      setExercises([]);
-    }
-    setLoading(false);
-  }
+  useEffect(() => {
+    fetch(FREE_EX_URL)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(data => { setExercises(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => { setError("Couldn't load exercise database. Check your connection."); setLoading(false); });
+  }, []);
 
-  // Search by name
-  async function doSearch(q) {
-    if (!q.trim()) { loadExercises(bodyPart); return; }
-    setSearching(true); setError(null);
-    try {
-      const res = await fetch(`${EDB_BASE}/exercises/search?name=${encodeURIComponent(q)}&limit=100`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.exercises || data.data || []);
-      setExercises(list); setPage(0);
-    } catch {
-      setError("Search failed. Try browsing by body part.");
-    }
-    setSearching(false);
-  }
-
-  useEffect(() => { loadExercises("all"); }, []);
-
-  function onBodyPartChange(bp) {
-    setBodyPart(bp); setSearch(""); loadExercises(bp);
-  }
-
-  function onSearchChange(v) {
-    setSearch(v);
-    clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => doSearch(v), 500);
-  }
-
-  // Client-side equipment filter
-  const filtered = equipment === "all"
-    ? exercises
-    : exercises.filter(ex => (ex.equipment||"").toLowerCase().includes(equipment.replace(" ","").toLowerCase()) ||
-        (ex.equipments||[]).some(e => e.toLowerCase().includes(equipment.toLowerCase())));
+  const filtered = exercises.filter(ex => {
+    const q = search.toLowerCase();
+    const nameOk = !q || ex.name.toLowerCase().includes(q);
+    const catOk = category === "all" || ex.category === category;
+    const equipOk = equipment === "all" || (ex.equipment||[]).includes(equipment);
+    const muscleOk = muscle === "all" || (ex.primaryMuscles||[]).includes(muscle) || (ex.secondaryMuscles||[]).includes(muscle);
+    return nameOk && catOk && equipOk && muscleOk;
+  });
 
   const pages = Math.ceil(filtered.length / PER);
   const visible = filtered.slice(page*PER, (page+1)*PER);
 
-  // Helper to build image URL — ExerciseDB serves GIF images
   function imgUrl(ex) {
-    if (!ex) return null;
-    // gifUrl is absolute in RapidAPI version
-    if (ex.gifUrl) return ex.gifUrl;
-    // imageUrl may be relative in open-source version
-    if (ex.imageUrl) return ex.imageUrl.startsWith("http") ? ex.imageUrl : `${EDB_BASE}/images/${ex.imageUrl}`;
-    return null;
+    if (!ex?.images?.length) return null;
+    return FREE_EX_IMG + encodeURIComponent(ex.id) + "/" + ex.images[0];
   }
 
   // ── Selected Exercise Detail ──────────────────────────────────────────────
   if (selected) {
     const img = imgUrl(selected);
-    const muscles = selected.targetMuscles || selected.target ? [selected.target].filter(Boolean) : [];
+    const muscles = selected.primaryMuscles || (selected.target ? [selected.target] : []);
     const secondary = selected.secondaryMuscles || [];
     const instructions = selected.instructions || [];
-    const col = COLS[selected.bodyPart||selected.bodyParts?.[0]?.toLowerCase()] || "var(--acc)";
+    const col = COLS[selected.primaryMuscles?.[0]] || "var(--tr)";
 
     return (
       <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:800, display:"flex", flexDirection:"column", animation:"fadeIn .2s" }}>
@@ -4006,7 +4470,7 @@ function ExerciseLibrary({ onClose }) {
 
           {/* Tags */}
           <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"14px" }}>
-            {[selected.bodyPart||selected.bodyParts?.[0], selected.equipment||selected.equipments?.[0], selected.exerciseType].filter(Boolean).map((t,i)=>(
+            {[selected.category, selected.equipment?.[0], selected.force, selected.level].filter(Boolean).map((t,i)=>(
               <div key={i} style={{ padding:"4px 11px", background:col+"18", border:`1px solid ${col}35`, borderRadius:"50px", fontSize:"11px", color:col, fontFamily:"var(--fm)" }}>{t}</div>
             ))}
           </div>
@@ -4087,21 +4551,23 @@ function ExerciseLibrary({ onClose }) {
           placeholder="Search exercises by name..."
           style={{ width:"100%", padding:"11px 14px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"10px", color:"var(--txt)", fontSize:"14px", fontFamily:"var(--fb)", outline:"none", marginBottom:"10px" }}/>
 
-        {/* Body part pills */}
-        <div style={{ display:"flex", gap:"6px", overflowX:"auto", scrollbarWidth:"none", paddingBottom:"12px" }}>
-          {BODY_PARTS.map(bp=>(
-            <button key={bp} onClick={()=>onBodyPartChange(bp)}
-              style={{ flexShrink:0, padding:"6px 13px", background:bodyPart===bp?(COLS[bp]||"var(--tr)")+"22":"rgba(255,255,255,.05)", border:`1.5px solid ${bodyPart===bp?(COLS[bp]||"var(--tr)"):"rgba(255,255,255,.1)"}`, borderRadius:"50px", color:bodyPart===bp?(COLS[bp]||"var(--tr)"):"var(--mut)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fb)", fontWeight:bodyPart===bp?700:400, whiteSpace:"nowrap" }}>
-              {bp==="all"?"All":bp}
+        {/* Category + muscle + equipment filters */}
+        <div style={{ display:"flex", gap:"7px", overflowX:"auto", scrollbarWidth:"none", paddingBottom:"8px" }}>
+          {CATS.map(c=>(
+            <button key={c} onClick={()=>{ setCategory(c); setPage(0); }}
+              style={{ flexShrink:0, padding:"6px 12px", background:category===c?"var(--tr)22":"rgba(255,255,255,.05)", border:`1.5px solid ${category===c?"var(--tr)":"rgba(255,255,255,.1)"}`, borderRadius:"50px", color:category===c?"var(--tr)":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fb)", fontWeight:600, whiteSpace:"nowrap" }}>
+              {c==="all"?"All types":c.replace("_"," ")}
             </button>
           ))}
         </div>
-
-        {/* Equipment filter */}
-        <div style={{ paddingBottom:"11px" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"7px", paddingBottom:"11px" }}>
+          <select value={muscle} onChange={e=>{ setMuscle(e.target.value); setPage(0); }}
+            style={{ padding:"8px 10px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"9px", color:muscle!=="all"?(COLS[muscle]||"var(--txt)"):"var(--txt)", fontSize:"12px", fontFamily:"var(--fm)", cursor:"pointer" }}>
+            {MUSCLES.map(m=><option key={m} value={m}>{m==="all"?"All muscles":m}</option>)}
+          </select>
           <select value={equipment} onChange={e=>{ setEquipment(e.target.value); setPage(0); }}
-            style={{ width:"100%", padding:"9px 12px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"9px", color:"var(--txt)", fontSize:"13px", fontFamily:"var(--fm)", cursor:"pointer" }}>
-            {EQUIPMENT.map(e=><option key={e} value={e}>{e==="all"?"All equipment":e}</option>)}
+            style={{ padding:"8px 10px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"9px", color:"var(--txt)", fontSize:"12px", fontFamily:"var(--fm)", cursor:"pointer" }}>
+            {EQUIPS.map(e=><option key={e} value={e}>{e==="all"?"All equipment":e}</option>)}
           </select>
         </div>
       </div>
@@ -4167,7 +4633,7 @@ function ExerciseLibrary({ onClose }) {
               style={{ padding:"8px 18px", background:page===pages-1?"rgba(255,255,255,.04)":"var(--tr)", border:"none", borderRadius:"8px", color:page===pages-1?"var(--mut)":"#fff", cursor:page===pages-1?"default":"pointer", fontFamily:"var(--fd)", fontSize:"12px" }}>NEXT →</button>
           </div>
         )}
-        {!loading && exercises.length > 0 && <Mono style={{ textAlign:"center", marginTop:"8px" }}>ExerciseDB Open Source API · exercisedb-api</Mono>}
+        {!loading && exercises.length > 0 && <Mono style={{ textAlign:"center", marginTop:"8px" }}>800+ exercises · free-exercise-db · Public Domain</Mono>}
       </div>
     </div>
   );
