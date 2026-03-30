@@ -1,6 +1,6 @@
 {
-  "name": "Fit2All",
-  "short_name": "Fit2All",
+  "name": "FitPlus",
+  "short_name": "FitPlus",
   "description": "AI-powered fitness for everyone",
   "start_url": "/",
   "display": "standalone",
