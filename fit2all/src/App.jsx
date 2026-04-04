@@ -43,53 +43,27 @@ const IMG = {
   recovery: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=70",
 };
 
-// ─── Translations ──────────────────────────────────────────────────────────────
-const LANGS = {
-  en:    { name:"English (UK)",     flag:"🇬🇧", currency:"£", currencyCode:"GBP", prices:{pro:"5.99", advNutr:"9.99", tStarter:"4.99", tPro:"9.99", tUnlimited:"14.99"} },
-  "en-us":{ name:"English (US)",   flag:"🇺🇸", currency:"$", currencyCode:"USD", prices:{pro:"7.99", advNutr:"12.99", tStarter:"6.99", tPro:"12.99", tUnlimited:"18.99"} },
-  pt:    { name:"Português",        flag:"🇵🇹", currency:"€", currencyCode:"EUR", prices:{pro:"6.99", advNutr:"10.99", tStarter:"5.99", tPro:"10.99", tUnlimited:"15.99"} },
-  es:    { name:"Español",          flag:"🇪🇸", currency:"€", currencyCode:"EUR", prices:{pro:"6.99", advNutr:"10.99", tStarter:"5.99", tPro:"10.99", tUnlimited:"15.99"} },
-  fr:    { name:"Français",         flag:"🇫🇷", currency:"€", currencyCode:"EUR", prices:{pro:"6.99", advNutr:"10.99", tStarter:"5.99", tPro:"10.99", tUnlimited:"15.99"} },
-  de:    { name:"Deutsch",          flag:"🇩🇪", currency:"€", currencyCode:"EUR", prices:{pro:"6.99", advNutr:"10.99", tStarter:"5.99", tPro:"10.99", tUnlimited:"15.99"} },
-  it:    { name:"Italiano",         flag:"🇮🇹", currency:"€", currencyCode:"EUR", prices:{pro:"6.99", advNutr:"10.99", tStarter:"5.99", tPro:"10.99", tUnlimited:"15.99"} },
-  zh:    { name:"中文",              flag:"🇨🇳", currency:"¥", currencyCode:"CNY", prices:{pro:"55", advNutr:"89", tStarter:"45", tPro:"89", tUnlimited:"129"} },
-  ja:    { name:"日本語",            flag:"🇯🇵", currency:"¥", currencyCode:"JPY", prices:{pro:"1299", advNutr:"1999", tStarter:"999", tPro:"1999", tUnlimited:"2999"} },
-  ru:    { name:"Русский",          flag:"🇷🇺", currency:"₽", currencyCode:"RUB", prices:{pro:"640", advNutr:"999", tStarter:"499", tPro:"979", tUnlimited:"1399"} },
-  ar:    { name:"العربية",          flag:"🇸🇦", currency:"﷼", currencyCode:"SAR", prices:{pro:"29.99", advNutr:"44.99", tStarter:"24.99", tPro:"44.99", tUnlimited:"64.99"} },
+// ─── Member Plans ─────────────────────────────────────────────────────────────
+const MEMBER_PLANS = {
+  free: { id:"free", name:"FREE TRIAL", price:"$0", period:"30 days", color:"var(--a3)", limits:{ai:2,days:30},
+    features:[{l:"AI Coach",d:"2/day",y:1},{l:"2-week Program",d:"",y:1},{l:"Nutrition Hub",d:"Full",y:1},{l:"Wearables",d:"Full",y:1},{l:"Unlimited AI",d:"",y:0},{l:"4-week Program",d:"",y:0}] },
+  pro:  { id:"pro",  name:"PRO",        price:"£5.99", period:"/month", color:"var(--acc)", limits:{ai:Infinity,days:Infinity},
+    features:[{l:"Unlimited AI",d:"Every day",y:1},{l:"4-week Programs",d:"Progressive",y:1},{l:"Nutrition Hub",d:"Full",y:1},{l:"Wearables",d:"Full",y:1},{l:"Priority Support",d:"",y:1},{l:"Early Access",d:"",y:1}] },
 };
 
-// ─── Language helpers (must be before plan objects that call getCurrency) ─────
-const getLang = () => { try { return localStorage.getItem("f2a_lang") || "en"; } catch { return "en"; } };
-const setLang = l => { try { localStorage.setItem("f2a_lang", l); } catch {} };
-const getCurrency = () => LANGS[getLang()]?.currency || "£";
-const getInitPrices = () => LANGS[getLang()]?.prices || LANGS.en.prices;
-
-// ─── Member Plans ─────────────────────────────────────────────────────────────
-// Currency-aware plan getters — call with getCurrency() or from useLang()
-const getMemberPlans = (cur, p) => ({
-  free: { id:"free", name:"FREE TRIAL", price:`${cur}0`, period:"30 days", color:"var(--a3)", limits:{ai:2,days:30},
-    features:[{l:"AI Coach",d:"2/day",y:1},{l:"2-week Program",d:"",y:1},{l:"Nutrition Hub",d:"Full",y:1},{l:"Wearables",d:"Full",y:1},{l:"Unlimited AI",d:"",y:0},{l:"4-week Program",d:"",y:0}] },
-  pro:  { id:"pro",  name:"PRO",        price:`${cur}${(p||LANGS.en.prices).pro}`, period:"/month", color:"var(--acc)", limits:{ai:Infinity,days:Infinity},
-    features:[{l:"Unlimited AI",d:"Every day",y:1},{l:"4-week Programs",d:"Progressive",y:1},{l:"Nutrition Hub",d:"Full",y:1},{l:"Wearables",d:"Full",y:1},{l:"Priority Support",d:"",y:1},{l:"Early Access",d:"",y:1}] },
-});
-// Legacy alias — uses stored lang for static contexts (admin panel etc.)
-const MEMBER_PLANS = getMemberPlans(getCurrency(), getInitPrices());
-
 // ─── Trainer Plans ────────────────────────────────────────────────────────────
-const getTrainerPlans = (cur, p) => ({
-  free:      { id:"free",      name:"FREE",      price:`${cur}0`,     period:"forever", color:"var(--a3)",  clientLimit:1 },
-  starter:   { id:"starter",   name:"STARTER",   price:`${cur}${(p||LANGS.en.prices).tStarter}`,  period:"/month",  color:"var(--acc)", clientLimit:5 },
-  pro:       { id:"pro",       name:"PRO",        price:`${cur}${(p||LANGS.en.prices).tPro}`,  period:"/month",  color:"var(--a4)",  clientLimit:10 },
-  unlimited: { id:"unlimited", name:"UNLIMITED",  price:`${cur}${(p||LANGS.en.prices).tUnlimited}`, period:"/month",  color:"var(--tr)",  clientLimit:Infinity },
-});
-const TRAINER_PLANS = getTrainerPlans(getCurrency(), getInitPrices());
-const getTPFeatures = (cur, p) => ({
+const TRAINER_PLANS = {
+  free:      { id:"free",      name:"FREE",      price:"$0",     period:"forever", color:"var(--a3)",  clientLimit:1 },
+  starter:   { id:"starter",   name:"STARTER",   price:"£4.99",  period:"/month",  color:"var(--acc)", clientLimit:5 },
+  pro:       { id:"pro",       name:"PRO",        price:"£9.99",  period:"/month",  color:"var(--a4)",  clientLimit:10 },
+  unlimited: { id:"unlimited", name:"UNLIMITED",  price:"£14.99", period:"/month",  color:"var(--tr)",  clientLimit:Infinity },
+};
+const TP_FEATURES = {
   free:      [{l:"1 Client",d:"free forever",y:1},{l:"Full management",d:"",y:1},{l:"Session notes",d:"",y:1},{l:"More clients",d:"",y:0}],
-  starter:   [{l:"Up to 5 clients",d:`${cur}${(p||LANGS.en.prices).tStarter}/mo`,y:1},{l:"Full management",d:"",y:1},{l:"Session notes",d:"",y:1},{l:"Priority support",d:"",y:1}],
-  pro:       [{l:"Up to 10 clients",d:`${cur}${(p||LANGS.en.prices).tPro}/mo`,y:1},{l:"Full management",d:"",y:1},{l:"Session notes",d:"",y:1},{l:"Priority support",d:"",y:1}],
-  unlimited: [{l:"Unlimited clients",d:`${cur}${(p||LANGS.en.prices).tUnlimited}/mo`,y:1},{l:"Full management",d:"",y:1},{l:"Session notes",d:"",y:1},{l:"Priority support",d:"",y:1}],
-});
-const TP_FEATURES = getTPFeatures(getCurrency(), getInitPrices());
+  starter:   [{l:"Up to 5 clients",d:"£4.99/mo",y:1},{l:"Full management",d:"",y:1},{l:"Session notes",d:"",y:1},{l:"Priority support",d:"",y:1}],
+  pro:       [{l:"Up to 10 clients",d:"£9.99/mo",y:1},{l:"Full management",d:"",y:1},{l:"Session notes",d:"",y:1},{l:"Priority support",d:"",y:1}],
+  unlimited: [{l:"Unlimited clients",d:"£14.99/mo",y:1},{l:"Full management",d:"",y:1},{l:"Session notes",d:"",y:1},{l:"Priority support",d:"",y:1}],
+};
 const PROMO_CODES = {
   "FIT2ALL50":     { discount:50,  label:"50% off first month" },
   "TRAINERLAUNCH": { discount:100, label:"1 month FREE" },
@@ -271,22 +245,37 @@ async function verifyBiometric() {
   return null;
 }
 
-const T = {
-  en:     { trainer:"TRAINER",    member:"MEMBER",    manageClients:"Manage clients",       startJourney:"Start your journey",       getStarted:"GET STARTED", moveTagline:"MOVE BETTER · LIVE STRONGER",        free:"Free",      pro:"Pro", trainerPlan:"Trainer",    nav:["Program","Wearables","Nutrition","Calendar"], perMonth:"/month", advNutr:"Advanced Nutrition Plan", loginBtn:"LOG IN",   joinBtn:"JOIN NOW"   , trainerAccess:"TRAINER ACCESS", joinApp:"JOIN FITPLUS", signInTitle:"SIGN IN", journeyTitle:"YOUR JOURNEY STARTS", fullName:"FULL NAME", emailAddr:"EMAIL ADDRESS", certId:"CERTIFICATION ID", password:"PASSWORD", enterDash:"ENTER DASHBOARD →", letsGo:"LET\'S GO →", useFingerprint:"USE FINGERPRINT", terms:"By continuing you agree to our Terms", contact:"CONTACT", logout:"LOG OUT", hey:"HEY", week:"Week", stats:"Stats", account:"Account", exercises:"Exercises", packages:"Packages", newPlan:"New Plan", myProgram:"My Program", freeTrial:"FREE TRIAL" },
-  "en-us":{ trainer:"TRAINER",   member:"MEMBER",    manageClients:"Manage clients",       startJourney:"Start your journey",       getStarted:"GET STARTED", moveTagline:"MOVE BETTER · LIVE STRONGER",        free:"Free",      pro:"Pro", trainerPlan:"Trainer",    nav:["Program","Wearables","Nutrition","Calendar"], perMonth:"/month", advNutr:"Advanced Nutrition Plan", loginBtn:"LOG IN",   joinBtn:"JOIN NOW"   , trainerAccess:"TRAINER ACCESS", joinApp:"JOIN FITPLUS", signInTitle:"SIGN IN", journeyTitle:"YOUR JOURNEY STARTS", fullName:"FULL NAME", emailAddr:"EMAIL ADDRESS", certId:"CERTIFICATION ID", password:"PASSWORD", enterDash:"ENTER DASHBOARD →", letsGo:"LET\'S GO →", useFingerprint:"USE FINGERPRINT", terms:"By continuing you agree to our Terms", contact:"CONTACT", logout:"LOG OUT", hey:"HEY", week:"Week", stats:"Stats", account:"Account", exercises:"Exercises", packages:"Packages", newPlan:"New Plan", myProgram:"My Program", freeTrial:"FREE TRIAL" },
-  pt:     { trainer:"TREINADOR", member:"MEMBRO",    manageClients:"Gerir clientes",       startJourney:"Comece a sua jornada",     getStarted:"COMEÇAR",     moveTagline:"MOVA-SE MELHOR · VIVA MAIS FORTE",   free:"Grátis",    pro:"Pro", trainerPlan:"Treinador",  nav:["Programa","Wearables","Nutrição","Calendário"], perMonth:"/mês", advNutr:"Plano Nutrição Avançado", loginBtn:"ENTRAR",   joinBtn:"REGISTAR"   , trainerAccess:"ACESSO TREINADOR", joinApp:"JUNTE-SE AO FITPLUS", signInTitle:"ENTRAR", journeyTitle:"A SUA JORNADA COMEÇA", fullName:"NOME COMPLETO", emailAddr:"ENDEREÇO DE EMAIL", certId:"ID DE CERTIFICAÇÃO", password:"SENHA", enterDash:"IR AO PAINEL →", letsGo:"VAMOS →", useFingerprint:"USAR IMPRESSÃO DIGITAL", terms:"Ao continuar aceita os nossos Termos", contact:"CONTACTO", logout:"SAIR", hey:"OLÁ", week:"Semana", stats:"Estatísticas", account:"Conta", exercises:"Exercícios", packages:"Pacotes", newPlan:"Novo Plano", myProgram:"Meu Programa", freeTrial:"TESTE GRÁTIS" },
-  es:     { trainer:"ENTRENADOR",member:"MIEMBRO",   manageClients:"Gestionar clientes",   startJourney:"Empieza tu viaje",         getStarted:"COMENZAR",    moveTagline:"MUÉVETE MEJOR · VIVE MÁS FUERTE",    free:"Gratis",    pro:"Pro", trainerPlan:"Entrenador", nav:["Programa","Wearables","Nutrición","Calendario"], perMonth:"/mes", advNutr:"Plan Nutrición Avanzado", loginBtn:"ENTRAR",   joinBtn:"ÚNETE"      , trainerAccess:"ACCESO ENTRENADOR", joinApp:"ÚNETE A FITPLUS", signInTitle:"INICIAR SESIÓN", journeyTitle:"TU VIAJE COMIENZA", fullName:"NOMBRE COMPLETO", emailAddr:"DIRECCIÓN DE EMAIL", certId:"ID DE CERTIFICACIÓN", password:"CONTRASEÑA", enterDash:"IR AL PANEL →", letsGo:"¡VAMOS →", useFingerprint:"USAR HUELLA DIGITAL", terms:"Al continuar aceptas nuestros Términos", contact:"CONTACTO", logout:"CERRAR SESIÓN", hey:"HOLA", week:"Semana", stats:"Estadísticas", account:"Cuenta", exercises:"Ejercicios", packages:"Paquetes", newPlan:"Nuevo Plan", myProgram:"Mi Programa", freeTrial:"PRUEBA GRATIS" },
-  fr:     { trainer:"ENTRAÎNEUR",member:"MEMBRE",    manageClients:"Gérer les clients",    startJourney:"Commencez votre parcours", getStarted:"COMMENCER",   moveTagline:"BOUGEZ MIEUX · VIVEZ PLUS FORT",     free:"Gratuit",   pro:"Pro", trainerPlan:"Entraîneur", nav:["Programme","Wearables","Nutrition","Calendrier"], perMonth:"/mois", advNutr:"Plan Nutrition Avancé", loginBtn:"CONNEXION",joinBtn:"REJOINDRE"  , trainerAccess:"ACCÈS ENTRAÎNEUR", joinApp:"REJOINDRE FITPLUS", signInTitle:"CONNEXION", journeyTitle:"VOTRE VOYAGE COMMENCE", fullName:"NOM COMPLET", emailAddr:"ADRESSE EMAIL", certId:"ID DE CERTIFICATION", password:"MOT DE PASSE", enterDash:"ACCÉDER AU TABLEAU →", letsGo:"ALLONS-Y →", useFingerprint:"UTILISER L\'EMPREINTE", terms:"En continuant vous acceptez nos Conditions", contact:"CONTACT", logout:"DÉCONNEXION", hey:"SALUT", week:"Semaine", stats:"Statistiques", account:"Compte", exercises:"Exercices", packages:"Forfaits", newPlan:"Nouveau Plan", myProgram:"Mon Programme", freeTrial:"ESSAI GRATUIT" },
-  de:     { trainer:"TRAINER",   member:"MITGLIED",  manageClients:"Kunden verwalten",     startJourney:"Starte deine Reise",       getStarted:"LOSLEGEN",    moveTagline:"BESSER BEWEGEN · STÄRKER LEBEN",     free:"Kostenlos", pro:"Pro", trainerPlan:"Trainer",    nav:["Programm","Wearables","Ernährung","Kalender"], perMonth:"/Monat", advNutr:"Erweiterter Ernährungsplan", loginBtn:"ANMELDEN", joinBtn:"BEITRETEN"  , trainerAccess:"TRAINER-ZUGANG", joinApp:"FITPLUS BEITRETEN", signInTitle:"ANMELDEN", journeyTitle:"DEINE REISE BEGINNT", fullName:"VOLLSTÄNDIGER NAME", emailAddr:"E-MAIL-ADRESSE", certId:"ZERTIFIZIERUNGS-ID", password:"PASSWORT", enterDash:"ZUM DASHBOARD →", letsGo:"LOS GEHT\'S →", useFingerprint:"FINGERABDRUCK NUTZEN", terms:"Mit Fortfahren stimmen Sie den Bedingungen zu", contact:"KONTAKT", logout:"ABMELDEN", hey:"HEY", week:"Woche", stats:"Statistiken", account:"Konto", exercises:"Übungen", packages:"Pakete", newPlan:"Neuer Plan", myProgram:"Mein Programm", freeTrial:"KOSTENLOSE TESTVERSION" },
-  it:     { trainer:"ALLENATORE",member:"MEMBRO",    manageClients:"Gestisci clienti",     startJourney:"Inizia il tuo percorso",   getStarted:"INIZIA",      moveTagline:"MUOVITI MEGLIO · VIVI PIÙ FORTE",    free:"Gratuito",  pro:"Pro", trainerPlan:"Allenatore", nav:["Programma","Wearables","Nutrizione","Calendario"], perMonth:"/mese", advNutr:"Piano Nutrizionale Avanzato", loginBtn:"ACCEDI",   joinBtn:"ISCRIVITI"  , trainerAccess:"ACCESSO ALLENATORE", joinApp:"UNISCITI A FITPLUS", signInTitle:"ACCEDI", journeyTitle:"IL TUO VIAGGIO INIZIA", fullName:"NOME COMPLETO", emailAddr:"INDIRIZZO EMAIL", certId:"ID CERTIFICAZIONE", password:"PASSWORD", enterDash:"VAI AL PANNELLO →", letsGo:"ANDIAMO →", useFingerprint:"USA IMPRONTA DIGITALE", terms:"Continuando accetti i nostri Termini", contact:"CONTATTO", logout:"ESCI", hey:"CIAO", week:"Settimana", stats:"Statistiche", account:"Account", exercises:"Esercizi", packages:"Pacchetti", newPlan:"Nuovo Piano", myProgram:"Il Mio Programma", freeTrial:"PROVA GRATUITA" },
-  zh:     { trainer:"教练",       member:"会员",       manageClients:"管理客户",             startJourney:"开始你的旅程",             getStarted:"开始",         moveTagline:"更好运动 · 更强生活",                free:"免费",       pro:"专业", trainerPlan:"教练",       nav:["训练计划","可穿戴","营养","日历"],            perMonth:"/月",    advNutr:"高级营养计划",             loginBtn:"登录",      joinBtn:"立即加入"    , trainerAccess:"教练入口", joinApp:"加入FITPLUS", signInTitle:"登录", journeyTitle:"您的旅程开始", fullName:"全名", emailAddr:"电子邮件地址", certId:"认证编号", password:"密码", enterDash:"进入控制台 →", letsGo:"出发 →", useFingerprint:"使用指纹", terms:"继续即表示您同意我们的条款", contact:"联系", logout:"退出", hey:"嘿", week:"周", stats:"统计", account:"账户", exercises:"练习", packages:"套餐", newPlan:"新计划", myProgram:"我的计划", freeTrial:"免费试用" },
-  ja:     { trainer:"トレーナー", member:"メンバー",   manageClients:"クライアント管理",     startJourney:"あなたの旅を始めましょう", getStarted:"始める",       moveTagline:"より良く動く · より強く生きる",      free:"無料",       pro:"プロ", trainerPlan:"トレーナー", nav:["プログラム","ウェアラブル","栄養","カレンダー"], perMonth:"/月",  advNutr:"高度な栄養プラン",         loginBtn:"ログイン",  joinBtn:"今すぐ参加"  , trainerAccess:"トレーナーアクセス", joinApp:"FITPLUSに参加", signInTitle:"ログイン", journeyTitle:"あなたの旅が始まる", fullName:"フルネーム", emailAddr:"メールアドレス", certId:"資格証明書ID", password:"パスワード", enterDash:"ダッシュボードへ →", letsGo:"始めましょう →", useFingerprint:"指紋を使用", terms:"続行することで利用規約に同意します", contact:"お問い合わせ", logout:"ログアウト", hey:"こんにちは", week:"週", stats:"統計", account:"アカウント", exercises:"エクササイズ", packages:"パッケージ", newPlan:"新しいプラン", myProgram:"マイプログラム", freeTrial:"無料トライアル" },
-  ru:     { trainer:"ТРЕНЕР",    member:"УЧАСТНИК",  manageClients:"Управление клиентами", startJourney:"Начните свой путь",        getStarted:"НАЧАТЬ",      moveTagline:"ДВИГАЙСЯ ЛУЧШЕ · ЖИВИ СИЛЬНЕЕ",     free:"Бесплатно", pro:"Про",  trainerPlan:"Тренер",     nav:["Программа","Устройства","Питание","Календарь"], perMonth:"/месяц", advNutr:"Расширенный план питания", loginBtn:"ВОЙТИ",    joinBtn:"ПРИСОЕДИНИТЬСЯ" , trainerAccess:"ДОСТУП ТРЕНЕРА", joinApp:"ПРИСОЕДИНИТЬСЯ К FITPLUS", signInTitle:"ВОЙТИ", journeyTitle:"ВАШЕ ПУТЕШЕСТВИЕ НАЧИНАЕТСЯ", fullName:"ПОЛНОЕ ИМЯ", emailAddr:"АДРЕС ЭПОЧТЫ", certId:"ID СЕРТИФИКАЦИИ", password:"ПАРОЛЬ", enterDash:"В ПАНЕЛЬ →", letsGo:"ВПЕРЁД →", useFingerprint:"ИСПОЛЬЗОВАТЬ ОТПЕЧАТОК", terms:"Продолжая вы принимаете наши Условия", contact:"КОНТАКТ", logout:"ВЫЙТИ", hey:"ПРИВЕТ", week:"Неделя", stats:"Статистика", account:"Аккаунт", exercises:"Упражнения", packages:"Пакеты", newPlan:"Новый план", myProgram:"Моя программа", freeTrial:"БЕСПЛАТНЫЙ ПЕРИОД" },
-  ar:     { trainer:"مدرب",      member:"عضو",       manageClients:"إدارة العملاء",        startJourney:"ابدأ رحلتك",              getStarted:"ابدأ",        moveTagline:"تحرك أفضل · عش أقوى",               free:"مجاني",     pro:"احترافي", trainerPlan:"مدرب",  nav:["البرنامج","الأجهزة","التغذية","التقويم"],      perMonth:"/شهر", advNutr:"خطة التغذية المتقدمة",    loginBtn:"تسجيل الدخول", joinBtn:"انضم الآن" , trainerAccess:"وصول المدرب", joinApp:"انضم إلى FITPLUS", signInTitle:"تسجيل الدخول", journeyTitle:"رحلتك تبدأ", fullName:"الاسم الكامل", emailAddr:"عنوان البريد الإلكتروني", certId:"معرف الشهادة", password:"كلمة المرور", enterDash:"لوحة التحكم →", letsGo:"لنبدأ →", useFingerprint:"استخدام بصمة الإصبع", terms:"بالمتابعة توافق على شروط الخدمة", contact:"تواصل", logout:"تسجيل الخروج", hey:"مرحباً", week:"أسبوع", stats:"إحصائيات", account:"الحساب", exercises:"تمارين", packages:"حزم", newPlan:"خطة جديدة", myProgram:"برنامجي", freeTrial:"تجربة مجانية" },
+
+// ─── Translations ──────────────────────────────────────────────────────────────
+const LANGS = {
+  en:    { name:"English (UK)",     flag:"🇬🇧", currency:"£", currencyCode:"GBP" },
+  "en-us":{ name:"English (US)",   flag:"🇺🇸", currency:"$", currencyCode:"USD" },
+  pt:    { name:"Português",        flag:"🇵🇹", currency:"€", currencyCode:"EUR" },
+  es:    { name:"Español",          flag:"🇪🇸", currency:"€", currencyCode:"EUR" },
+  fr:    { name:"Français",         flag:"🇫🇷", currency:"€", currencyCode:"EUR" },
+  de:    { name:"Deutsch",          flag:"🇩🇪", currency:"€", currencyCode:"EUR" },
+  it:    { name:"Italiano",         flag:"🇮🇹", currency:"€", currencyCode:"EUR" },
+  zh:    { name:"中文",              flag:"🇨🇳", currency:"¥", currencyCode:"CNY" },
+  ja:    { name:"日本語",            flag:"🇯🇵", currency:"¥", currencyCode:"JPY" },
+  ru:    { name:"Русский",          flag:"🇷🇺", currency:"₽", currencyCode:"RUB" },
+  ar:    { name:"العربية",          flag:"🇸🇦", currency:"﷼", currencyCode:"SAR" },
 };
-// ─── Language Context — propagates language selection to all components ────────
-const LangContext = React.createContext({ lang:"en", currency:"£", prices:LANGS.en.prices, t:T.en, changeLang:()=>{} });
-const useLang = () => React.useContext(LangContext);
+const getCurrency = () => LANGS[getLang()]?.currency || "£";
+const T = {
+  en:    { trainer:"TRAINER",    member:"MEMBER",    manageClients:"Manage clients",       startJourney:"Start your journey",       getStarted:"GET STARTED", moveTagline:"MOVE BETTER · LIVE STRONGER",           free:"Free",      pro:"Pro", trainerPlan:"Trainer"    },
+  "en-us":{ trainer:"TRAINER",  member:"MEMBER",    manageClients:"Manage clients",       startJourney:"Start your journey",       getStarted:"GET STARTED", moveTagline:"MOVE BETTER · LIVE STRONGER",           free:"Free",      pro:"Pro", trainerPlan:"Trainer"    },
+  pt:    { trainer:"TREINADOR", member:"MEMBRO",    manageClients:"Gerir clientes",       startJourney:"Comece a sua jornada",     getStarted:"COMEÇAR",     moveTagline:"MOVA-SE MELHOR · VIVA MAIS FORTE",      free:"Grátis",    pro:"Pro", trainerPlan:"Treinador"  },
+  es:    { trainer:"ENTRENADOR",member:"MIEMBRO",   manageClients:"Gestionar clientes",   startJourney:"Empieza tu viaje",         getStarted:"COMENZAR",    moveTagline:"MUÉVETE MEJOR · VIVE MÁS FUERTE",       free:"Gratis",    pro:"Pro", trainerPlan:"Entrenador" },
+  fr:    { trainer:"ENTRAÎNEUR",member:"MEMBRE",    manageClients:"Gérer les clients",    startJourney:"Commencez votre parcours", getStarted:"COMMENCER",   moveTagline:"BOUGEZ MIEUX · VIVEZ PLUS FORT",        free:"Gratuit",   pro:"Pro", trainerPlan:"Entraîneur" },
+  de:    { trainer:"TRAINER",   member:"MITGLIED",  manageClients:"Kunden verwalten",     startJourney:"Starte deine Reise",       getStarted:"LOSLEGEN",    moveTagline:"BESSER BEWEGEN · STÄRKER LEBEN",        free:"Kostenlos", pro:"Pro", trainerPlan:"Trainer"    },
+  it:    { trainer:"ALLENATORE",member:"MEMBRO",    manageClients:"Gestisci clienti",     startJourney:"Inizia il tuo percorso",   getStarted:"INIZIA",      moveTagline:"MUOVITI MEGLIO · VIVI PIÙ FORTE",       free:"Gratuito",  pro:"Pro", trainerPlan:"Allenatore" },
+  zh:    { trainer:"教练",       member:"会员",       manageClients:"管理客户",             startJourney:"开始你的旅程",             getStarted:"开始",         moveTagline:"动得更好 · 活得更强",                   free:"免费",       pro:"专业", trainerPlan:"教练"        },
+  ja:    { trainer:"トレーナー", member:"メンバー",   manageClients:"クライアント管理",     startJourney:"あなたの旅を始めましょう", getStarted:"始める",       moveTagline:"もっと動いて · もっと強く生きる",       free:"無料",       pro:"プロ", trainerPlan:"トレーナー"   },
+  ru:    { trainer:"ТРЕНЕР",    member:"УЧАСТНИК",  manageClients:"Управление клиентами", startJourney:"Начните свой путь",        getStarted:"НАЧАТЬ",      moveTagline:"ДВИГАЙТЕСЬ ЛУЧШЕ · ЖИВИТЕ СИЛЬНЕЕ",     free:"Бесплатно", pro:"Про",  trainerPlan:"Тренер"     },
+  ar:    { trainer:"مدرب",      member:"عضو",       manageClients:"إدارة العملاء",        startJourney:"ابدأ رحلتك",              getStarted:"ابدأ",        moveTagline:"تحرك بشكل أفضل · عش بقوة أكبر",        free:"مجاني",     pro:"احترافي", trainerPlan:"مدرب"    },
+};
+const getLang = () => { try { return localStorage.getItem("f2a_lang") || "en"; } catch { return "en"; } };
+const setLang = l => { try { localStorage.setItem("f2a_lang", l); } catch {} };
 
 
 const FAB_ICON = "data:image/png;base64,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";
@@ -1155,7 +1144,6 @@ function NutriIcon({ size=22, style={} }) {
 
 // ─── Advanced Nutrition Plan — AI-generated 4-week plan (paid feature £9.99) ─
 function AdvancedNutritionPlan({ user, profile, onBack }) {
-  const { currency, prices, t } = useLang();
   const STORAGE_KEY = "adv_nutrition_" + (user?.email||"guest");
   const PAID_KEY   = "adv_nutrition_paid_" + (user?.email||"guest");
   const EXPIRY_KEY = "adv_nutrition_expiry_" + (user?.email||"guest");
@@ -1338,7 +1326,7 @@ Return ONLY valid JSON (no markdown):
   if (showPayment) return (
     <PayPalModal
       planName="Advanced Nutrition Plan"
-      amount={prices.advNutr}
+      amount="9.99"
       onSuccess={handlePaymentSuccess}
       onClose={()=>setShowPayment(false)}
     />
@@ -1572,7 +1560,7 @@ Return ONLY valid JSON (no markdown):
           A fully personalised 4-week nutrition programme built by AI around your exact BMR, goals, and training schedule.
         </div>
         <div style={{ display:"flex", alignItems:"baseline", gap:"6px", marginBottom:"16px" }}>
-          <div style={{ fontFamily:"var(--fd)", fontSize:"36px", color:"#22c55e" }}>{currency}{prices.advNutr}</div>
+          <div style={{ fontFamily:"var(--fd)", fontSize:"36px", color:"#22c55e" }}>£9.99</div>
           <div style={{ fontSize:"13px", color:"var(--mut)" }}>one-time · yours forever</div>
         </div>
         {/* Features */}
@@ -1612,7 +1600,6 @@ Return ONLY valid JSON (no markdown):
 
 
 function NutritionHub({ user, profile }) {
-  const { currency, prices, t } = useLang();
   const [macros, setMacros] = useState({ p:165, c:220, f:60, fiber:30 });
   const [water, setWater] = useState(0);
   const [diet, setDiet] = useState("Standard");
@@ -1732,7 +1719,7 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
         <div onClick={()=>setVw("plans")} style={{ padding:"12px 14px", marginBottom:"12px", background:"linear-gradient(135deg,rgba(34,197,94,.08),rgba(16,185,129,.05))", border:"1px solid rgba(34,197,94,.22)", borderRadius:"12px", cursor:"pointer", display:"flex", alignItems:"center", gap:"12px" }}>
           <img src={NUTR_ICON_64} alt="" style={{ width:"36px", height:"36px", objectFit:"contain", flexShrink:0 }}/>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", color:"#22c55e", marginBottom:"2px" }}>{`ADVANCED NUTRITION PLAN — ${currency}{prices.advNutr}`}</div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", color:"#22c55e", marginBottom:"2px" }}>ADVANCED NUTRITION PLAN — £9.99</div>
             <div style={{ fontSize:"11px", color:"rgba(255,255,255,.5)" }}>4-week personalised plan with daily meals, macros & grocery lists →</div>
           </div>
           <span style={{ color:"#22c55e", fontSize:"16px" }}>›</span>
@@ -1887,7 +1874,7 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
               A fully AI-generated 4-week nutrition programme built around your exact BMR, TDEE, goals, and training schedule. No generic plans — everything personalised to you.
             </div>
             <div style={{ display:"flex", alignItems:"baseline", gap:"6px", marginBottom:"16px" }}>
-              <div style={{ fontFamily:"var(--fd)", fontSize:"34px", color:"#22c55e" }}>{currency}{prices.advNutr}</div>
+              <div style={{ fontFamily:"var(--fd)", fontSize:"34px", color:"#22c55e" }}>£9.99</div>
               <div style={{ fontSize:"13px", color:"var(--mut)" }}>one-time · yours forever</div>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:"6px", marginBottom:"20px" }}>
@@ -1899,7 +1886,7 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
             </div>
             <button onClick={()=>setShowAdvPlan(true)}
               style={{ width:"100%", padding:"16px", background:"linear-gradient(135deg,#22c55e,#16a34a)", border:"none", borderRadius:"14px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"2px", boxShadow:"0 6px 24px rgba(34,197,94,.3)", marginBottom:"10px" }}>
-              <NutriIcon size={18} style={{marginRight:"7px"}}/>{`GET MY PLAN — ${currency}{prices.advNutr}`}
+              <NutriIcon size={18} style={{marginRight:"7px"}}/> GET MY PLAN — £9.99
             </button>
             <div style={{ fontSize:"11px", color:"rgba(255,255,255,.3)", textAlign:"center", fontFamily:"var(--fm)" }}>
               Secure payment · Instant access · AI-generated in ~30 seconds
@@ -2063,9 +2050,6 @@ function AICoach({ user, profile, ctx, onClose, onLimit }) {
 
 // ─── Trainer Plan Screen ───────────────────────────────────────────────────────
 function TrainerUpgradeScreen({ clientCount, onUpgraded, onClose }) {
-  const { currency, prices } = useLang();
-  const TRAINER_PLANS = getTrainerPlans(currency, prices);
-  const TP_FEATURES = getTPFeatures(currency, prices);
   const [sel, setSel] = useState("starter");
   const [promoIn, setPromoIn] = useState("");
   const [promo, setPromo] = useState(null);
@@ -3006,7 +2990,6 @@ const MOCK_NOTES = {
 };
 
 function TrainerDashboard({ user, tab, setTab, onHome, onLogout }) {
-  const { t } = useLang();
   const [clients, setClients] = useState(MOCK_CLIENTS);
   const [notes, setNotes] = useState(MOCK_NOTES);
   const [selId, setSelId] = useState(null);
@@ -3077,8 +3060,8 @@ function TrainerDashboard({ user, tab, setTab, onHome, onLogout }) {
         <div style={{ position:"absolute", top:0, left:0, right:0, padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div onClick={onHome} style={{ cursor:"pointer" }}><Wordmark size={40} col="rgba(255,255,255,.9)"/></div>
           <div style={{ display:"flex", gap:"7px" }}>
-            <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"50px", color:"rgba(255,255,255,.6)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>{t.contact}</button>
-            <button onClick={onLogout} style={{ background:"rgba(255,31,31,.12)", border:"1px solid rgba(255,31,31,.3)", borderRadius:"50px", color:"var(--rd)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>{t.logout}</button>
+            <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"50px", color:"rgba(255,255,255,.6)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>CONTACT</button>
+            <button onClick={onLogout} style={{ background:"rgba(255,31,31,.12)", border:"1px solid rgba(255,31,31,.3)", borderRadius:"50px", color:"var(--rd)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>LOG OUT</button>
           </div>
         </div>
         {/* Trainer info */}
@@ -3087,7 +3070,7 @@ function TrainerDashboard({ user, tab, setTab, onHome, onLogout }) {
             <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&q=80" alt="Trainer" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
           </div>
           <div style={{ flex:1, paddingBottom:"2px" }}>
-            <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px", lineHeight:1, color:"var(--txt)" }}>{t.hey}, {user.name.split(" ")[0].toUpperCase()}</div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px", lineHeight:1, color:"var(--txt)" }}>HEY, {user.name.split(" ")[0].toUpperCase()}</div>
             <div style={{ display:"flex", alignItems:"center", gap:"8px", marginTop:"5px" }}>
               <div style={{ padding:"2px 9px", background:tplan.color+"20", border:`1px solid ${tplan.color}40`, borderRadius:"50px", fontSize:"10px", fontFamily:"var(--fm)", color:tplan.color, letterSpacing:"1px" }}>{tplan.name}</div>
               <div style={{ fontSize:"11px", color:"rgba(255,255,255,.4)" }}>{limit===Infinity?"Unlimited":""+clients.length+"/"+limit+" clients"}</div>
@@ -5258,7 +5241,6 @@ function MemberExLibBtn() {
 
 // ─── Member Dashboard ──────────────────────────────────────────────────────────
 function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome, onLogout }) {
-  const { t } = useLang();
   const [showGen, setShowGen] = useState(false);
   // Restore profile and program from localStorage for returning members
   const [profile, setProfile] = useState(() => loadProfile(user.email));
@@ -5287,8 +5269,8 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome, onLog
         <div style={{ position:"absolute", top:0, left:0, right:0, padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div onClick={onHome} style={{ cursor:"pointer" }}><Wordmark size={40} col="rgba(255,255,255,.9)"/></div>
           <div style={{ display:"flex", gap:"7px" }}>
-            <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"50px", color:"rgba(255,255,255,.6)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>{t.contact}</button>
-            <button onClick={onLogout} style={{ background:"rgba(255,31,31,.12)", border:"1px solid rgba(255,31,31,.3)", borderRadius:"50px", color:"var(--rd)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>{t.logout}</button>
+            <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"50px", color:"rgba(255,255,255,.6)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>CONTACT</button>
+            <button onClick={onLogout} style={{ background:"rgba(255,31,31,.12)", border:"1px solid rgba(255,31,31,.3)", borderRadius:"50px", color:"var(--rd)", cursor:"pointer", padding:"5px 12px", fontSize:"10px", fontFamily:"var(--fm)", letterSpacing:"1px" }}>LOG OUT</button>
           </div>
         </div>
         {/* User info row */}
@@ -5297,20 +5279,20 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome, onLog
             <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&q=80" alt="Member" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
           </div>
           <div style={{ flex:1, paddingBottom:"2px" }}>
-            <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px", lineHeight:1, color:"var(--txt)" }}>{t.hey}, {user.name.split(" ")[0].toUpperCase()}</div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px", lineHeight:1, color:"var(--txt)" }}>HEY, {user.name.split(" ")[0].toUpperCase()}</div>
             <div style={{ display:"flex", alignItems:"center", gap:"8px", marginTop:"5px" }}>
               <div style={{ padding:"2px 9px", background:sub?.id==="pro"?"rgba(14,165,233,.15)":"rgba(2,132,199,.12)", border:`1px solid ${sub?.id==="pro"?"rgba(14,165,233,.3)":"rgba(2,132,199,.3)"}`, borderRadius:"50px", fontSize:"10px", fontFamily:"var(--fm)", color:sub?.id==="pro"?"var(--acc)":"var(--a3)", letterSpacing:"1px" }}>
-                {sub?.id==="pro"?"⚡ "+t.pro:"🎁 "+t.freeTrial}
+                {sub?.id==="pro"?"⚡ PRO":"🎁 FREE TRIAL"}
               </div>
-              <div style={{ fontSize:"11px", color:"rgba(255,255,255,.4)" }}>{(profile?.goal||"").replace(/[🔥💪🏃🧘⚡🏆]/g,"").trim()} · {t.week} 1</div>
+              <div style={{ fontSize:"11px", color:"rgba(255,255,255,.4)" }}>{(profile?.goal||"").replace(/[🔥💪🏃🧘⚡🏆]/g,"").trim()} · Week 1</div>
             </div>
           </div>
         </div>
       </div>
       <div style={{ display:"flex", gap:"7px", padding:"12px 18px 4px", overflowX:"auto", scrollbarWidth:"none" }}>
         {(user.isTrainerClient
-          ? [["program","📋",t.myProgram],["nutrition","__NUTRI__",t.nav[2]],["exercises","🎥",t.exercises],["account","👤",t.account],["packages","📦",t.packages]]
-          : [["program","📋",t.nav[0]],["nutrition","__NUTRI__",t.nav[2]],["wearables","⌚",t.nav[1]],["stats","📊",t.stats],["account","👤",t.account],["new","🔄",t.newPlan]]
+          ? [["program","📋","My Program"],["nutrition","__NUTRI__","Nutrition"],["exercises","🎥","Exercises"],["account","👤","Account"],["packages","📦","Packages"]]
+          : [["program","📋","Program"],["nutrition","__NUTRI__","Nutrition"],["wearables","⌚","Wearables"],["stats","📊","Stats"],["account","👤","Account"],["new","🔄","New Plan"]]
         ).map(([t,ic,lbl])=>{
           const isA = tab===t;
           return (
@@ -5634,20 +5616,17 @@ function ProgressTracker({ storageKey, user }) {
 
 
 function UpgradeBtn({ onUpgrade }) {
-  const { currency, prices } = useLang();
   const [showPP, setShowPP] = useState(false);
   return (
     <>
-      <button onClick={()=>setShowPP(true)} style={{ width:"100%", padding:"12px", background:"var(--acc)", border:"none", borderRadius:"var(--r)", color:"#000", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px" }}>{`💳 UPGRADE TO PRO — ${currency}{prices.pro}/mo`}</button>
-      {showPP && <PayPalModal planName="Fit2All Pro" amount={prices.pro} onSuccess={()=>onUpgrade("done")} onClose={()=>setShowPP(false)}/>}
+      <button onClick={()=>setShowPP(true)} style={{ width:"100%", padding:"12px", background:"var(--acc)", border:"none", borderRadius:"var(--r)", color:"#000", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px" }}>💳 UPGRADE TO PRO — $4.99/mo</button>
+      {showPP && <PayPalModal planName="Fit2All Pro" amount="4.99" onSuccess={()=>onUpgrade("done")} onClose={()=>setShowPP(false)}/>}
     </>
   );
 }
 
 // ─── Plan Selection ────────────────────────────────────────────────────────────
 function PlanScreen({ onSelect, onBack, defaultPlan }) {
-  const { currency, prices, t } = useLang();
-  const MEMBER_PLANS = getMemberPlans(currency, prices);
   const [sel, setSel] = useState(defaultPlan||"free");
   const [showPP, setShowPP] = useState(false);
   return (
@@ -5678,17 +5657,16 @@ function PlanScreen({ onSelect, onBack, defaultPlan }) {
           ))}
         </Card>
         <PBtn onClick={()=>sel==="pro"?setShowPP(true):onSelect("free")} col={MEMBER_PLANS[sel].color} style={{ fontSize:"16px", letterSpacing:"2px", color:sel==="pro"?"#fff":"#000" }}>
-          {sel==="pro"?`💳 PAY ${currency}{prices.pro}/mo via PayPal`:"🎁 START FREE TRIAL"}
+          {sel==="pro"?"💳 PAY $4.99/mo via PayPal":"🎁 START FREE TRIAL"}
         </PBtn>
         <Mono style={{ textAlign:"center", marginTop:"8px" }}>{sel==="pro"?"Secure checkout · Cancel anytime":"No credit card required"}</Mono>
       </div>
-      {showPP && <PayPalModal planName="Fit2All Pro" amount={prices.pro} onSuccess={()=>onSelect("pro")} onClose={()=>setShowPP(false)}/>}
+      {showPP && <PayPalModal planName="Fit2All Pro" amount="4.99" onSuccess={()=>onSelect("pro")} onClose={()=>setShowPP(false)}/>}
     </div>
   );
 }
 
 function UpgradeModal({ reason, onUpgrade, onClose }) {
-  const { currency, prices } = useLang();
   const [showPP, setShowPP] = useState(false);
   const cfg = { ai_limit:{icon:"🤖",title:"DAILY LIMIT REACHED",body:"You've used your 2 daily AI questions. Upgrade for unlimited."}, trial_expired:{icon:"⏰",title:"TRIAL EXPIRED",body:"Your 30-day free trial has ended. Upgrade to continue."} };
   const info = cfg[reason] || cfg.ai_limit;
@@ -5701,22 +5679,21 @@ function UpgradeModal({ reason, onUpgrade, onClose }) {
             <div style={{ fontFamily:"var(--fd)", fontSize:"19px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"6px" }}>{info.title}</div>
             <p style={{ fontSize:"13px", color:"var(--mut)", lineHeight:1.7 }}>{info.body}</p>
           </div>
-          <PBtn onClick={()=>setShowPP(true)} style={{ marginBottom:"8px", fontSize:"14px", letterSpacing:"2px", color:"#000" }}>{`💳 PAY ${currency}{prices.pro}/mo via PayPal`}</PBtn>
+          <PBtn onClick={()=>setShowPP(true)} style={{ marginBottom:"8px", fontSize:"14px", letterSpacing:"2px", color:"#000" }}>💳 PAY $4.99/mo via PayPal</PBtn>
           <PBtn onClick={onClose} style={{ background:"transparent", border:"1px solid rgba(255,255,255,.08)", color:"var(--mut)", fontSize:"14px" }}>Maybe later</PBtn>
         </div>
       </div>
-      {showPP && <PayPalModal planName="Fit2All Pro" amount={prices.pro} onSuccess={()=>{ onUpgrade(); onClose(); }} onClose={()=>setShowPP(false)}/>}
+      {showPP && <PayPalModal planName="Fit2All Pro" amount="4.99" onSuccess={()=>{ onUpgrade(); onClose(); }} onClose={()=>setShowPP(false)}/>}
     </>
   );
 }
 
 // ─── Splash + Auth ─────────────────────────────────────────────────────────────
 function SplashScreen({ onContinue, onPlanPill, onAdminHold }) {
-  const { changeLang:changeAppLang, currency } = useLang();
   const [lang, setLangState] = useState(getLang());
   const [showLang, setShowLang] = useState(false);
   const t = T[lang] || T.en;
-  function changeLang(l) { setLang(l); setLangState(l); changeAppLang(l); setShowLang(false); }
+  function changeLang(l) { setLang(l); setLangState(l); setShowLang(false); }
   const [visible, setVisible] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [holdProg, setHoldProg] = useState(0);
@@ -5754,7 +5731,7 @@ function SplashScreen({ onContinue, onPlanPill, onAdminHold }) {
           </div>
           {/* CONTACT + Language stacked on the right */}
           <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"7px" }}>
-            <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.18)", borderRadius:"50px", color:"rgba(255,255,255,.8)", cursor:"pointer", padding:"6px 14px", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px", backdropFilter:"blur(8px)" }}>{t.contact}</button>
+            <button onClick={()=>setShowContact(true)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.18)", borderRadius:"50px", color:"rgba(255,255,255,.8)", cursor:"pointer", padding:"6px 14px", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px", backdropFilter:"blur(8px)" }}>CONTACT</button>
             {/* Language selector */}
             <div style={{ position:"relative" }}>
               <button onClick={()=>setShowLang(s=>!s)} style={{ display:"inline-flex", alignItems:"center", gap:"5px", padding:"5px 11px", background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.18)", borderRadius:"50px", color:"rgba(255,255,255,.7)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"0px" }}>
@@ -5835,7 +5812,7 @@ function SplashScreen({ onContinue, onPlanPill, onAdminHold }) {
           <div style={{ display:"flex", gap:"6px" }}>
             {[
               { img:"https://images.unsplash.com/photo-1539794830467-1f1755804d13?w=400&q=80", n:"Free", d:"30-day trial", c:"var(--a3)", action:"free" },
-              { img:"https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=80", n:"Pro", d:`${currency}${prices.pro}/mo`, c:"var(--acc)", action:"pro" },
+              { img:"https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=80", n:"Pro", d:"£5.99/mo", c:"var(--acc)", action:"pro" },
               { img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80", n:"Trainer", d:"From free", c:"var(--tr)", action:"trainer" },
             ].map(item=>(
               <div key={item.n} onClick={()=>onPlanPill&&onPlanPill(item.action)} style={{ flex:1, background:"rgba(255,255,255,.03)", border:`1px solid ${item.c}20`, borderRadius:"10px", overflow:"hidden", textAlign:"center", cursor:"pointer" }}>
@@ -5859,7 +5836,6 @@ function SplashScreen({ onContinue, onPlanPill, onAdminHold }) {
 }
 
 function AuthScreen({ role, onLogin, onBack }) {
-  const { t } = useLang();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -5899,23 +5875,23 @@ function AuthScreen({ role, onLogin, onBack }) {
         <BackBtn onClick={onBack}/>
         <div style={{ position:"absolute", bottom:"28px", left:0, right:0, display:"flex", flexDirection:"column", alignItems:"center", gap:"8px", paddingTop:"54px" }}>
           <div style={{ width:"60px", height:"60px", borderRadius:"18px", background:col+"18", border:`1.5px solid ${col}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"26px", backdropFilter:"blur(8px)" }}>{isT?"🏋️":"⚡"}</div>
-          <Mono style={{ color:col, letterSpacing:"2px" }}>{isT?t.trainerAccess:t.joinApp}</Mono>
+          <Mono style={{ color:col, letterSpacing:"2px" }}>{isT?"TRAINER ACCESS":"JOIN FIT2ALL"}</Mono>
         </div>
       </div>
 
       {/* Form area */}
       <div style={{ flex:1, padding:"28px 22px 36px", display:"flex", flexDirection:"column", gap:"18px" }}>
         <div style={{ fontFamily:"var(--fd)", fontSize:"clamp(28px,9vw,40px)", letterSpacing:"3px", lineHeight:.9, marginBottom:"4px" }}>
-          {isT ? t.signInTitle : <span>YOUR<br/><span style={{ color:col }}>JOURNEY</span><br/>STARTS</span>}
+          {isT ? "SIGN IN" : <span>YOUR<br/><span style={{ color:col }}>JOURNEY</span><br/>STARTS</span>}
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", gap:"13px" }}>
-          {!isSpecialEmail && <Field lbl={t.fullName} val={name} set={setName} ph="Your name" acc={col}/>}
-          <Field lbl={t.emailAddr} val={email} set={v=>{ setEmail(v); setOwnerErr(""); }} ph="your@email.com" acc={col} type="email"/>
+          {!isSpecialEmail && <Field lbl="FULL NAME" val={name} set={setName} ph="Your name" acc={col}/>}
+          <Field lbl="EMAIL ADDRESS" val={email} set={v=>{ setEmail(v); setOwnerErr(""); }} ph="your@email.com" acc={col} type="email"/>
           {/* Show password field only for owner email */}
           {isSpecialEmail && (
             <div>
-              <Mono style={{ marginBottom:"7px", color:ownerErr?"var(--rd)":"var(--mut)" }}>{t.password}</Mono>
+              <Mono style={{ marginBottom:"7px", color:ownerErr?"var(--rd)":"var(--mut)" }}>PASSWORD</Mono>
               <div style={{ position:"relative" }}>
                 <input type={showPass?"text":"password"} value={password} onChange={e=>{ setPassword(e.target.value); setOwnerErr(""); }} onKeyDown={e=>e.key==="Enter"&&handleLogin()} placeholder="Enter your password" style={{ width:"100%", padding:"12px 40px 12px 14px", background:"rgba(255,255,255,.04)", border:`1px solid ${ownerErr?"var(--rd)":"rgba(255,255,255,.1)"}`, borderRadius:"10px", color:"var(--txt)", fontSize:"14px", fontFamily:"var(--fm)", outline:"none", letterSpacing:"2px" }}/>
                 <button onClick={()=>setShowPass(s=>!s)} style={{ position:"absolute", right:"11px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:"var(--mut)", cursor:"pointer", fontSize:"14px" }}>{showPass?"🙈":"👁️"}</button>
@@ -5927,13 +5903,13 @@ function AuthScreen({ role, onLogin, onBack }) {
               </div>
             </div>
           )}
-          {isT && !isOwnerEmail && <Field lbl={t.certId} val="" set={()=>{}} ph="e.g. NASM-12345" acc={col}/>}
+          {isT && !isOwnerEmail && <Field lbl="CERTIFICATION ID" val="" set={()=>{}} ph="e.g. NASM-12345" acc={col}/>}
         </div>
 
         <div style={{ marginTop:"auto" }}>
           <button onClick={handleLogin} disabled={isSpecialEmail&&!password.trim()}
             style={{ width:"100%", padding:"16px", background:isSpecialEmail&&!password.trim()?"rgba(255,255,255,.08)":col, border:"none", borderRadius:"var(--r)", color:isSpecialEmail&&!password.trim()?"var(--mut)":"#000", cursor:isSpecialEmail&&!password.trim()?"default":"pointer", fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px", boxShadow:isSpecialEmail&&!password.trim()?"none":`0 8px 28px ${col}30`, marginBottom:"12px" }}>
-            {isSpecialEmail ? "👑 LOGIN" : isT?t.enterDash:t.letsGo}
+            {isSpecialEmail ? "👑 LOGIN" : isT?"ENTER DASHBOARD →":"LET'S GO →"}
           </button>
           {/* Fingerprint button — only shown if biometric is registered for a previous session */}
           {store.get("f2a_biometric_user") && (
@@ -5945,10 +5921,10 @@ function AuthScreen({ role, onLogin, onBack }) {
                 else { alert("Biometric verified but no saved session found. Please log in manually once."); }
               }
             }} style={{ width:"100%", padding:"14px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.15)", borderRadius:"var(--r)", color:"var(--txt)", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px", marginBottom:"12px", display:"flex", alignItems:"center", justifyContent:"center", gap:"10px" }}>
-              <span style={{ fontSize:"22px" }}>👆</span> {t.useFingerprint}
+              <span style={{ fontSize:"22px" }}>👆</span> USE FINGERPRINT
             </button>
           )}
-          <Mono style={{ textAlign:"center" }}>{t.terms}</Mono>
+          <Mono style={{ textAlign:"center" }}>By continuing you agree to our Terms of Service</Mono>
         </div>
       </div>
     </div>
@@ -5982,11 +5958,9 @@ function NavIcon({ id, active }) {
 }
 
 function BottomNav({ role, tab, setTab }) {
-  const { t } = useLang();
-  const nav = t.nav || ["Program","Wearables","Nutrition","Calendar"];
   const tabs = role==="trainer"
     ? [["clients","Clients"],["calendar","Calendar"],["profile","Profile"]]
-    : [["program",nav[0]],["wearables",nav[1]],["nutrition",nav[2]],["calendar",nav[3]]];
+    : [["program","Program"],["wearables","Wearables"],["nutrition","Nutrition"],["calendar","Calendar"]];
   const col = role==="trainer" ? "var(--tr)" : "var(--acc)";
   return (
     <div style={{ position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", zIndex:50 }}>
@@ -6104,13 +6078,6 @@ function FAB({ onClick }) {
 
 // ─── Root App ──────────────────────────────────────────────────────────────────
 export default function App() {
-  // ─── Language state ─────────────────────────────────────────────────────────
-  const [lang, setLangState] = useState(getLang());
-  function changeAppLang(l) { setLang(l); setLangState(l); }
-  const currency = LANGS[lang]?.currency || "£";
-  const prices = LANGS[lang]?.prices || LANGS.en.prices;
-  const t = T[lang] || T.en;
-
   // Restore session from localStorage on load
   const savedSession = loadSession();
   const [screen, setScreen] = useState(savedSession ? "app" : "splash");
@@ -6185,7 +6152,6 @@ export default function App() {
   function doUpgrade() { setUpgradeReason(null); const s = mkMemberSub("pro"); setSub(s); }
 
   return (
-    <LangContext.Provider value={{ lang, currency, prices, t, changeLang:changeAppLang }}>
     <div style={{ maxWidth:"480px", margin:"0 auto", minHeight:"100vh", position:"relative" }}>
       {screen==="splash" && <SplashScreen onContinue={goRole} onPlanPill={plan=>{ if(plan==="trainer"){ goRole("trainer"); } else if(plan==="pro"){ setRole("enthusiast"); setScreen("plan_pro"); } else { goRole("enthusiast"); } }} onAdminHold={()=>setShowAdminLogin(true)}/>}
       {screen==="plan"   && <PlanScreen onSelect={goPlan} onBack={()=>setScreen("splash")}/>}
@@ -6216,7 +6182,6 @@ export default function App() {
       {showAdminLogin && <AdminLogin onLogin={()=>{ setShowAdminLogin(false); setShowAdminPanel(true); }} onClose={()=>setShowAdminLogin(false)}/>}
       {showAdminPanel && <AdminPanel onClose={()=>setShowAdminPanel(false)}/>}
     </div>
-    </LangContext.Provider>
   );
 }
 
