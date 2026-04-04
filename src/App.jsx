@@ -5311,10 +5311,10 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome, onLog
         {(user.isTrainerClient
           ? [["program","📋",t.myProgram],["nutrition","__NUTRI__",t.nav[2]],["exercises","🎥",t.exercises],["account","👤",t.account],["packages","📦",t.packages]]
           : [["program","📋",t.nav[0]],["nutrition","__NUTRI__",t.nav[2]],["wearables","⌚",t.nav[1]],["stats","📊",t.stats],["account","👤",t.account],["new","🔄",t.newPlan]]
-        ).map(([t,ic,lbl])=>{
-          const isA = tab===t;
+        ).map(([tabId,ic,lbl])=>{
+          const isA = tab===tabId;
           return (
-            <button key={t} onClick={()=>{ if(t==="new"){
+            <button key={tabId} onClick={()=>{ if(tabId==="new"){
                 const bmrDone = !!loadProfile(user.email)?.bmr;
                 const bioAgeDoneNow = (() => { try { return !!localStorage.getItem("bioage_done_"+user.email); } catch { return false; } })();
                 if (!bmrDone || !bioAgeDoneNow) {
@@ -5322,7 +5322,7 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome, onLog
                   return;
                 }
                 setProg(null); setShowGen(true);
-              } else setTab(t); }}
+              } else setTab(tabId); }}
               style={{ padding:"7px 14px", background:isA?"var(--acc)":"rgba(255,255,255,.05)", border:`1px solid ${isA?"var(--acc)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:isA?"#000":"rgba(255,255,255,.55)", cursor:"pointer", fontSize:"12px", fontFamily:"var(--fb)", fontWeight:isA?700:500, whiteSpace:"nowrap", transition:"all .2s", display:"flex", alignItems:"center", gap:"5px", flexShrink:0 }}>
               {ic==="__NUTRI__"
                 ? <img src={NUTRITION_ICON} alt="nutrition" style={{ width:"15px", height:"15px", objectFit:"contain", filter:isA?"brightness(0)":"none" }}/>
@@ -5712,7 +5712,7 @@ function UpgradeModal({ reason, onUpgrade, onClose }) {
 
 // ─── Splash + Auth ─────────────────────────────────────────────────────────────
 function SplashScreen({ onContinue, onPlanPill, onAdminHold }) {
-  const { changeLang:changeAppLang, currency } = useLang();
+  const { changeLang:changeAppLang, currency, prices } = useLang();
   const [lang, setLangState] = useState(getLang());
   const [showLang, setShowLang] = useState(false);
   const t = T[lang] || T.en;
