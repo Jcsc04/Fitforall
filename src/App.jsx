@@ -8,8 +8,14 @@ import React, { useState, useEffect, useRef } from "react";
   document.head.appendChild(fl);
   const gs = document.createElement("style");
   gs.textContent = `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --bg:#0a0a0a;--card:#141414;--acc:#0ea5e9;--a2:#ff1f1f;--a3:#0284c7;--a4:#0ea5e9;--txt:#f5f5f5;--mut:#666666;--tr:#ff1f1f;--gr:#0ea5e9;--yw:#ff6b00;--rd:#ff1f1f;--r:14px;--fd:'Orbitron',sans-serif;--fb:'Inter',sans-serif;--fm:'Space Mono',monospace; }
-body { background:var(--bg);color:var(--txt);font-family:var(--fb);overflow-x:hidden; }
+:root { --bg:#0a0a0a;--card:#141414;--acc:#0ea5e9;--a2:#ff1f1f;--a3:#0284c7;--a4:#0ea5e9;--txt:#f5f5f5;--mut:#666666;--tr:#ff1f1f;--gr:#0ea5e9;--yw:#ff6b00;--rd:#ff1f1f;--r:14px;--fd:'Orbitron',sans-serif;--fb:'Space Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--fm:'Space Mono',monospace; }
+body { background:var(--bg);color:var(--txt);font-family:var(--fb);overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%; }
+* { box-sizing:border-box; }
+/* Responsive container */
+#root { max-width:480px; margin:0 auto; }
+/* Tablet adjustments */
+@media (min-width:481px) and (max-width:1024px) { #root { max-width:600px; } }
+@media (min-width:1025px) { #root { max-width:480px; box-shadow:0 0 80px rgba(0,0,0,.8); } }
 ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -74,6 +80,12 @@ const FULL_ACCESS_USERS = [
   { name:"Joao M",  email:"Jmrm0912@hotmail.com", password:"Jmrmjcsc" },
   { name:"FitPlus", email:"Fitplustest@gmail.com", password:"Fitplus" },
 ];
+function isFullAccess(email) {
+  if (!email) return false;
+  const e = email.toLowerCase();
+  return e === "jcsc04@gmail.com" ||
+    FULL_ACCESS_USERS.some(u => u.email.toLowerCase() === e);
+}
 
 
 
@@ -1133,10 +1145,48 @@ function NutriIcon({ size=22, style={} }) {
 // ─── Advanced Nutrition Plan — AI-generated 4-week plan (paid feature £9.99) ─
 function AdvancedNutritionPlan({ user, profile, onBack }) {
   const STORAGE_KEY = "adv_nutrition_" + (user?.email||"guest");
+  const PAID_KEY   = "adv_nutrition_paid_" + (user?.email||"guest");
+  const EXPIRY_KEY = "adv_nutrition_expiry_" + (user?.email||"guest");
+
+  // Check full-access bypass
+  const isFreeAccess = isFullAccess(user?.email);
+
+  // Check if paid (or free access) and not expired
+  const isPaid = (() => {
+    if (isFreeAccess) return true;
+    try {
+      const paid = localStorage.getItem(PAID_KEY);
+      if (!paid) return false;
+      const expiry = localStorage.getItem(EXPIRY_KEY);
+      if (expiry && new Date() > new Date(expiry)) {
+        // Expired — clear plan
+        localStorage.removeItem(PAID_KEY);
+        localStorage.removeItem(STORAGE_KEY);
+        return false;
+      }
+      return true;
+    } catch { return false; }
+  })();
+
   const [plan, setPlan] = useState(() => {
+    if (!isPaid) return null;
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); } catch { return null; }
   });
   const [loading, setLoading] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
+
+  function handlePaymentSuccess() {
+    // Mark as paid with 6-week expiry
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + 42); // 6 weeks
+    try {
+      localStorage.setItem(PAID_KEY, "true");
+      localStorage.setItem(EXPIRY_KEY, expiry.toISOString());
+    } catch {}
+    setShowPayment(false);
+    setPaymentDone(true);
+  }
   const [msgIdx, setMsgIdx] = useState(0);
   const [activeWeek, setActiveWeek] = useState(0);
   const [activeDay, setActiveDay] = useState(null);
@@ -1271,6 +1321,36 @@ Return ONLY valid JSON (no markdown):
     }
     setLoading(false);
   }
+
+  // ── PAYMENT MODAL ──
+  if (showPayment) return (
+    <PayPalModal
+      planName="Advanced Nutrition Plan"
+      amount="9.99"
+      onSuccess={handlePaymentSuccess}
+      onClose={()=>setShowPayment(false)}
+    />
+  );
+
+  // ── WELCOME / GENERATE SCREEN (after payment) ──
+  if ((isPaid || paymentDone) && !plan && !loading) return (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"#0a0a0a", zIndex:700, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px", textAlign:"center" }}>
+      <div style={{ fontSize:"64px", marginBottom:"20px" }}>🥗</div>
+      <div style={{ fontFamily:"var(--fd)", fontSize:"24px", letterSpacing:"2px", color:"#22c55e", marginBottom:"12px" }}>WELCOME!</div>
+      <div style={{ fontSize:"15px", color:"rgba(255,255,255,.7)", lineHeight:1.8, marginBottom:"8px" }}>
+        Your Advanced Nutrition Plan is ready to generate.
+      </div>
+      <div style={{ fontSize:"13px", color:"rgba(255,255,255,.4)", lineHeight:1.6, marginBottom:"32px" }}>
+        This is a personalised 4-week plan built around your goals, BMR, and training schedule. It takes about 20-30 seconds to create.
+      </div>
+      <button onClick={generatePlan}
+        style={{ width:"100%", maxWidth:"320px", padding:"18px", background:"linear-gradient(135deg,#22c55e,#16a34a)", border:"none", borderRadius:"14px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px", boxShadow:"0 8px 32px rgba(34,197,94,.35)", marginBottom:"12px" }}>
+        🌿 GENERATE MY NUTRITION PLAN
+      </button>
+      <div style={{ fontSize:"11px", color:"rgba(255,255,255,.3)", fontFamily:"var(--fm)" }}>Valid for 6 weeks · Stored on your device</div>
+      {isFreeAccess && <div style={{ marginTop:"10px", fontSize:"11px", color:"#22c55e", fontFamily:"var(--fm)" }}>⚡ Full access granted</div>}
+    </div>
+  );
 
   // ── LOADING STATE ──
   if (loading) return (
@@ -1532,44 +1612,93 @@ function NutritionHub({ user, profile }) {
 
   if (showAdvPlan) return <AdvancedNutritionPlan user={user} profile={profile} onBack={()=>setShowAdvPlan(false)}/>;
 
-  async function genMeals() {
-    setMealsLoading(true); setMeals(null);
-    const goal    = mealGoal;
-    const bmr     = profile?.bmr;
-    const tdee    = profile?.tdee;
-    const wkg     = profile?.weightKg;
-    const gender  = profile?.gender;
-    const bioAge  = profile?.bioAge || profile?.bmrAge;
+  // Meal plan limits based on subscription
+  const memberEmail = user?.email || "";
+  const memberPlan  = (() => {
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST", headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
-        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:3000,
-          messages:[{ role:"user", content:`You are a registered dietitian and sports nutritionist. Create a highly specific, practical 1-day meal plan.
+      const s = JSON.parse(localStorage.getItem("f2a_member_sub")||"{}");
+      return s.id || "free";
+    } catch { return "free"; }
+  })();
+  const hasFullAccess = isFullAccess(memberEmail);
+  const mealDays = hasFullAccess ? 7 : memberPlan === "pro" ? 7 : 2;
+  const mealLabel = hasFullAccess ? "7-day" : memberPlan === "pro" ? "7-day" : "2-day";
+  // Check if meal plan already generated this period
+  const MEAL_GEN_KEY = "meal_plan_generated_" + memberEmail;
+  const alreadyGenerated = (() => {
+    if (hasFullAccess) return false;
+    try {
+      const ts = localStorage.getItem(MEAL_GEN_KEY);
+      if (!ts) return false;
+      const generated = new Date(ts);
+      const now = new Date();
+      if (memberPlan === "pro") {
+        // Reset monthly (30 days)
+        const diffDays = (now - generated) / (1000*60*60*24);
+        return diffDays < 30;
+      } else {
+        // Free trial — never regenerate (one time)
+        return true;
+      }
+    } catch { return false; }
+  })();
 
-MEMBER PROFILE:
-- Goal: ${goal}
-- Focus: ${mealTime}
-${bmr ? `- BMR: ${bmr} kcal/day | TDEE: ${tdee} kcal/day` : ""}
-${wkg ? `- Weight: ${wkg}kg` : ""}
-${gender ? `- Gender: ${gender}` : ""}
-${bioAge ? `- Fitness Age: ${bioAge}` : ""}
+  async function genMeals() {
+    if (alreadyGenerated) return;
+    setMealsLoading(true); setMeals(null);
+    const goal   = mealGoal;
+    const bmr    = profile?.bmr;
+    const tdee   = profile?.tdee;
+    const wkg    = profile?.weightKg;
+    const gender = profile?.gender;
+    const bioAge = profile?.bioAge || profile?.bmrAge;
 
-REQUIREMENTS:
-1. 5-6 meals including snacks, exactly timed through the day
-2. Pre and post-workout meals if it's a training day
-3. Real, specific food items with exact quantities (grams/oz)
-4. Each meal: realistic preparation instructions (not just "cook and serve")
-5. Calorie and macro targets aligned to their TDEE and goal
-6. A practical shopping list
-
-Return ONLY JSON:
-{"meals":[{"mealTime":"Meal name","time":"HH:MM AM/PM","name":"Full meal name","calories":number,"protein":number,"carbs":number,"fat":number,"ingredients":["150g chicken breast","80g brown rice","100g broccoli"],"prep":"2-3 sentence detailed prep method","tip":"specific goal-aligned tip","type":"breakfast|pre-workout|post-workout|lunch|dinner|snack"}],"dailyTotals":{"calories":number,"protein":number,"carbs":number,"fat":number},"groceryList":["item with quantity"],"nutritionNotes":"2-sentence expert commentary on this day's nutrition strategy"}` }]
-        })
-      });
-      const d = await res.json();
-      const raw = d.content?.[0]?.text || "";
-      setMeals(JSON.parse(raw.replace(/```json/g,"").replace(/```/g,"").trim()));
-    } catch { setMeals({ meals:[{mealTime:"Error",name:"Couldn't generate meals",calories:0,protein:0,carbs:0,fat:0,ingredients:[],prep:"Please try again.",tip:"Check your connection."}], dailyTotals:{}, groceryList:[] }); }
+    // Generate one day at a time to avoid token limits
+    const allDays = [];
+    try {
+      for (let d = 1; d <= mealDays; d++) {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method:"POST",
+          headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
+          body: JSON.stringify({
+            model:"claude-sonnet-4-20250514",
+            max_tokens:2000,
+            messages:[{ role:"user", content:
+              `You are a dietitian. Create a 1-day meal plan for Day ${d} of ${mealDays}.
+Goal: ${goal}. Focus: ${mealTime}.${bmr?` TDEE: ${tdee}kcal.`:""}${wkg?` Weight: ${wkg}kg.`:""}${gender?` Gender: ${gender}.`:""}
+Return ONLY a JSON object (no markdown, no extra text):
+{"day":${d},"label":"Day ${d}","meals":[{"name":"Breakfast","time":"7:30 AM","calories":420,"protein":32,"carbs":48,"fat":11,"foods":["180g oats","250ml milk","1 banana"],"prep":"Cook oats in milk, top with banana.","tip":"Great energy for morning."}],"totalCalories":2100,"totalProtein":170,"totalCarbs":220,"totalFat":60}
+Include exactly 5 meals: Breakfast, Mid-Morning Snack, Lunch, Afternoon Snack, Dinner. Make it realistic and goal-aligned.`
+            }]
+          })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message || "API error");
+        const raw = (data.content?.[0]?.text || "")
+          .replace(/^```json\s*/,"").replace(/^```\s*/,"").replace(/\s*```$/,"").trim();
+        // Find first { and last } to extract JSON cleanly
+        const firstBrace = raw.indexOf("{");
+        const lastBrace = raw.lastIndexOf("}");
+        if (firstBrace === -1 || lastBrace === -1) throw new Error("No JSON in response");
+        const parsed = JSON.parse(raw.slice(firstBrace, lastBrace + 1));
+        allDays.push(parsed);
+      }
+      // Build grocery list from all days
+      const allFoods = allDays.flatMap(day =>
+        (day.meals||[]).flatMap(m => m.foods||[])
+      );
+      const uniqueFoods = [...new Set(allFoods)].slice(0, 25);
+      setMeals({ days: allDays, groceryList: uniqueFoods, notes:`${mealDays}-day ${goal} meal plan tailored to your TDEE and goals.` });
+    } catch(err) {
+      setMeals({ days:[{ day:1, label:"Day 1", meals:[{
+        name:"Generation failed",
+        time:"—", calories:0, protein:0, carbs:0, fat:0,
+        foods:[], prep:`Error: ${err?.message||"Unknown error"}. Tap Generate again.`, tip:"Check your internet connection."
+      }], totalCalories:0, totalProtein:0 }], groceryList:[], notes:"" });
+    }
+    if (!hasFullAccess) {
+      try { localStorage.setItem(MEAL_GEN_KEY, new Date().toISOString()); } catch {}
+    }
     setMealsLoading(false);
   }
   const totalKcal = macros.p*4 + macros.c*4 + macros.f*9;
@@ -1606,7 +1735,10 @@ Return ONLY JSON:
       {vw==="meals" && (
         <div style={{ animation:"fadeIn .3s" }}>
           <Card style={{ padding:"14px", marginBottom:"12px", border:"1px solid rgba(2,132,199,.2)" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"10px" }}><img src={NUTR_ICON_32} alt="" style={{ width:"22px", height:"22px", objectFit:"contain" }}/><Mono>AI MEAL PLANNER</Mono></div>
+            <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"6px" }}><img src={NUTR_ICON_32} alt="" style={{ width:"22px", height:"22px", objectFit:"contain" }}/><Mono>AI MEAL PLANNER</Mono></div>
+            <div style={{ fontSize:"11px", color:"rgba(255,255,255,.4)", fontFamily:"var(--fm)", marginBottom:"10px" }}>
+              {hasFullAccess ? "⚡ Full access — 7-day plan" : memberPlan === "pro" ? "⭐ Pro — 7-day plan · Refreshes monthly" : "🆓 Free trial — 2-day plan · One time only"}
+            </div>
             <div style={{ marginBottom:"10px" }}>
               <Mono style={{ marginBottom:"7px" }}>YOUR GOAL</Mono>
               <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
@@ -1624,7 +1756,7 @@ Return ONLY JSON:
               </div>
             </div>
             <button onClick={genMeals} disabled={mealsLoading} style={{ width:"100%", padding:"13px", background:mealsLoading?"rgba(255,255,255,.06)":"var(--a3)", border:"none", borderRadius:"10px", color:mealsLoading?"var(--mut)":"#000", cursor:mealsLoading?"default":"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px" }}>
-              {mealsLoading ? "⏳ GENERATING..." : "🌿 GENERATE MEAL PLAN"}
+              {mealsLoading ? "⏳ GENERATING..." : alreadyGenerated ? `✓ ${mealLabel.toUpperCase()} PLAN GENERATED` : `🌿 GENERATE ${mealLabel.toUpperCase()} MEAL PLAN`}
             </button>
           </Card>
 
@@ -1635,71 +1767,68 @@ Return ONLY JSON:
             </Card>
           )}
 
-          {meals && !mealsLoading && (
-            <div>
-              {/* Daily totals */}
-              {meals.dailyTotals?.calories && (
-                <Card style={{ padding:"13px", marginBottom:"11px", border:"1px solid rgba(2,132,199,.15)" }}>
-                  <Mono style={{ marginBottom:"9px", color:"var(--a3)" }}>DAILY TOTALS</Mono>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"6px" }}>
-                    {[{l:"Calories",v:meals.dailyTotals.calories,c:"var(--acc)"},{l:"Protein",v:meals.dailyTotals.protein,c:"var(--tr)"},{l:"Carbs",v:meals.dailyTotals.carbs,c:"var(--a3)"},{l:"Fat",v:meals.dailyTotals.fat,c:"var(--a4)"}].map(s=>(
-                      <div key={s.l} style={{ textAlign:"center", padding:"8px 4px", background:"rgba(255,255,255,.04)", borderRadius:"8px" }}>
-                        <div style={{ fontFamily:"var(--fd)", fontSize:"14px", color:s.c, lineHeight:1 }}>{s.v}</div>
-                        <div style={{ fontSize:"9px", color:"var(--mut)", marginTop:"3px" }}>{s.l}</div>
-                      </div>
-                    ))}
+          {meals && !mealsLoading && (() => {
+            // Handle both old format (meals array) and new multi-day format (days array)
+            const days = meals.days || [{ day:1, label:"Day 1", meals: meals.meals||[], totalCalories: meals.dailyTotals?.calories, totalProtein: meals.dailyTotals?.protein }];
+            const grocery = meals.groceryList || [];
+            const notes = meals.notes || meals.nutritionNotes || "";
+            return (
+              <div style={{ animation:"fadeIn .3s" }}>
+                {notes && (
+                  <div style={{ padding:"11px 13px", background:"rgba(34,197,94,.06)", border:"1px solid rgba(34,197,94,.18)", borderRadius:"12px", marginBottom:"12px", fontSize:"12px", color:"rgba(255,255,255,.65)", lineHeight:1.65, fontStyle:"italic" }}>
+                    💡 {notes}
                   </div>
-                </Card>
-              )}
-
-              {/* Meal cards */}
-              {(meals.meals||[]).map((meal,i)=>(
-                <Card key={i} style={{ marginBottom:"9px", overflow:"hidden", border:"1px solid rgba(255,255,255,.08)", animation:`fadeUp .3s ease ${i*.07}s both` }}>
-                  <div style={{ padding:"13px" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px" }}>
-                      <div>
-                        <div style={{ fontFamily:"var(--fm)", fontSize:"9px", color:"var(--a3)", letterSpacing:"1px", marginBottom:"2px" }}>{meal.mealTime?.toUpperCase()}</div>
-                        <div style={{ fontWeight:700, fontSize:"15px" }}>{meal.name}</div>
-                      </div>
-                      <div style={{ textAlign:"right" }}>
-                        <div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:"var(--acc)" }}>{meal.calories}</div>
-                        <div style={{ fontSize:"9px", color:"var(--mut)" }}>kcal</div>
-                      </div>
-                    </div>
-                    <div style={{ display:"flex", gap:"8px", marginBottom:"9px" }}>
-                      {[{l:"P",v:meal.protein,c:"var(--tr)"},{l:"C",v:meal.carbs,c:"var(--a3)"},{l:"F",v:meal.fat,c:"var(--a4)"}].map(m=>(
-                        <div key={m.l} style={{ padding:"3px 9px", background:m.c+"12", border:`1px solid ${m.c}25`, borderRadius:"50px", fontSize:"11px", color:m.c, fontFamily:"var(--fm)" }}>{m.l}: {m.v}</div>
-                      ))}
-                    </div>
-                    {meal.ingredients?.length>0 && (
-                      <div style={{ marginBottom:"8px" }}>
-                        <Mono style={{ marginBottom:"5px" }}>INGREDIENTS</Mono>
-                        <div style={{ display:"flex", flexWrap:"wrap", gap:"5px" }}>
-                          {meal.ingredients.map((ing,j)=>(
-                            <span key={j} style={{ fontSize:"11px", padding:"2px 8px", background:"rgba(255,255,255,.05)", borderRadius:"5px", color:"rgba(255,255,255,.65)" }}>{ing}</span>
+                )}
+                {days.map((dayObj, di) => (
+                  <div key={di} style={{ marginBottom:"16px" }}>
+                    <Mono style={{ color:"var(--a3)", marginBottom:"8px" }}>{dayObj.label || `DAY ${dayObj.day}`} · {dayObj.totalCalories||"—"} kcal</Mono>
+                    {(dayObj.meals||[]).map((m,mi) => (
+                      <Card key={mi} style={{ padding:"13px", marginBottom:"8px", border:"1px solid rgba(255,255,255,.07)" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"7px" }}>
+                          <div>
+                            <div style={{ fontWeight:700, fontSize:"14px" }}>{m.name}</div>
+                            <div style={{ fontSize:"11px", color:"var(--mut)", fontFamily:"var(--fm)" }}>⏰ {m.time}</div>
+                          </div>
+                          <div style={{ textAlign:"right" }}>
+                            <div style={{ fontFamily:"var(--fd)", fontSize:"16px", color:"var(--acc)" }}>{m.calories}</div>
+                            <div style={{ fontSize:"9px", color:"var(--mut)", fontFamily:"var(--fm)" }}>kcal</div>
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:"5px", marginBottom:"7px" }}>
+                          {[{l:"P",v:m.protein,c:"#f87171"},{l:"C",v:m.carbs,c:"#60a5fa"},{l:"F",v:m.fat,c:"#fbbf24"}].map((x,xi)=>(
+                            <div key={xi} style={{ padding:"2px 7px", background:"rgba(255,255,255,.04)", border:`1px solid ${x.c}25`, borderRadius:"20px", fontSize:"11px", color:x.c, fontFamily:"var(--fd)" }}>{x.l}: {x.v}g</div>
                           ))}
                         </div>
-                      </div>
-                    )}
-                    {meal.prep && <div style={{ fontSize:"12px", color:"rgba(255,255,255,.55)", lineHeight:1.6, marginBottom:"5px" }}>{meal.prep}</div>}
-                    {meal.tip && <div style={{ fontSize:"11px", color:"var(--a3)", fontStyle:"italic" }}>💡 {meal.tip}</div>}
-                  </div>
-                </Card>
-              ))}
-
-              {/* Grocery list */}
-              {meals.groceryList?.length>0 && (
-                <Card style={{ padding:"14px", border:"1px solid rgba(14,165,233,.15)" }}>
-                  <Mono style={{ marginBottom:"9px", color:"var(--a4)" }}>🛒 GROCERY LIST</Mono>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:"6px" }}>
-                    {meals.groceryList.map((item,i)=>(
-                      <span key={i} style={{ fontSize:"12px", padding:"4px 10px", background:"rgba(14,165,233,.08)", border:"1px solid rgba(14,165,233,.2)", borderRadius:"8px", color:"rgba(255,255,255,.7)" }}>{item}</span>
+                        {(m.foods||m.ingredients||[]).map((f,fi)=>(
+                          <div key={fi} style={{ fontSize:"12px", color:"rgba(255,255,255,.65)", display:"flex", gap:"5px", marginBottom:"2px" }}>
+                            <span style={{ color:"var(--a3)", flexShrink:0 }}>•</span>{f}
+                          </div>
+                        ))}
+                        {m.prep && <div style={{ marginTop:"7px", fontSize:"12px", color:"rgba(255,255,255,.45)", lineHeight:1.6, borderTop:"1px solid rgba(255,255,255,.05)", paddingTop:"6px" }}>👨‍🍳 {m.prep}</div>}
+                        {m.tip && <div style={{ marginTop:"4px", fontSize:"11px", color:"var(--a3)", fontStyle:"italic" }}>💡 {m.tip}</div>}
+                      </Card>
                     ))}
+                    <div style={{ padding:"8px 12px", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.06)", borderRadius:"10px", display:"flex", gap:"10px", flexWrap:"wrap" }}>
+                      <span style={{ fontSize:"11px", color:"var(--mut)", fontFamily:"var(--fm)" }}>Totals:</span>
+                      {[{l:"Calories",v:dayObj.totalCalories||"—",c:"var(--acc)"},{l:"Protein",v:(dayObj.totalProtein||"—")+"g",c:"#f87171"},{l:"Carbs",v:(dayObj.totalCarbs||"—")+"g",c:"#60a5fa"},{l:"Fat",v:(dayObj.totalFat||"—")+"g",c:"#fbbf24"}].map((t,ti)=>(
+                        <span key={ti} style={{ fontSize:"11px", color:t.c, fontFamily:"var(--fd)" }}>{t.l}: {t.v}</span>
+                      ))}
+                    </div>
                   </div>
-                </Card>
-              )}
-            </div>
-          )}
+                ))}
+                {grocery.length > 0 && (
+                  <Card style={{ padding:"13px", marginTop:"8px", border:"1px solid rgba(255,255,255,.07)" }}>
+                    <Mono style={{ marginBottom:"8px" }}>🛒 GROCERY LIST</Mono>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:"5px" }}>
+                      {grocery.map((g,gi)=>(
+                        <div key={gi} style={{ padding:"3px 9px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"20px", fontSize:"11px", color:"rgba(255,255,255,.7)" }}>{g}</div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
       {vw==="macros" && (
@@ -3520,9 +3649,13 @@ function GenProg({ profile, user, onDone }) {
     setTimeout(() => setMsg("Designing your program structure..."), 800);
     setTimeout(() => { setPhase("generating"); setMsg("AI building your personalised workouts..."); }, 1600);
 
-    const PROMPT = `You are an elite certified personal trainer and sports scientist. Design a complete, highly personalised 4-week periodized training program.
+    // Load saved bio age result for extra detail
+  const savedBioResult = (() => {
+    try { return JSON.parse(localStorage.getItem("bioage_result_"+(user?.email||"")))||null; } catch { return null; } })();
 
-MEMBER PROFILE:
+  const PROMPT = `You are an elite certified personal trainer and sports scientist with 20+ years of experience. Design a COMPLETE, highly personalised 4-week periodized training program. This must be ADVANCED, SPECIFIC, and PROFESSIONAL — not generic.
+
+MEMBER PROFILE (use ALL of this to personalise every aspect):
 - Name: ${user?.name || "Athlete"}
 - Goal: ${goal}
 - Fitness Level: ${level}
@@ -3531,8 +3664,11 @@ MEMBER PROFILE:
 - Equipment: ${equip}
 - Gender: ${gender}
 ${wkg ? `- Body Weight: ${wkg}kg` : ""}
-${bmr ? `- BMR: ${bmr} kcal/day | TDEE: ${tdee} kcal/day` : ""}
-${bioAge ? `- Fitness Age: ${bioAge} years` : ""}
+${bmr ? `- BMR: ${bmr} kcal/day (energy at rest)` : ""}
+${tdee ? `- TDEE: ${tdee} kcal/day (total daily needs)` : ""}
+${bioAge ? `- Fitness Age: ${bioAge} years (use this to adjust intensity, recovery, and exercise selection)` : ""}
+${savedBioResult ? `- VO2max estimate: ${savedBioResult.vo2max || "unknown"}, overall fitness score: ${savedBioResult.score || "unknown"}` : ""}
+${profile?.duration ? `- Preferred session length: ${profile.duration} minutes` : ""}
 
 PROGRAM REQUIREMENTS:
 1. Use periodization: Week 1 Foundation → Week 2 Progression → Week 3 Intensification → Week 4 Deload
@@ -3932,8 +4068,8 @@ function ExerciseDetailModal({ exercise, userEmail, onClose }) {
   const [view, setView] = useState("detail"); // detail | log | progress
   const [exData, setExData] = useState(null);
   const [imgSrc, setImgSrc] = useState(null);
-  const FREE_EX_URL = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
-  const FREE_EX_IMG = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+  const FREE_EX_URL = "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/dist/exercises.json";
+  const FREE_EX_IMG = "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/";
 
   // Fetch exercise details from library
   useEffect(() => {
@@ -5213,9 +5349,6 @@ function MemberDashboard({ user, tab, setTab, sub, ctx, onUpgrade, onHome, onLog
         )}
         {tab==="packages" && (
           <MemberPackages user={user}/>
-        )}
-        {tab==="calendar" && (
-          <WorkoutCalendar userEmail={user.email}/>
         )}
         {tab==="calendar" && (
           <WorkoutCalendar userEmail={user.email}/>
