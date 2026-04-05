@@ -63,6 +63,8 @@ const getLang = () => { try { return localStorage.getItem("f2a_lang") || "en"; }
 const setLang = l => { try { localStorage.setItem("f2a_lang", l); } catch {} };
 const getCurrency = () => LANGS[getLang()]?.currency || "£";
 const getInitPrices = () => LANGS[getLang()]?.prices || LANGS.en.prices;
+const LANG_NAMES = { en:"English","en-us":"English",pt:"Portuguese",es:"Spanish",fr:"French",de:"German",it:"Italian",zh:"Chinese",ja:"Japanese",ru:"Russian",ar:"Arabic" };
+const getLangName = () => LANG_NAMES[getLang()] || "English";
 
 // ─── Member Plans ─────────────────────────────────────────────────────────────
 // Currency-aware plan getters — call with getCurrency() or from useLang()
@@ -272,20 +274,19 @@ async function verifyBiometric() {
 }
 
 const T = {
-  en:     { trainer:"TRAINER",    member:"MEMBER",    manageClients:"Manage clients",       startJourney:"Start your journey",       getStarted:"GET STARTED", moveTagline:"MOVE BETTER · LIVE STRONGER",        free:"Free",      pro:"Pro", trainerPlan:"Trainer",    nav:["Program","Wearables","Nutrition","Calendar"], perMonth:"/month", advNutr:"Advanced Nutrition Plan", loginBtn:"LOG IN",   joinBtn:"JOIN NOW"   , trainerAccess:"TRAINER ACCESS", joinApp:"JOIN FITPLUS", signInTitle:"SIGN IN", journeyTitle:"YOUR JOURNEY STARTS", fullName:"FULL NAME", emailAddr:"EMAIL ADDRESS", certId:"CERTIFICATION ID", password:"PASSWORD", enterDash:"ENTER DASHBOARD →", letsGo:"LET\'S GO →", useFingerprint:"USE FINGERPRINT", terms:"By continuing you agree to our Terms", contact:"CONTACT", logout:"LOG OUT", hey:"HEY", week:"Week", stats:"Stats", account:"Account", exercises:"Exercises", packages:"Packages", newPlan:"New Plan", myProgram:"My Program", freeTrial:"FREE TRIAL" },
-  "en-us":{ trainer:"TRAINER",   member:"MEMBER",    manageClients:"Manage clients",       startJourney:"Start your journey",       getStarted:"GET STARTED", moveTagline:"MOVE BETTER · LIVE STRONGER",        free:"Free",      pro:"Pro", trainerPlan:"Trainer",    nav:["Program","Wearables","Nutrition","Calendar"], perMonth:"/month", advNutr:"Advanced Nutrition Plan", loginBtn:"LOG IN",   joinBtn:"JOIN NOW"   , trainerAccess:"TRAINER ACCESS", joinApp:"JOIN FITPLUS", signInTitle:"SIGN IN", journeyTitle:"YOUR JOURNEY STARTS", fullName:"FULL NAME", emailAddr:"EMAIL ADDRESS", certId:"CERTIFICATION ID", password:"PASSWORD", enterDash:"ENTER DASHBOARD →", letsGo:"LET\'S GO →", useFingerprint:"USE FINGERPRINT", terms:"By continuing you agree to our Terms", contact:"CONTACT", logout:"LOG OUT", hey:"HEY", week:"Week", stats:"Stats", account:"Account", exercises:"Exercises", packages:"Packages", newPlan:"New Plan", myProgram:"My Program", freeTrial:"FREE TRIAL" },
-  pt:     { trainer:"TREINADOR", member:"MEMBRO",    manageClients:"Gerir clientes",       startJourney:"Comece a sua jornada",     getStarted:"COMEÇAR",     moveTagline:"MOVA-SE MELHOR · VIVA MAIS FORTE",   free:"Grátis",    pro:"Pro", trainerPlan:"Treinador",  nav:["Programa","Wearables","Nutrição","Calendário"], perMonth:"/mês", advNutr:"Plano Nutrição Avançado", loginBtn:"ENTRAR",   joinBtn:"REGISTAR"   , trainerAccess:"ACESSO TREINADOR", joinApp:"JUNTE-SE AO FITPLUS", signInTitle:"ENTRAR", journeyTitle:"A SUA JORNADA COMEÇA", fullName:"NOME COMPLETO", emailAddr:"ENDEREÇO DE EMAIL", certId:"ID DE CERTIFICAÇÃO", password:"SENHA", enterDash:"IR AO PAINEL →", letsGo:"VAMOS →", useFingerprint:"USAR IMPRESSÃO DIGITAL", terms:"Ao continuar aceita os nossos Termos", contact:"CONTACTO", logout:"SAIR", hey:"OLÁ", week:"Semana", stats:"Estatísticas", account:"Conta", exercises:"Exercícios", packages:"Pacotes", newPlan:"Novo Plano", myProgram:"Meu Programa", freeTrial:"TESTE GRÁTIS" },
-  es:     { trainer:"ENTRENADOR",member:"MIEMBRO",   manageClients:"Gestionar clientes",   startJourney:"Empieza tu viaje",         getStarted:"COMENZAR",    moveTagline:"MUÉVETE MEJOR · VIVE MÁS FUERTE",    free:"Gratis",    pro:"Pro", trainerPlan:"Entrenador", nav:["Programa","Wearables","Nutrición","Calendario"], perMonth:"/mes", advNutr:"Plan Nutrición Avanzado", loginBtn:"ENTRAR",   joinBtn:"ÚNETE"      , trainerAccess:"ACCESO ENTRENADOR", joinApp:"ÚNETE A FITPLUS", signInTitle:"INICIAR SESIÓN", journeyTitle:"TU VIAJE COMIENZA", fullName:"NOMBRE COMPLETO", emailAddr:"DIRECCIÓN DE EMAIL", certId:"ID DE CERTIFICACIÓN", password:"CONTRASEÑA", enterDash:"IR AL PANEL →", letsGo:"¡VAMOS →", useFingerprint:"USAR HUELLA DIGITAL", terms:"Al continuar aceptas nuestros Términos", contact:"CONTACTO", logout:"CERRAR SESIÓN", hey:"HOLA", week:"Semana", stats:"Estadísticas", account:"Cuenta", exercises:"Ejercicios", packages:"Paquetes", newPlan:"Nuevo Plan", myProgram:"Mi Programa", freeTrial:"PRUEBA GRATIS" },
-  fr:     { trainer:"ENTRAÎNEUR",member:"MEMBRE",    manageClients:"Gérer les clients",    startJourney:"Commencez votre parcours", getStarted:"COMMENCER",   moveTagline:"BOUGEZ MIEUX · VIVEZ PLUS FORT",     free:"Gratuit",   pro:"Pro", trainerPlan:"Entraîneur", nav:["Programme","Wearables","Nutrition","Calendrier"], perMonth:"/mois", advNutr:"Plan Nutrition Avancé", loginBtn:"CONNEXION",joinBtn:"REJOINDRE"  , trainerAccess:"ACCÈS ENTRAÎNEUR", joinApp:"REJOINDRE FITPLUS", signInTitle:"CONNEXION", journeyTitle:"VOTRE VOYAGE COMMENCE", fullName:"NOM COMPLET", emailAddr:"ADRESSE EMAIL", certId:"ID DE CERTIFICATION", password:"MOT DE PASSE", enterDash:"ACCÉDER AU TABLEAU →", letsGo:"ALLONS-Y →", useFingerprint:"UTILISER L\'EMPREINTE", terms:"En continuant vous acceptez nos Conditions", contact:"CONTACT", logout:"DÉCONNEXION", hey:"SALUT", week:"Semaine", stats:"Statistiques", account:"Compte", exercises:"Exercices", packages:"Forfaits", newPlan:"Nouveau Plan", myProgram:"Mon Programme", freeTrial:"ESSAI GRATUIT" },
-  de:     { trainer:"TRAINER",   member:"MITGLIED",  manageClients:"Kunden verwalten",     startJourney:"Starte deine Reise",       getStarted:"LOSLEGEN",    moveTagline:"BESSER BEWEGEN · STÄRKER LEBEN",     free:"Kostenlos", pro:"Pro", trainerPlan:"Trainer",    nav:["Programm","Wearables","Ernährung","Kalender"], perMonth:"/Monat", advNutr:"Erweiterter Ernährungsplan", loginBtn:"ANMELDEN", joinBtn:"BEITRETEN"  , trainerAccess:"TRAINER-ZUGANG", joinApp:"FITPLUS BEITRETEN", signInTitle:"ANMELDEN", journeyTitle:"DEINE REISE BEGINNT", fullName:"VOLLSTÄNDIGER NAME", emailAddr:"E-MAIL-ADRESSE", certId:"ZERTIFIZIERUNGS-ID", password:"PASSWORT", enterDash:"ZUM DASHBOARD →", letsGo:"LOS GEHT\'S →", useFingerprint:"FINGERABDRUCK NUTZEN", terms:"Mit Fortfahren stimmen Sie den Bedingungen zu", contact:"KONTAKT", logout:"ABMELDEN", hey:"HEY", week:"Woche", stats:"Statistiken", account:"Konto", exercises:"Übungen", packages:"Pakete", newPlan:"Neuer Plan", myProgram:"Mein Programm", freeTrial:"KOSTENLOSE TESTVERSION" },
-  it:     { trainer:"ALLENATORE",member:"MEMBRO",    manageClients:"Gestisci clienti",     startJourney:"Inizia il tuo percorso",   getStarted:"INIZIA",      moveTagline:"MUOVITI MEGLIO · VIVI PIÙ FORTE",    free:"Gratuito",  pro:"Pro", trainerPlan:"Allenatore", nav:["Programma","Wearables","Nutrizione","Calendario"], perMonth:"/mese", advNutr:"Piano Nutrizionale Avanzato", loginBtn:"ACCEDI",   joinBtn:"ISCRIVITI"  , trainerAccess:"ACCESSO ALLENATORE", joinApp:"UNISCITI A FITPLUS", signInTitle:"ACCEDI", journeyTitle:"IL TUO VIAGGIO INIZIA", fullName:"NOME COMPLETO", emailAddr:"INDIRIZZO EMAIL", certId:"ID CERTIFICAZIONE", password:"PASSWORD", enterDash:"VAI AL PANNELLO →", letsGo:"ANDIAMO →", useFingerprint:"USA IMPRONTA DIGITALE", terms:"Continuando accetti i nostri Termini", contact:"CONTATTO", logout:"ESCI", hey:"CIAO", week:"Settimana", stats:"Statistiche", account:"Account", exercises:"Esercizi", packages:"Pacchetti", newPlan:"Nuovo Piano", myProgram:"Il Mio Programma", freeTrial:"PROVA GRATUITA" },
-  zh:     { trainer:"教练",       member:"会员",       manageClients:"管理客户",             startJourney:"开始你的旅程",             getStarted:"开始",         moveTagline:"更好运动 · 更强生活",                free:"免费",       pro:"专业", trainerPlan:"教练",       nav:["训练计划","可穿戴","营养","日历"],            perMonth:"/月",    advNutr:"高级营养计划",             loginBtn:"登录",      joinBtn:"立即加入"    , trainerAccess:"教练入口", joinApp:"加入FITPLUS", signInTitle:"登录", journeyTitle:"您的旅程开始", fullName:"全名", emailAddr:"电子邮件地址", certId:"认证编号", password:"密码", enterDash:"进入控制台 →", letsGo:"出发 →", useFingerprint:"使用指纹", terms:"继续即表示您同意我们的条款", contact:"联系", logout:"退出", hey:"嘿", week:"周", stats:"统计", account:"账户", exercises:"练习", packages:"套餐", newPlan:"新计划", myProgram:"我的计划", freeTrial:"免费试用" },
-  ja:     { trainer:"トレーナー", member:"メンバー",   manageClients:"クライアント管理",     startJourney:"あなたの旅を始めましょう", getStarted:"始める",       moveTagline:"より良く動く · より強く生きる",      free:"無料",       pro:"プロ", trainerPlan:"トレーナー", nav:["プログラム","ウェアラブル","栄養","カレンダー"], perMonth:"/月",  advNutr:"高度な栄養プラン",         loginBtn:"ログイン",  joinBtn:"今すぐ参加"  , trainerAccess:"トレーナーアクセス", joinApp:"FITPLUSに参加", signInTitle:"ログイン", journeyTitle:"あなたの旅が始まる", fullName:"フルネーム", emailAddr:"メールアドレス", certId:"資格証明書ID", password:"パスワード", enterDash:"ダッシュボードへ →", letsGo:"始めましょう →", useFingerprint:"指紋を使用", terms:"続行することで利用規約に同意します", contact:"お問い合わせ", logout:"ログアウト", hey:"こんにちは", week:"週", stats:"統計", account:"アカウント", exercises:"エクササイズ", packages:"パッケージ", newPlan:"新しいプラン", myProgram:"マイプログラム", freeTrial:"無料トライアル" },
-  ru:     { trainer:"ТРЕНЕР",    member:"УЧАСТНИК",  manageClients:"Управление клиентами", startJourney:"Начните свой путь",        getStarted:"НАЧАТЬ",      moveTagline:"ДВИГАЙСЯ ЛУЧШЕ · ЖИВИ СИЛЬНЕЕ",     free:"Бесплатно", pro:"Про",  trainerPlan:"Тренер",     nav:["Программа","Устройства","Питание","Календарь"], perMonth:"/месяц", advNutr:"Расширенный план питания", loginBtn:"ВОЙТИ",    joinBtn:"ПРИСОЕДИНИТЬСЯ" , trainerAccess:"ДОСТУП ТРЕНЕРА", joinApp:"ПРИСОЕДИНИТЬСЯ К FITPLUS", signInTitle:"ВОЙТИ", journeyTitle:"ВАШЕ ПУТЕШЕСТВИЕ НАЧИНАЕТСЯ", fullName:"ПОЛНОЕ ИМЯ", emailAddr:"АДРЕС ЭПОЧТЫ", certId:"ID СЕРТИФИКАЦИИ", password:"ПАРОЛЬ", enterDash:"В ПАНЕЛЬ →", letsGo:"ВПЕРЁД →", useFingerprint:"ИСПОЛЬЗОВАТЬ ОТПЕЧАТОК", terms:"Продолжая вы принимаете наши Условия", contact:"КОНТАКТ", logout:"ВЫЙТИ", hey:"ПРИВЕТ", week:"Неделя", stats:"Статистика", account:"Аккаунт", exercises:"Упражнения", packages:"Пакеты", newPlan:"Новый план", myProgram:"Моя программа", freeTrial:"БЕСПЛАТНЫЙ ПЕРИОД" },
-  ar:     { trainer:"مدرب",      member:"عضو",       manageClients:"إدارة العملاء",        startJourney:"ابدأ رحلتك",              getStarted:"ابدأ",        moveTagline:"تحرك أفضل · عش أقوى",               free:"مجاني",     pro:"احترافي", trainerPlan:"مدرب",  nav:["البرنامج","الأجهزة","التغذية","التقويم"],      perMonth:"/شهر", advNutr:"خطة التغذية المتقدمة",    loginBtn:"تسجيل الدخول", joinBtn:"انضم الآن" , trainerAccess:"وصول المدرب", joinApp:"انضم إلى FITPLUS", signInTitle:"تسجيل الدخول", journeyTitle:"رحلتك تبدأ", fullName:"الاسم الكامل", emailAddr:"عنوان البريد الإلكتروني", certId:"معرف الشهادة", password:"كلمة المرور", enterDash:"لوحة التحكم →", letsGo:"لنبدأ →", useFingerprint:"استخدام بصمة الإصبع", terms:"بالمتابعة توافق على شروط الخدمة", contact:"تواصل", logout:"تسجيل الخروج", hey:"مرحباً", week:"أسبوع", stats:"إحصائيات", account:"الحساب", exercises:"تمارين", packages:"حزم", newPlan:"خطة جديدة", myProgram:"برنامجي", freeTrial:"تجربة مجانية" },
-};
-// ─── Language Context — propagates language selection to all components ────────
-const LangContext = React.createContext({ lang:"en", currency:"£", prices:LANGS.en.prices, t:T.en, changeLang:()=>{} });
+  en:     { trainer:"TRAINER",    member:"MEMBER",    manageClients:"Manage clients",       startJourney:"Start your journey",       getStarted:"GET STARTED", moveTagline:"MOVE BETTER · LIVE STRONGER",        free:"Free",      pro:"Pro", trainerPlan:"Trainer",    nav:["Program","Wearables","Nutrition","Calendar"], perMonth:"/month", advNutr:"Advanced Nutrition Plan", loginBtn:"LOG IN",   joinBtn:"JOIN NOW"   , trainerAccess:"TRAINER ACCESS", joinApp:"JOIN FITPLUS", signInTitle:"SIGN IN", journeyTitle:"YOUR JOURNEY STARTS", fullName:"FULL NAME", emailAddr:"EMAIL ADDRESS", certId:"CERTIFICATION ID", password:"PASSWORD", enterDash:"ENTER DASHBOARD →", letsGo:"LET\'S GO →", useFingerprint:"USE FINGERPRINT", terms:"By continuing you agree to our Terms", contact:"CONTACT", logout:"LOG OUT", hey:"HEY", week:"Week", stats:"Stats", account:"Account", exercises:"Exercises", packages:"Packages", newPlan:"New Plan", myProgram:"My Program", freeTrial:"FREE TRIAL" , generate:"GENERATE", generating:"GENERATING...", planGenerated:"PLAN GENERATED", back:"BACK", retry:"RETRY", overview:"OVERVIEW", meals:"MEALS", macros:"MACROS", water:"WATER", plans:"PLANS", aiCoach:"AI COACH", program:"PROGRAM", wearables:"WEARABLES", nutrition:"NUTRITION", calendar:"CALENDAR", upgrade:"UPGRADE", proAccess:"PRO ACCESS", fuelCenter:"FUEL CENTER", nutritionHub:"NUTRITION HUB", aiMealPlanner:"AI MEAL PLANNER", yourGoal:"YOUR GOAL", mealFocus:"MEAL FOCUS", groceryList:"GROCERY LIST", advNutrPlan:"ADVANCED NUTRITION PLAN", getMyPlan:"GET MY PLAN", supplement:"SUPPLEMENT", hydration:"HYDRATION", mealPrep:"MEAL PREP", weeklyGoals:"WEEKLY GOALS", generating2:"Generating...", weekOf:"Week", day:"Day", total:"Total", protein:"Protein", carbs:"Carbs", fat:"Fat", calories:"Calories" },
+  "en-us":{ trainer:"TRAINER",   member:"MEMBER",    manageClients:"Manage clients",       startJourney:"Start your journey",       getStarted:"GET STARTED", moveTagline:"MOVE BETTER · LIVE STRONGER",        free:"Free",      pro:"Pro", trainerPlan:"Trainer",    nav:["Program","Wearables","Nutrition","Calendar"], perMonth:"/month", advNutr:"Advanced Nutrition Plan", loginBtn:"LOG IN",   joinBtn:"JOIN NOW"   , trainerAccess:"TRAINER ACCESS", joinApp:"JOIN FITPLUS", signInTitle:"SIGN IN", journeyTitle:"YOUR JOURNEY STARTS", fullName:"FULL NAME", emailAddr:"EMAIL ADDRESS", certId:"CERTIFICATION ID", password:"PASSWORD", enterDash:"ENTER DASHBOARD →", letsGo:"LET\'S GO →", useFingerprint:"USE FINGERPRINT", terms:"By continuing you agree to our Terms", contact:"CONTACT", logout:"LOG OUT", hey:"HEY", week:"Week", stats:"Stats", account:"Account", exercises:"Exercises", packages:"Packages", newPlan:"New Plan", myProgram:"My Program", freeTrial:"FREE TRIAL" , generate:"GENERATE", generating:"GENERATING...", planGenerated:"PLAN GENERATED", back:"BACK", retry:"RETRY", overview:"OVERVIEW", meals:"MEALS", macros:"MACROS", water:"WATER", plans:"PLANS", aiCoach:"AI COACH", program:"PROGRAM", wearables:"WEARABLES", nutrition:"NUTRITION", calendar:"CALENDAR", upgrade:"UPGRADE", proAccess:"PRO ACCESS", fuelCenter:"FUEL CENTER", nutritionHub:"NUTRITION HUB", aiMealPlanner:"AI MEAL PLANNER", yourGoal:"YOUR GOAL", mealFocus:"MEAL FOCUS", groceryList:"GROCERY LIST", advNutrPlan:"ADVANCED NUTRITION PLAN", getMyPlan:"GET MY PLAN", supplement:"SUPPLEMENT", hydration:"HYDRATION", mealPrep:"MEAL PREP", weeklyGoals:"WEEKLY GOALS", generating2:"Generating...", weekOf:"Week", day:"Day", total:"Total", protein:"Protein", carbs:"Carbs", fat:"Fat", calories:"Calories" },
+  pt:     { trainer:"TREINADOR", member:"MEMBRO",    manageClients:"Gerir clientes",       startJourney:"Comece a sua jornada",     getStarted:"COMEÇAR",     moveTagline:"MOVA-SE MELHOR · VIVA MAIS FORTE",   free:"Grátis",    pro:"Pro", trainerPlan:"Treinador",  nav:["Programa","Wearables","Nutrição","Calendário"], perMonth:"/mês", advNutr:"Plano Nutrição Avançado", loginBtn:"ENTRAR",   joinBtn:"REGISTAR"   , trainerAccess:"ACESSO TREINADOR", joinApp:"JUNTE-SE AO FITPLUS", signInTitle:"ENTRAR", journeyTitle:"A SUA JORNADA COMEÇA", fullName:"NOME COMPLETO", emailAddr:"ENDEREÇO DE EMAIL", certId:"ID DE CERTIFICAÇÃO", password:"SENHA", enterDash:"IR AO PAINEL →", letsGo:"VAMOS →", useFingerprint:"USAR IMPRESSÃO DIGITAL", terms:"Ao continuar aceita os nossos Termos", contact:"CONTACTO", logout:"SAIR", hey:"OLÁ", week:"Semana", stats:"Estatísticas", account:"Conta", exercises:"Exercícios", packages:"Pacotes", newPlan:"Novo Plano", myProgram:"Meu Programa", freeTrial:"TESTE GRÁTIS" , generate:"GERAR", generating:"GERANDO...", planGenerated:"PLANO GERADO", back:"VOLTAR", retry:"TENTAR NOVAMENTE", overview:"VISÃO GERAL", meals:"REFEIÇÕES", macros:"MACROS", water:"ÁGUA", plans:"PLANOS", aiCoach:"TREINADOR IA", program:"PROGRAMA", wearables:"WEARABLES", nutrition:"NUTRIÇÃO", calendar:"CALENDÁRIO", upgrade:"MELHORAR", proAccess:"ACESSO PRO", fuelCenter:"CENTRO DE COMBUSTÍVEL", nutritionHub:"HUB DE NUTRIÇÃO", aiMealPlanner:"PLANEADOR IA", yourGoal:"O SEU OBJETIVO", mealFocus:"FOCO DA REFEIÇÃO", groceryList:"LISTA DE COMPRAS", advNutrPlan:"PLANO NUTRIÇÃO AVANÇADO", getMyPlan:"OBTER O MEU PLANO", supplement:"SUPLEMENTO", hydration:"HIDRATAÇÃO", mealPrep:"PREP REFEIÇÕES", weeklyGoals:"OBJETIVOS SEMANAIS", generating2:"A gerar...", weekOf:"Semana", day:"Dia", total:"Total", protein:"Proteína", carbs:"Carboidratos", fat:"Gordura", calories:"Calorias" },
+  es:     { trainer:"ENTRENADOR",member:"MIEMBRO",   manageClients:"Gestionar clientes",   startJourney:"Empieza tu viaje",         getStarted:"COMENZAR",    moveTagline:"MUÉVETE MEJOR · VIVE MÁS FUERTE",    free:"Gratis",    pro:"Pro", trainerPlan:"Entrenador", nav:["Programa","Wearables","Nutrición","Calendario"], perMonth:"/mes", advNutr:"Plan Nutrición Avanzado", loginBtn:"ENTRAR",   joinBtn:"ÚNETE"      , trainerAccess:"ACCESO ENTRENADOR", joinApp:"ÚNETE A FITPLUS", signInTitle:"INICIAR SESIÓN", journeyTitle:"TU VIAJE COMIENZA", fullName:"NOMBRE COMPLETO", emailAddr:"DIRECCIÓN DE EMAIL", certId:"ID DE CERTIFICACIÓN", password:"CONTRASEÑA", enterDash:"IR AL PANEL →", letsGo:"¡VAMOS →", useFingerprint:"USAR HUELLA DIGITAL", terms:"Al continuar aceptas nuestros Términos", contact:"CONTACTO", logout:"CERRAR SESIÓN", hey:"HOLA", week:"Semana", stats:"Estadísticas", account:"Cuenta", exercises:"Ejercicios", packages:"Paquetes", newPlan:"Nuevo Plan", myProgram:"Mi Programa", freeTrial:"PRUEBA GRATIS" , generate:"GENERAR", generating:"GENERANDO...", planGenerated:"PLAN GENERADO", back:"ATRÁS", retry:"REINTENTAR", overview:"RESUMEN", meals:"COMIDAS", macros:"MACROS", water:"AGUA", plans:"PLANES", aiCoach:"ENTRENADOR IA", program:"PROGRAMA", wearables:"WEARABLES", nutrition:"NUTRICIÓN", calendar:"CALENDARIO", upgrade:"MEJORAR", proAccess:"ACCESO PRO", fuelCenter:"CENTRO DE COMBUSTIBLE", nutritionHub:"HUB DE NUTRICIÓN", aiMealPlanner:"PLANIFICADOR IA", yourGoal:"TU OBJETIVO", mealFocus:"ENFOQUE COMIDA", groceryList:"LISTA DE COMPRAS", advNutrPlan:"PLAN NUTRICIÓN AVANZADO", getMyPlan:"OBTENER MI PLAN", supplement:"SUPLEMENTO", hydration:"HIDRATACIÓN", mealPrep:"PREP COMIDAS", weeklyGoals:"OBJETIVOS SEMANALES", generating2:"Generando...", weekOf:"Semana", day:"Día", total:"Total", protein:"Proteína", carbs:"Carbohidratos", fat:"Grasa", calories:"Calorías" },
+  fr:     { trainer:"ENTRAÎNEUR",member:"MEMBRE",    manageClients:"Gérer les clients",    startJourney:"Commencez votre parcours", getStarted:"COMMENCER",   moveTagline:"BOUGEZ MIEUX · VIVEZ PLUS FORT",     free:"Gratuit",   pro:"Pro", trainerPlan:"Entraîneur", nav:["Programme","Wearables","Nutrition","Calendrier"], perMonth:"/mois", advNutr:"Plan Nutrition Avancé", loginBtn:"CONNEXION",joinBtn:"REJOINDRE"  , trainerAccess:"ACCÈS ENTRAÎNEUR", joinApp:"REJOINDRE FITPLUS", signInTitle:"CONNEXION", journeyTitle:"VOTRE VOYAGE COMMENCE", fullName:"NOM COMPLET", emailAddr:"ADRESSE EMAIL", certId:"ID DE CERTIFICATION", password:"MOT DE PASSE", enterDash:"ACCÉDER AU TABLEAU →", letsGo:"ALLONS-Y →", useFingerprint:"UTILISER L\'EMPREINTE", terms:"En continuant vous acceptez nos Conditions", contact:"CONTACT", logout:"DÉCONNEXION", hey:"SALUT", week:"Semaine", stats:"Statistiques", account:"Compte", exercises:"Exercices", packages:"Forfaits", newPlan:"Nouveau Plan", myProgram:"Mon Programme", freeTrial:"ESSAI GRATUIT" , generate:"GÉNÉRER", generating:"GÉNÉRATION...", planGenerated:"PLAN GÉNÉRÉ", back:"RETOUR", retry:"RÉESSAYER", overview:"APERÇU", meals:"REPAS", macros:"MACROS", water:"EAU", plans:"PLANS", aiCoach:"COACH IA", program:"PROGRAMME", wearables:"WEARABLES", nutrition:"NUTRITION", calendar:"CALENDRIER", upgrade:"AMÉLIORER", proAccess:"ACCÈS PRO", fuelCenter:"CENTRE CARBURANT", nutritionHub:"HUB NUTRITION", aiMealPlanner:"PLANIFICATEUR IA", yourGoal:"VOTRE OBJECTIF", mealFocus:"FOCUS REPAS", groceryList:"LISTE DE COURSES", advNutrPlan:"PLAN NUTRITION AVANCÉ", getMyPlan:"OBTENIR MON PLAN", supplement:"SUPPLÉMENT", hydration:"HYDRATATION", mealPrep:"PRÉP REPAS", weeklyGoals:"OBJECTIFS HEBDO", generating2:"Génération...", weekOf:"Semaine", day:"Jour", total:"Total", protein:"Protéines", carbs:"Glucides", fat:"Lipides", calories:"Calories" },
+  de:     { trainer:"TRAINER",   member:"MITGLIED",  manageClients:"Kunden verwalten",     startJourney:"Starte deine Reise",       getStarted:"LOSLEGEN",    moveTagline:"BESSER BEWEGEN · STÄRKER LEBEN",     free:"Kostenlos", pro:"Pro", trainerPlan:"Trainer",    nav:["Programm","Wearables","Ernährung","Kalender"], perMonth:"/Monat", advNutr:"Erweiterter Ernährungsplan", loginBtn:"ANMELDEN", joinBtn:"BEITRETEN"  , trainerAccess:"TRAINER-ZUGANG", joinApp:"FITPLUS BEITRETEN", signInTitle:"ANMELDEN", journeyTitle:"DEINE REISE BEGINNT", fullName:"VOLLSTÄNDIGER NAME", emailAddr:"E-MAIL-ADRESSE", certId:"ZERTIFIZIERUNGS-ID", password:"PASSWORT", enterDash:"ZUM DASHBOARD →", letsGo:"LOS GEHT\'S →", useFingerprint:"FINGERABDRUCK NUTZEN", terms:"Mit Fortfahren stimmen Sie den Bedingungen zu", contact:"KONTAKT", logout:"ABMELDEN", hey:"HEY", week:"Woche", stats:"Statistiken", account:"Konto", exercises:"Übungen", packages:"Pakete", newPlan:"Neuer Plan", myProgram:"Mein Programm", freeTrial:"KOSTENLOSE TESTVERSION" , generate:"GENERIEREN", generating:"GENERIERUNG...", planGenerated:"PLAN ERSTELLT", back:"ZURÜCK", retry:"ERNEUT VERSUCHEN", overview:"ÜBERSICHT", meals:"MAHLZEITEN", macros:"MAKROS", water:"WASSER", plans:"PLÄNE", aiCoach:"KI-TRAINER", program:"PROGRAMM", wearables:"WEARABLES", nutrition:"ERNÄHRUNG", calendar:"KALENDER", upgrade:"UPGRADEN", proAccess:"PRO-ZUGANG", fuelCenter:"KRAFTSTOFFZENTRUM", nutritionHub:"ERNÄHRUNGS-HUB", aiMealPlanner:"KI-MAHLZEITENPLANER", yourGoal:"DEIN ZIEL", mealFocus:"MAHLZEITEN-FOKUS", groceryList:"EINKAUFSLISTE", advNutrPlan:"ERWEITERTER ERNÄHRUNGSPLAN", getMyPlan:"MEINEN PLAN HOLEN", supplement:"ERGÄNZUNG", hydration:"HYDRATION", mealPrep:"MAHLZEITENVORBEREITUNG", weeklyGoals:"WOCHENZIELE", generating2:"Generiere...", weekOf:"Woche", day:"Tag", total:"Gesamt", protein:"Protein", carbs:"Kohlenhydrate", fat:"Fett", calories:"Kalorien" },
+  it:     { trainer:"ALLENATORE",member:"MEMBRO",    manageClients:"Gestisci clienti",     startJourney:"Inizia il tuo percorso",   getStarted:"INIZIA",      moveTagline:"MUOVITI MEGLIO · VIVI PIÙ FORTE",    free:"Gratuito",  pro:"Pro", trainerPlan:"Allenatore", nav:["Programma","Wearables","Nutrizione","Calendario"], perMonth:"/mese", advNutr:"Piano Nutrizionale Avanzato", loginBtn:"ACCEDI",   joinBtn:"ISCRIVITI"  , trainerAccess:"ACCESSO ALLENATORE", joinApp:"UNISCITI A FITPLUS", signInTitle:"ACCEDI", journeyTitle:"IL TUO VIAGGIO INIZIA", fullName:"NOME COMPLETO", emailAddr:"INDIRIZZO EMAIL", certId:"ID CERTIFICAZIONE", password:"PASSWORD", enterDash:"VAI AL PANNELLO →", letsGo:"ANDIAMO →", useFingerprint:"USA IMPRONTA DIGITALE", terms:"Continuando accetti i nostri Termini", contact:"CONTATTO", logout:"ESCI", hey:"CIAO", week:"Settimana", stats:"Statistiche", account:"Account", exercises:"Esercizi", packages:"Pacchetti", newPlan:"Nuovo Piano", myProgram:"Il Mio Programma", freeTrial:"PROVA GRATUITA" , generate:"GENERA", generating:"GENERANDO...", planGenerated:"PIANO GENERATO", back:"INDIETRO", retry:"RIPROVA", overview:"PANORAMICA", meals:"PASTI", macros:"MACRO", water:"ACQUA", plans:"PIANI", aiCoach:"ALLENATORE IA", program:"PROGRAMMA", wearables:"WEARABLES", nutrition:"NUTRIZIONE", calendar:"CALENDARIO", upgrade:"AGGIORNA", proAccess:"ACCESSO PRO", fuelCenter:"CENTRO CARBURANTE", nutritionHub:"HUB NUTRIZIONE", aiMealPlanner:"PIANIFICATORE IA", yourGoal:"IL TUO OBIETTIVO", mealFocus:"FOCUS PASTO", groceryList:"LISTA DELLA SPESA", advNutrPlan:"PIANO NUTRIZIONALE AVANZATO", getMyPlan:"OTTIENI IL MIO PIANO", supplement:"INTEGRATORE", hydration:"IDRATAZIONE", mealPrep:"PREP PASTI", weeklyGoals:"OBIETTIVI SETTIMANALI", generating2:"Generando...", weekOf:"Settimana", day:"Giorno", total:"Totale", protein:"Proteine", carbs:"Carboidrati", fat:"Grassi", calories:"Calorie" },
+  zh:     { trainer:"教练",       member:"会员",       manageClients:"管理客户",             startJourney:"开始你的旅程",             getStarted:"开始",         moveTagline:"更好运动 · 更强生活",                free:"免费",       pro:"专业", trainerPlan:"教练",       nav:["训练计划","可穿戴","营养","日历"],            perMonth:"/月",    advNutr:"高级营养计划",             loginBtn:"登录",      joinBtn:"立即加入"    , trainerAccess:"教练入口", joinApp:"加入FITPLUS", signInTitle:"登录", journeyTitle:"您的旅程开始", fullName:"全名", emailAddr:"电子邮件地址", certId:"认证编号", password:"密码", enterDash:"进入控制台 →", letsGo:"出发 →", useFingerprint:"使用指纹", terms:"继续即表示您同意我们的条款", contact:"联系", logout:"退出", hey:"嘿", week:"周", stats:"统计", account:"账户", exercises:"练习", packages:"套餐", newPlan:"新计划", myProgram:"我的计划", freeTrial:"免费试用" , generate:"生成", generating:"生成中...", planGenerated:"计划已生成", back:"返回", retry:"重试", overview:"概览", meals:"餐食", macros:"宏量", water:"水分", plans:"计划", aiCoach:"AI教练", program:"训练计划", wearables:"可穿戴", nutrition:"营养", calendar:"日历", upgrade:"升级", proAccess:"专业版访问", fuelCenter:"营养中心", nutritionHub:"营养枢纽", aiMealPlanner:"AI膳食规划", yourGoal:"你的目标", mealFocus:"餐食重点", groceryList:"购物清单", advNutrPlan:"高级营养计划", getMyPlan:"获取我的计划", supplement:"补剂", hydration:"水分补充", mealPrep:"备餐", weeklyGoals:"周目标", generating2:"生成中...", weekOf:"周", day:"天", total:"总计", protein:"蛋白质", carbs:"碳水", fat:"脂肪", calories:"卡路里" },
+  ja:     { trainer:"トレーナー", member:"メンバー",   manageClients:"クライアント管理",     startJourney:"あなたの旅を始めましょう", getStarted:"始める",       moveTagline:"より良く動く · より強く生きる",      free:"無料",       pro:"プロ", trainerPlan:"トレーナー", nav:["プログラム","ウェアラブル","栄養","カレンダー"], perMonth:"/月",  advNutr:"高度な栄養プラン",         loginBtn:"ログイン",  joinBtn:"今すぐ参加"  , trainerAccess:"トレーナーアクセス", joinApp:"FITPLUSに参加", signInTitle:"ログイン", journeyTitle:"あなたの旅が始まる", fullName:"フルネーム", emailAddr:"メールアドレス", certId:"資格証明書ID", password:"パスワード", enterDash:"ダッシュボードへ →", letsGo:"始めましょう →", useFingerprint:"指紋を使用", terms:"続行することで利用規約に同意します", contact:"お問い合わせ", logout:"ログアウト", hey:"こんにちは", week:"週", stats:"統計", account:"アカウント", exercises:"エクササイズ", packages:"パッケージ", newPlan:"新しいプラン", myProgram:"マイプログラム", freeTrial:"無料トライアル" , generate:"生成", generating:"生成中...", planGenerated:"プラン生成済", back:"戻る", retry:"再試行", overview:"概要", meals:"食事", macros:"マクロ", water:"水分", plans:"プラン", aiCoach:"AIコーチ", program:"プログラム", wearables:"ウェアラブル", nutrition:"栄養", calendar:"カレンダー", upgrade:"アップグレード", proAccess:"プロアクセス", fuelCenter:"栄養センター", nutritionHub:"栄養ハブ", aiMealPlanner:"AI食事プランナー", yourGoal:"あなたの目標", mealFocus:"食事フォーカス", groceryList:"買い物リスト", advNutrPlan:"高度な栄養プラン", getMyPlan:"プランを取得", supplement:"サプリメント", hydration:"水分補給", mealPrep:"食事準備", weeklyGoals:"週間目標", generating2:"生成中...", weekOf:"週", day:"日", total:"合計", protein:"タンパク質", carbs:"炭水化物", fat:"脂質", calories:"カロリー" },
+  ru:     { trainer:"ТРЕНЕР",    member:"УЧАСТНИК",  manageClients:"Управление клиентами", startJourney:"Начните свой путь",        getStarted:"НАЧАТЬ",      moveTagline:"ДВИГАЙСЯ ЛУЧШЕ · ЖИВИ СИЛЬНЕЕ",     free:"Бесплатно", pro:"Про",  trainerPlan:"Тренер",     nav:["Программа","Устройства","Питание","Календарь"], perMonth:"/месяц", advNutr:"Расширенный план питания", loginBtn:"ВОЙТИ",    joinBtn:"ПРИСОЕДИНИТЬСЯ" , trainerAccess:"ДОСТУП ТРЕНЕРА", joinApp:"ПРИСОЕДИНИТЬСЯ К FITPLUS", signInTitle:"ВОЙТИ", journeyTitle:"ВАШЕ ПУТЕШЕСТВИЕ НАЧИНАЕТСЯ", fullName:"ПОЛНОЕ ИМЯ", emailAddr:"АДРЕС ЭПОЧТЫ", certId:"ID СЕРТИФИКАЦИИ", password:"ПАРОЛЬ", enterDash:"В ПАНЕЛЬ →", letsGo:"ВПЕРЁД →", useFingerprint:"ИСПОЛЬЗОВАТЬ ОТПЕЧАТОК", terms:"Продолжая вы принимаете наши Условия", contact:"КОНТАКТ", logout:"ВЫЙТИ", hey:"ПРИВЕТ", week:"Неделя", stats:"Статистика", account:"Аккаунт", exercises:"Упражнения", packages:"Пакеты", newPlan:"Новый план", myProgram:"Моя программа", freeTrial:"БЕСПЛАТНЫЙ ПЕРИОД" , generate:"СОЗДАТЬ", generating:"СОЗДАНИЕ...", planGenerated:"ПЛАН СОЗДАН", back:"НАЗАД", retry:"ПОВТОРИТЬ", overview:"ОБЗОР", meals:"ПРИЁМЫ ПИЩИ", macros:"МАКРОСЫ", water:"ВОДА", plans:"ПЛАНЫ", aiCoach:"ИИ-ТРЕНЕР", program:"ПРОГРАММА", wearables:"УСТРОЙСТВА", nutrition:"ПИТАНИЕ", calendar:"КАЛЕНДАРЬ", upgrade:"ОБНОВИТЬ", proAccess:"ПРО-ДОСТУП", fuelCenter:"ЦЕНТР ПИТАНИЯ", nutritionHub:"ХАБ ПИТАНИЯ", aiMealPlanner:"ИИ-ПЛАНИРОВЩИК", yourGoal:"ВАША ЦЕЛЬ", mealFocus:"АКЦЕНТ ПИТАНИЯ", groceryList:"СПИСОК ПОКУПОК", advNutrPlan:"РАСШИРЕННЫЙ ПЛАН ПИТАНИЯ", getMyPlan:"ПОЛУЧИТЬ МОЙ ПЛАН", supplement:"ДОБАВКА", hydration:"ГИДРАТАЦИЯ", mealPrep:"ПОДГОТОВКА ЕДЫ", weeklyGoals:"ЦЕЛИ НЕДЕЛИ", generating2:"Создание...", weekOf:"Неделя", day:"День", total:"Итого", protein:"Белок", carbs:"Углеводы", fat:"Жир", calories:"Калории" },
+  ar:     { trainer:"مدرب",      member:"عضو",       manageClients:"إدارة العملاء",        startJourney:"ابدأ رحلتك",              getStarted:"ابدأ",        moveTagline:"تحرك أفضل · عش أقوى",               free:"مجاني",     pro:"احترافي", trainerPlan:"مدرب",  nav:["البرنامج","الأجهزة","التغذية","التقويم"],      perMonth:"/شهر", advNutr:"خطة التغذية المتقدمة",    loginBtn:"تسجيل الدخول", joinBtn:"انضم الآن" , trainerAccess:"وصول المدرب", joinApp:"انضم إلى FITPLUS", signInTitle:"تسجيل الدخول", journeyTitle:"رحلتك تبدأ", fullName:"الاسم الكامل", emailAddr:"عنوان البريد الإلكتروني", certId:"معرف الشهادة", password:"كلمة المرور", enterDash:"لوحة التحكم →", letsGo:"لنبدأ →", useFingerprint:"استخدام بصمة الإصبع", terms:"بالمتابعة توافق على شروط الخدمة", contact:"تواصل", logout:"تسجيل الخروج", hey:"مرحباً", week:"أسبوع", stats:"إحصائيات", account:"الحساب", exercises:"تمارين", packages:"حزم", newPlan:"خطة جديدة", myProgram:"برنامجي", freeTrial:"تجربة مجانية" , generate:"توليد", generating:"جاري التوليد...", planGenerated:"تم إنشاء الخطة", back:"رجوع", retry:"إعادة المحاولة", overview:"نظرة عامة", meals:"وجبات", macros:"ماكرو", water:"ماء", plans:"خطط", aiCoach:"مدرب ذكاء اصطناعي", program:"برنامج", wearables:"أجهزة قابلة للارتداء", nutrition:"تغذية", calendar:"تقويم", upgrade:"ترقية", proAccess:"وصول احترافي", fuelCenter:"مركز التغذية", nutritionHub:"مركز التغذية", aiMealPlanner:"مخطط وجبات ذكي", yourGoal:"هدفك", mealFocus:"تركيز الوجبة", groceryList:"قائمة التسوق", advNutrPlan:"خطة التغذية المتقدمة", getMyPlan:"احصل على خطتي", supplement:"مكمل", hydration:"ترطيب", mealPrep:"تحضير الوجبات", weeklyGoals:"أهداف الأسبوع", generating2:"جاري الإنشاء...", weekOf:"أسبوع", day:"يوم", total:"الإجمالي", protein:"بروتين", carbs:"كربوهيدرات", fat:"دهون", calories:"سعرات" },
+};// ─── Language Context — propagates language selection to all components ────────
+const LangContext = React.createContext({ lang:"en", currency:"£", prices:LANGS.en.prices, t:T.en, langName:"English", changeLang:()=>{} });
 const useLang = () => React.useContext(LangContext);
 
 
@@ -1155,7 +1156,7 @@ function NutriIcon({ size=22, style={} }) {
 
 // ─── Advanced Nutrition Plan — AI-generated 4-week plan (paid feature £9.99) ─
 function AdvancedNutritionPlan({ user, profile, onBack }) {
-  const { currency, prices, t } = useLang();
+  const { currency, prices, t, langName } = useLang();
   const STORAGE_KEY = "adv_nutrition_" + (user?.email||"guest");
   const PAID_KEY   = "adv_nutrition_paid_" + (user?.email||"guest");
   const EXPIRY_KEY = "adv_nutrition_expiry_" + (user?.email||"guest");
@@ -1164,8 +1165,11 @@ function AdvancedNutritionPlan({ user, profile, onBack }) {
   const isFreeAccess = isFullAccess(user?.email);
 
   // Check if paid (or free access) and not expired
+  // Pro members get Advanced Nutrition included
+  const memberPlanForAdv = (() => { try { const s=JSON.parse(localStorage.getItem("f2a_member_sub")||"{}"); return s.id||"free"; } catch { return "free"; } })();
   const isPaid = (() => {
     if (isFreeAccess) return true;
+    if (memberPlanForAdv === "pro") return true;
     try {
       const paid = localStorage.getItem(PAID_KEY);
       if (!paid) return false;
@@ -1318,8 +1322,8 @@ Return ONLY valid JSON (no markdown):
         headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
         body: JSON.stringify({
           model:"claude-sonnet-4-6",
-          max_tokens:8000,
-          messages:[{role:"user", content:PROMPT}]
+          max_tokens:16000,
+          messages:[{role:"user", content:PROMPT+"\n\nIMPORTANT: Generate ALL text content in "+langName+" language. Keep JSON keys in English but ALL values (meal names, descriptions, tips, notes, ingredient names, supplement names) in "+langName+"."}]
         })
       });
       const data = await res.json();
@@ -1425,10 +1429,10 @@ Return ONLY valid JSON (no markdown):
                   {[
                     { label:"Training Day", cal:week.calorieTarget?.training, col:"#22c55e" },
                     { label:"Rest Day", cal:week.calorieTarget?.rest, col:"#60a5fa" },
-                  ].map((t,i)=>(
-                    <div key={i} style={{ padding:"10px", background:"rgba(255,255,255,.03)", border:`1px solid ${t.col}20`, borderRadius:"10px", textAlign:"center" }}>
-                      <div style={{ fontFamily:"var(--fd)", fontSize:"20px", color:t.col }}>{t.cal}</div>
-                      <div style={{ fontSize:"9px", color:"var(--mut)", fontFamily:"var(--fm)" }}>kcal · {t.label}</div>
+                  ].map((item,i)=>(
+                    <div key={i} style={{ padding:"10px", background:"rgba(255,255,255,.03)", border:`1px solid ${item.col}20`, borderRadius:"10px", textAlign:"center" }}>
+                      <div style={{ fontFamily:"var(--fd)", fontSize:"20px", color:item.col }}>{item.cal}</div>
+                      <div style={{ fontSize:"9px", color:"var(--mut)", fontFamily:"var(--fm)" }}>kcal · {item.label}</div>
                     </div>
                   ))}
                 </div>
@@ -1541,7 +1545,7 @@ Return ONLY valid JSON (no markdown):
               {week.mealPrepTips?.length > 0 && (
                 <div style={{ marginTop:"14px", padding:"12px 14px", background:"rgba(251,191,36,.05)", border:"1px solid rgba(251,191,36,.2)", borderRadius:"12px" }}>
                   <Mono style={{ color:"#fbbf24", marginBottom:"8px" }}>⚡ MEAL PREP TIPS</Mono>
-                  {week.mealPrepTips.map((t,i)=>(
+                  {week.mealPrepTips.map((tip,i)=>(
                     <div key={i} style={{ fontSize:"12px", color:"rgba(255,255,255,.65)", marginBottom:"4px", display:"flex", gap:"6px" }}>
                       <span style={{ color:"#fbbf24", flexShrink:0 }}>•</span>{t}
                     </div>
@@ -1599,12 +1603,19 @@ Return ONLY valid JSON (no markdown):
         </Card>
       )}
 
-      <button onClick={generatePlan}
-        style={{ width:"100%", padding:"17px", background:"linear-gradient(135deg,#22c55e,#16a34a)", border:"none", borderRadius:"14px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px", boxShadow:"0 6px 24px rgba(34,197,94,.3)", marginBottom:"10px" }}>
-        <NutriIcon size={18} style={{marginRight:"7px"}}/> GENERATE MY NUTRITION PLAN
-      </button>
+      {(isFreeAccess || memberPlanForAdv === "pro") ? (
+        <button onClick={generatePlan}
+          style={{ width:"100%", padding:"17px", background:"linear-gradient(135deg,#22c55e,#16a34a)", border:"none", borderRadius:"14px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px", boxShadow:"0 6px 24px rgba(34,197,94,.3)", marginBottom:"10px" }}>
+          <NutriIcon size={18} style={{marginRight:"7px"}}/> 🌿 GENERATE MY NUTRITION PLAN
+        </button>
+      ) : (
+        <button onClick={()=>setShowPayment(true)}
+          style={{ width:"100%", padding:"17px", background:"linear-gradient(135deg,#22c55e,#16a34a)", border:"none", borderRadius:"14px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"16px", letterSpacing:"2px", boxShadow:"0 6px 24px rgba(34,197,94,.3)", marginBottom:"10px" }}>
+          <NutriIcon size={18} style={{marginRight:"7px"}}/> 💳 BUY NOW — {currency}{prices.advNutr}
+        </button>
+      )}
       <div style={{ fontSize:"11px", color:"rgba(255,255,255,.3)", textAlign:"center", fontFamily:"var(--fm)" }}>
-        Payment processed via PayPal · Instant access after purchase
+        {(isFreeAccess || memberPlanForAdv === "pro") ? "Included in your Pro plan · AI-generated in ~30 seconds" : "Secure payment via PayPal · Instant access · Valid 6 weeks"}
       </div>
     </div>
   );
@@ -1612,7 +1623,7 @@ Return ONLY valid JSON (no markdown):
 
 
 function NutritionHub({ user, profile }) {
-  const { currency, prices, t } = useLang();
+  const { currency, prices, t, langName } = useLang();
   const [macros, setMacros] = useState({ p:165, c:220, f:60, fiber:30 });
   const [water, setWater] = useState(0);
   const [diet, setDiet] = useState("Standard");
@@ -1646,18 +1657,18 @@ function NutritionHub({ user, profile }) {
       const generated = new Date(ts);
       const now = new Date();
       if (memberPlan === "pro") {
-        // Reset monthly (30 days)
+        // Pro: reset weekly (7 days)
+        const diffDays = (now - generated) / (1000*60*60*24);
+        return diffDays < 7;
+      } else {
+        // Free trial — once per 30 days
         const diffDays = (now - generated) / (1000*60*60*24);
         return diffDays < 30;
-      } else {
-        // Free trial — never regenerate (one time)
-        return true;
       }
     } catch { return false; }
   })();
 
   async function genMeals() {
-    if (alreadyGenerated) return;
     setMealsLoading(true); setMeals(null);
     const goal   = mealGoal;
     const bmr    = profile?.bmr;
@@ -1677,7 +1688,7 @@ function NutritionHub({ user, profile }) {
             model:"claude-haiku-4-5-20251001",
             max_tokens:2000,
             messages:[{ role:"user", content:
-              `Create a 1-day meal plan for Day ${d} of ${mealDays}. Goal: ${goal}.${tdee?` Daily calories: ${tdee}kcal.`:""}${wkg?` Weight: ${wkg}kg.`:""}${gender?` Gender: ${gender}.`:""}
+              `Create a 1-day meal plan for Day ${d} of ${mealDays}. Goal: ${goal}. Language: ALL text must be in ${langName}.${tdee?` Daily calories: ${tdee}kcal.`:""}${wkg?` Weight: ${wkg}kg.`:""}${gender?` Gender: ${gender}.`:""}
 Return ONLY this JSON structure (no markdown, no explanation, nothing else):
 {"day":${d},"label":"Day ${d}","meals":[{"name":"Breakfast","time":"7:30 AM","calories":420,"protein":32,"carbs":48,"fat":11,"foods":["180g oats","250ml milk","1 banana"],"prep":"Cook oats in milk 5 min, slice banana on top.","tip":"High protein start."},{"name":"Mid-Morning Snack","time":"10:30 AM","calories":180,"protein":15,"carbs":20,"fat":5,"foods":["150g Greek yogurt","30g berries"],"prep":"Serve yogurt topped with berries.","tip":"Keeps hunger away."},{"name":"Lunch","time":"1:00 PM","calories":550,"protein":45,"carbs":55,"fat":14,"foods":["200g chicken breast","150g rice","100g broccoli"],"prep":"Grill chicken 6 min each side, steam rice and broccoli.","tip":"Biggest meal of the day."},{"name":"Afternoon Snack","time":"4:00 PM","calories":200,"protein":12,"carbs":25,"fat":6,"foods":["1 apple","30g almonds"],"prep":"Eat apple with almonds.","tip":"Pre-workout energy."},{"name":"Dinner","time":"7:30 PM","calories":480,"protein":40,"carbs":45,"fat":13,"foods":["180g salmon","150g sweet potato","80g spinach"],"prep":"Bake salmon 15 min at 200C, microwave sweet potato 5 min.","tip":"Omega-3 aids recovery."}],"totalCalories":1830,"totalProtein":144,"totalCarbs":193,"totalFat":49}`
             }]
@@ -1718,13 +1729,13 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
       <div style={{ borderRadius:"12px", overflow:"hidden", marginBottom:"12px", background:"linear-gradient(135deg,rgba(34,197,94,.12),rgba(16,185,129,.06))", border:"1px solid rgba(34,197,94,.2)", padding:"16px 18px", display:"flex", alignItems:"center", gap:"16px" }}>
         <img src={NUTRITION_ICON_LG} alt="nutrition" style={{ width:"64px", height:"64px", objectFit:"contain", flexShrink:0 }}/>
         <div>
-          <Mono style={{ color:"#22c55e", marginBottom:"3px" }}>FUEL CENTER</Mono>
-          <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px" }}>NUTRITION <span style={{ color:"#22c55e" }}>HUB</span></div>
+          <Mono style={{ color:"#22c55e", marginBottom:"3px" }}>{t.fuelCenter}</Mono>
+          <div style={{ fontFamily:"var(--fd)", fontSize:"22px", letterSpacing:"2px" }}>{t.nutritionHub?.split(" ")[0]} <span style={{ color:"#22c55e" }}>{t.nutritionHub?.split(" ")[1]||"HUB"}</span></div>
         </div>
       </div>
       <div style={{ display:"flex", gap:"6px", marginBottom:"11px", overflowX:"auto" }}>
-        {[["overview","📊"],["meals","🍽"],["macros","🎚️"],["water","💧"],["plans","⭐"]].map(([t,ic])=>(
-          <button key={t} onClick={()=>setVw(t)} style={{ padding:"6px 12px", background:vw===t?t==="plans"?"linear-gradient(135deg,#22c55e,#16a34a)":"var(--a3)":"rgba(255,255,255,.04)", border:`1px solid ${vw===t?t==="plans"?"#22c55e":"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:vw===t?"#fff":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px", whiteSpace:"nowrap", flexShrink:0 }}>{ic} {t.toUpperCase()}</button>
+        {[["overview","📊",t.overview],["meals","🍽",t.meals],["macros","🎚️",t.macros],["water","💧",t.water],["plans","⭐",t.plans]].map(([tabKey,ic,tabLabel])=>(
+          <button key={tabKey} onClick={()=>setVw(tabKey)} style={{ padding:"6px 12px", background:vw===tabKey?tabKey==="plans"?"linear-gradient(135deg,#22c55e,#16a34a)":"var(--a3)":"rgba(255,255,255,.04)", border:`1px solid ${vw===tabKey?tabKey==="plans"?"#22c55e":"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:vw===tabKey?"#fff":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fm)", letterSpacing:"1px", whiteSpace:"nowrap", flexShrink:0 }}>{ic} {(tabLabel||"").toUpperCase()}</button>
         ))}
       </div>
       {/* Advanced Plan promo banner in overview */}
@@ -1732,7 +1743,7 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
         <div onClick={()=>setVw("plans")} style={{ padding:"12px 14px", marginBottom:"12px", background:"linear-gradient(135deg,rgba(34,197,94,.08),rgba(16,185,129,.05))", border:"1px solid rgba(34,197,94,.22)", borderRadius:"12px", cursor:"pointer", display:"flex", alignItems:"center", gap:"12px" }}>
           <img src={NUTR_ICON_64} alt="" style={{ width:"36px", height:"36px", objectFit:"contain", flexShrink:0 }}/>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", color:"#22c55e", marginBottom:"2px" }}>{`ADVANCED NUTRITION PLAN — ${currency}{prices.advNutr}`}</div>
+            <div style={{ fontFamily:"var(--fd)", fontSize:"12px", letterSpacing:"1px", color:"#22c55e", marginBottom:"2px" }}>{`ADVANCED NUTRITION PLAN — ${currency}${prices.advNutr}`}</div>
             <div style={{ fontSize:"11px", color:"rgba(255,255,255,.5)" }}>4-week personalised plan with daily meals, macros & grocery lists →</div>
           </div>
           <span style={{ color:"#22c55e", fontSize:"16px" }}>›</span>
@@ -1744,12 +1755,12 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
       {vw==="meals" && (
         <div style={{ animation:"fadeIn .3s" }}>
           <Card style={{ padding:"14px", marginBottom:"12px", border:"1px solid rgba(2,132,199,.2)" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"6px" }}><img src={NUTR_ICON_32} alt="" style={{ width:"22px", height:"22px", objectFit:"contain" }}/><Mono>AI MEAL PLANNER</Mono></div>
+            <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"6px" }}><img src={NUTR_ICON_32} alt="" style={{ width:"22px", height:"22px", objectFit:"contain" }}/><Mono>{t.aiMealPlanner}</Mono></div>
             <div style={{ fontSize:"11px", color:"rgba(255,255,255,.4)", fontFamily:"var(--fm)", marginBottom:"10px" }}>
               {hasFullAccess ? "⚡ Full access — 7-day plan" : memberPlan === "pro" ? "⭐ Pro — 7-day plan · Refreshes monthly" : "🆓 Free trial — 2-day plan · One time only"}
             </div>
             <div style={{ marginBottom:"10px" }}>
-              <Mono style={{ marginBottom:"7px" }}>YOUR GOAL</Mono>
+              <Mono style={{ marginBottom:"7px" }}>{t.yourGoal}</Mono>
               <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
                 {["Muscle Gain","Fat Loss","Endurance","General Fitness","Vegan","High Protein","Keto"].map(g=>(
                   <button key={g} onClick={()=>setMealGoal(g)} style={{ padding:"5px 11px", background:mealGoal===g?"rgba(2,132,199,.18)":"rgba(255,255,255,.04)", border:`1px solid ${mealGoal===g?"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:mealGoal===g?"var(--a3)":"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{g}</button>
@@ -1757,15 +1768,15 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
               </div>
             </div>
             <div style={{ marginBottom:"12px" }}>
-              <Mono style={{ marginBottom:"7px" }}>MEAL FOCUS</Mono>
+              <Mono style={{ marginBottom:"7px" }}>{t.mealFocus}</Mono>
               <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
-                {["All meals","Pre-workout","Post-workout","Breakfast","High protein snacks"].map(t=>(
-                  <button key={t} onClick={()=>setMealTime(t)} style={{ padding:"5px 11px", background:mealTime===t?"rgba(2,132,199,.18)":"rgba(255,255,255,.04)", border:`1px solid ${mealTime===t?"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:mealTime===t?"var(--a3)":"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{t}</button>
+                {["All meals","Pre-workout","Post-workout","Breakfast","High protein snacks"].map(mealOpt=>(
+                  <button key={mealOpt} onClick={()=>setMealTime(mealOpt)} style={{ padding:"5px 11px", background:mealTime===mealOpt?"rgba(2,132,199,.18)":"rgba(255,255,255,.04)", border:`1px solid ${mealTime===t?"var(--a3)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:mealTime===mealOpt?"var(--a3)":"var(--mut)", cursor:"pointer", fontSize:"11px" }}>{mealOpt}</button>
                 ))}
               </div>
             </div>
-            <button onClick={genMeals} disabled={mealsLoading} style={{ width:"100%", padding:"13px", background:mealsLoading?"rgba(255,255,255,.06)":"var(--a3)", border:"none", borderRadius:"10px", color:mealsLoading?"var(--mut)":"#000", cursor:mealsLoading?"default":"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px" }}>
-              {mealsLoading ? "⏳ GENERATING..." : alreadyGenerated ? `✓ ${mealLabel.toUpperCase()} PLAN GENERATED` : `🌿 GENERATE ${mealLabel.toUpperCase()} MEAL PLAN`}
+            <button onClick={()=>{ if(!mealsLoading) genMeals(); }} style={{ width:"100%", padding:"13px", background:mealsLoading?"rgba(255,255,255,.06)":"var(--a3)", border:"none", borderRadius:"10px", color:mealsLoading?"var(--mut)":"#000", cursor:mealsLoading?"default":"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px" }}>
+              {mealsLoading ? `⏳ ${t.generating||"GENERATING..."}` : meals ? `🔄 ${t.generate||"REGENERATE"} ${mealLabel.toUpperCase()} PLAN` : `🌿 ${t.generate||"GENERATE"} ${mealLabel.toUpperCase()} MEAL PLAN`}
             </button>
           </Card>
 
@@ -1819,15 +1830,15 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
                     ))}
                     <div style={{ padding:"8px 12px", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.06)", borderRadius:"10px", display:"flex", gap:"10px", flexWrap:"wrap" }}>
                       <span style={{ fontSize:"11px", color:"var(--mut)", fontFamily:"var(--fm)" }}>Totals:</span>
-                      {[{l:"Calories",v:dayObj.totalCalories||"—",c:"var(--acc)"},{l:"Protein",v:(dayObj.totalProtein||"—")+"g",c:"#f87171"},{l:"Carbs",v:(dayObj.totalCarbs||"—")+"g",c:"#60a5fa"},{l:"Fat",v:(dayObj.totalFat||"—")+"g",c:"#fbbf24"}].map((t,ti)=>(
-                        <span key={ti} style={{ fontSize:"11px", color:t.c, fontFamily:"var(--fd)" }}>{t.l}: {t.v}</span>
+                      {[{l:"Calories",v:dayObj.totalCalories||"—",c:"var(--acc)"},{l:"Protein",v:(dayObj.totalProtein||"—")+"g",c:"#f87171"},{l:"Carbs",v:(dayObj.totalCarbs||"—")+"g",c:"#60a5fa"},{l:"Fat",v:(dayObj.totalFat||"—")+"g",c:"#fbbf24"}].map((col,ti)=>(
+                        <span key={ti} style={{ fontSize:"11px", color:col.c, fontFamily:"var(--fd)" }}>{col.l}: {col.v}</span>
                       ))}
                     </div>
                   </div>
                 ))}
                 {grocery.length > 0 && (
                   <Card style={{ padding:"13px", marginTop:"8px", border:"1px solid rgba(255,255,255,.07)" }}>
-                    <Mono style={{ marginBottom:"8px" }}>🛒 GROCERY LIST</Mono>
+                    <Mono style={{ marginBottom:"8px" }}>🛒 {t.groceryList}</Mono>
                     <div style={{ display:"flex", flexWrap:"wrap", gap:"5px" }}>
                       {grocery.map((g,gi)=>(
                         <div key={gi} style={{ padding:"3px 9px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"20px", fontSize:"11px", color:"rgba(255,255,255,.7)" }}>{g}</div>
@@ -1899,7 +1910,7 @@ Return ONLY this JSON structure (no markdown, no explanation, nothing else):
             </div>
             <button onClick={()=>setShowAdvPlan(true)}
               style={{ width:"100%", padding:"16px", background:"linear-gradient(135deg,#22c55e,#16a34a)", border:"none", borderRadius:"14px", color:"#fff", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"15px", letterSpacing:"2px", boxShadow:"0 6px 24px rgba(34,197,94,.3)", marginBottom:"10px" }}>
-              <NutriIcon size={18} style={{marginRight:"7px"}}/>{`GET MY PLAN — ${currency}{prices.advNutr}`}
+              <NutriIcon size={18} style={{marginRight:"7px"}}/>{`GET MY PLAN — ${currency}${prices.advNutr}`}
             </button>
             <div style={{ fontSize:"11px", color:"rgba(255,255,255,.3)", textAlign:"center", fontFamily:"var(--fm)" }}>
               Secure payment · Instant access · AI-generated in ~30 seconds
@@ -1951,6 +1962,7 @@ function parseYT(text) {
 }
 
 function AICoach({ user, profile, ctx, onClose, onLimit }) {
+  const { langName } = useLang();
   const [msgs, setMsgs] = useState([{ role:"assistant", content:`Hey ${user?.name?.split(" ")[0]||"there"}! 👋 I'm your FitPlus AI Coach.\n\nAsk me about:\n• 💪 Exercises & YouTube tutorials\n• 🥗 Nutrition & meal timing\n• 😴 Rest & recovery`, time:nowTime() }]);
   const [inp, setInp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1966,7 +1978,7 @@ function AICoach({ user, profile, ctx, onClose, onLimit }) {
     setInp(""); setShowQ(false);
     const hist = [...msgs, { role:"user", content:q, time:nowTime() }];
     setMsgs(hist); setLoading(true);
-    const sys = `You are FitPlus AI Coach. User:${user?.name||"Member"}, Goal:${(profile?.goal||"").replace(/[🔥💪🏃🧘⚡🏆]/g,"").trim()||"Fitness"}. Include YouTube URLs for exercises. Concise bullet points under 250 words. Known URLs: squat:https://www.youtube.com/watch?v=gcNh17Ckjgg deadlift:https://www.youtube.com/watch?v=op9kVnSso6Q bench:https://www.youtube.com/watch?v=rT7DgCr-3pg push-up:https://www.youtube.com/watch?v=IODxDxX7oi4`;
+    const sys = `You are FitPlus AI Coach. Always respond in ${langName}.. User:${user?.name||"Member"}, Goal:${(profile?.goal||"").replace(/[🔥💪🏃🧘⚡🏆]/g,"").trim()||"Fitness"}. Include YouTube URLs for exercises. Concise bullet points under 250 words. Known URLs: squat:https://www.youtube.com/watch?v=gcNh17Ckjgg deadlift:https://www.youtube.com/watch?v=op9kVnSso6Q bench:https://www.youtube.com/watch?v=rT7DgCr-3pg push-up:https://www.youtube.com/watch?v=IODxDxX7oi4`;
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"}, body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:800, system:sys, messages:hist.map(m=>({ role:m.role, content:m.content })) }) });
       const data = await res.json();
@@ -2517,6 +2529,7 @@ function ClientProgramBuilder({ client, existing, onSave, onClose }) {
 
 // ─── Send Workout Sheet ────────────────────────────────────────────────────────
 function SendWorkoutSheet({ client, onClose }) {
+  const { langName } = useLang();
   const [workoutType, setWorkoutType] = useState("Full Body Strength");
   const [week, setWeek] = useState("Week 1");
   const [customNote, setCustomNote] = useState("");
@@ -2576,7 +2589,7 @@ function SendWorkoutSheet({ client, onClose }) {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method:"POST", headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
         body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:1500,
-          messages:[{ role:"user", content:`Create a single workout session for: Name:${client?.name}, Goal:${client?.goal}${client?.injuries?", Injuries:"+client.injuries:""}. Type:${workoutType}. Return ONLY JSON: {"sessionName":"...","warmup":"5 min specific warmup","exercises":[{"name":"...","sets":"3","reps":"10","rest":"60s","notes":"technique cue"}],"cooldown":"5 min cooldown","coachNote":"motivating note from trainer"}` }]
+          messages:[{ role:"user", content:`Create a single workout session for: Name:${client?.name}, Goal:${client?.goal}${client?.injuries?", Injuries:"+client.injuries:""}. Type:${workoutType}. Language: ALL text in ${langName}. Return ONLY JSON: {"sessionName":"...","warmup":"5 min specific warmup","exercises":[{"name":"...","sets":"3","reps":"10","rest":"60s","notes":"technique cue"}],"cooldown":"5 min cooldown","coachNote":"motivating note from trainer"}` }]
         })
       });
       const d = await res.json();
@@ -3639,6 +3652,7 @@ function ProfileSetup({ onDone, user }) {
 }
 
 function GenProg({ profile, user, onDone }) {
+  const { langName } = useLang();
   const [phase, setPhase] = useState("thinking"); // thinking | generating | done
   const [msg, setMsg] = useState("Analysing your profile...");
 
@@ -3747,7 +3761,9 @@ Return ONLY valid JSON in this exact structure (no markdown, no explanation):
   "recoveryProtocol": "detailed recovery guidance"
 }
 
-Include exactly ${days} training days per week, distributed optimally. Each day must have 6-9 exercises including the cardio finisher and 5 stretching exercises. Make this program genuinely challenging, specific, and professional — not generic.`;
+Include exactly ${days} training days per week, distributed optimally. Each day must have 6-9 exercises including the cardio finisher and 5 stretching exercises. Make this program genuinely challenging, specific, and professional — not generic.
+
+IMPORTANT: Write ALL text content in ${langName} language. Keep JSON keys in English but ALL values in ${langName}.`;
 
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -4009,8 +4025,32 @@ const advancedFallback = (p, u) => {
 };
 
 // ─── Exercise Image: Live lookup via ExerciseDB API ───────────────────────────
-const EDB_IMG_BASE = "https://exercisedb-api.vercel.app/api/v1";
-const exImgCache = {};
+// ExerciseDB via RapidAPI
+const EDB_HOST = "exercisedb.p.rapidapi.com";
+const EDB_KEY  = "ba0ed8e2173208f6ecb99599f44bb17d7c851b10";
+const EDB_BASE = "https://exercisedb.p.rapidapi.com";
+const EDB_HEADERS = { "x-rapidapi-host": EDB_HOST, "x-rapidapi-key": EDB_KEY };
+const exCache = {};  // { name: { gifUrl, instructions, target, secondaryMuscles } }
+const exImgCache = {}; // legacy compat
+
+// Fetch exercise data from ExerciseDB RapidAPI
+async function fetchExerciseData(name) {
+  if (exCache[name]) return exCache[name];
+  const query = encodeURIComponent(name.toLowerCase().replace(/[^a-z0-9 ]/g,"").trim());
+  try {
+    const res = await fetch(`${EDB_BASE}/exercises/name/${query}?limit=5`, { headers: EDB_HEADERS });
+    if (!res.ok) throw new Error("HTTP "+res.status);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data.exercises || []);
+    const ex = list[0];
+    if (ex) {
+      exCache[name] = ex;
+      if (ex.gifUrl) exImgCache[name] = ex.gifUrl;
+      return ex;
+    }
+  } catch {}
+  return null;
+}
 
 function ExerciseImage({ name, style }) {
   const [imgSrc, setImgSrc] = useState(null);
@@ -4019,21 +4059,10 @@ function ExerciseImage({ name, style }) {
   useEffect(() => {
     if (!name || tried) return;
     setTried(true);
-    // Check cache first
     if (exImgCache[name]) { setImgSrc(exImgCache[name]); return; }
-    // Search ExerciseDB for this exercise
-    const query = encodeURIComponent(name.toLowerCase().replace(/[^a-z0-9 ]/g,""));
-    fetch(`${EDB_IMG_BASE}/exercises/search?name=${query}&limit=1`)
-      .then(r => r.json())
-      .then(data => {
-        const list = Array.isArray(data) ? data : (data.exercises || data.data || []);
-        const ex = list[0];
-        if (ex) {
-          const url = ex.gifUrl || (ex.imageUrl ? (ex.imageUrl.startsWith("http") ? ex.imageUrl : `${EDB_IMG_BASE}/images/${ex.imageUrl}`) : null);
-          if (url) { exImgCache[name] = url; setImgSrc(url); }
-        }
-      })
-      .catch(() => {});
+    fetchExerciseData(name).then(ex => {
+      if (ex?.gifUrl) { setImgSrc(ex.gifUrl); }
+    });
   }, [name]);
 
   // Fallback Unsplash image by muscle/keyword
@@ -4071,6 +4100,8 @@ function ExerciseImage({ name, style }) {
 
 // ─── Exercise Detail Modal with Weight Logging ───────────────────────────────
 function ExerciseDetailModal({ exercise, userEmail, onClose }) {
+  const [edbData, setEdbData] = useState(()=>exCache[exercise?.name]||null);
+  useEffect(()=>{ if(!exercise?.name||edbData) return; fetchExerciseData(exercise.name).then(d=>{if(d) setEdbData(d);}); },[exercise?.name]);
   const key = "exlog_" + (userEmail||"user") + "_" + (exercise.name||"").replace(/\s+/g,"_").toLowerCase();
   const loadLogs = () => { try { return JSON.parse(localStorage.getItem(key)||"[]"); } catch { return []; } };
   const [logs, setLogs] = useState(loadLogs);
@@ -4137,6 +4168,7 @@ function ExerciseDetailModal({ exercise, userEmail, onClose }) {
           <button onClick={onClose} style={{ background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:"8px", color:"var(--mut)", cursor:"pointer", padding:"6px 13px", fontSize:"11px", fontFamily:"var(--fm)" }}>← BACK</button>
           <div style={{ flex:1 }}>
             <div style={{ fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"1px", color:mcol }}>{exercise.name}</div>
+                {edbData?.target && <div style={{ fontSize:"10px", color:"rgba(255,255,255,.5)", fontFamily:"var(--fm)", marginTop:"2px" }}>🎯 {edbData.target} · {edbData.equipment}</div>}
             <Mono>{primaryMuscle || exercise.muscleTarget}</Mono>
           </div>
           {pr && <div style={{ textAlign:"right" }}><div style={{ fontFamily:"var(--fd)", fontSize:"18px", color:"var(--a3)" }}>{pr}kg</div><Mono style={{fontSize:"9px"}}>PB</Mono></div>}
@@ -4156,7 +4188,7 @@ function ExerciseDetailModal({ exercise, userEmail, onClose }) {
             {/* Image */}
             <div style={{ borderRadius:"14px", overflow:"hidden", marginBottom:"14px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", height:"200px", display:"flex", alignItems:"center", justifyContent:"center" }}>
               {imgSrc
-                ? <img src={imgSrc} alt={exercise.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{ e.target.style.display="none"; }}/>
+                ? <img src={edbData?.gifUrl||imgSrc} alt={exercise.name} style={{ width:"100%", height:"100%", objectFit:edbData?.gifUrl?"contain":"cover", background:edbData?.gifUrl?"#000":"transparent" }} onError={e=>{ if(imgSrc) e.target.src=imgSrc; else e.target.style.display="none"; }}/>
                 : <div style={{ textAlign:"center" }}><div style={{ fontSize:"40px", marginBottom:"8px" }}>💪</div><Mono>Loading image...</Mono></div>
               }
             </div>
@@ -4497,7 +4529,51 @@ function getMuscleKey(mg) {
 }
 
 // ─── DaySessionView — Full Screen Workout Page ───────────────────────────────
+
+// ─── ExerciseCardInline — compact card with live GIF from ExerciseDB ──────────
+function ExerciseCardInline({ name, done }) {
+  const [ex, setEx] = useState(null);
+  const [showGif, setShowGif] = useState(false);
+  useEffect(() => {
+    if (!name) return;
+    if (exCache[name]) { setEx(exCache[name]); return; }
+    fetchExerciseData(name).then(data => { if (data) setEx(data); });
+  }, [name]);
+  const gifUrl = ex?.gifUrl || null;
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:"8px" }}>
+        <div style={{ fontWeight:600, fontSize:"14px", marginBottom:"3px", color:done?"rgba(255,255,255,.5)":"var(--txt)", textDecoration:done?"line-through":"none" }}>{name}</div>
+        {gifUrl && (
+          <button onClick={()=>setShowGif(s=>!s)} style={{ flexShrink:0, background:"rgba(14,165,233,.12)", border:"1px solid rgba(14,165,233,.25)", borderRadius:"8px", color:"var(--acc)", cursor:"pointer", fontSize:"10px", fontFamily:"var(--fm)", padding:"3px 8px" }}>
+            {showGif ? "▲" : "▶ GIF"}
+          </button>
+        )}
+      </div>
+      {ex && !done && (
+        <div style={{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"4px" }}>
+          {ex.target && <span style={{ padding:"1px 7px", background:"rgba(14,165,233,.1)", border:"1px solid rgba(14,165,233,.2)", borderRadius:"20px", fontSize:"10px", color:"var(--acc)" }}>{ex.target}</span>}
+          {ex.equipment && <span style={{ padding:"1px 7px", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.08)", borderRadius:"20px", fontSize:"10px", color:"rgba(255,255,255,.45)" }}>{ex.equipment}</span>}
+          {(ex.secondaryMuscles||[]).slice(0,2).map((m,i)=>(
+            <span key={i} style={{ padding:"1px 7px", background:"rgba(139,92,246,.1)", border:"1px solid rgba(139,92,246,.2)", borderRadius:"20px", fontSize:"10px", color:"#a78bfa" }}>{m}</span>
+          ))}
+        </div>
+      )}
+      {showGif && gifUrl && (
+        <div style={{ borderRadius:"10px", overflow:"hidden", marginBottom:"6px", border:"1px solid rgba(14,165,233,.2)", background:"#000" }}>
+          <img src={gifUrl} alt={name} style={{ width:"100%", maxHeight:"200px", objectFit:"contain", display:"block" }} loading="lazy"/>
+          <div style={{ padding:"5px 10px", display:"flex", justifyContent:"space-between" }}>
+            <span style={{ fontSize:"9px", color:"rgba(255,255,255,.35)", fontFamily:"var(--fm)" }}>ExerciseDB · {ex?.bodyPart||""}</span>
+            {ex?.target && <span style={{ fontSize:"9px", color:"var(--acc)", fontFamily:"var(--fm)" }}>Target: {ex.target}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DaySessionView({ day, userEmail, onClose, onExercise }) {
+  const { langName } = useLang();
   const [completedExs, setCompletedExs] = useState({});
   const [workoutDone, setWorkoutDone] = useState(false);
 
@@ -4571,7 +4647,7 @@ function DaySessionView({ day, userEmail, onClose, onExercise }) {
               <div onClick={e=>{e.stopPropagation(); toggleEx(idx);}} style={{ position:"absolute", top:"12px", right:"12px", width:"22px", height:"22px", borderRadius:"50%", border:`2px solid ${done?"#22c55e":"rgba(255,255,255,.2)"}`, background:done?"#22c55e":"transparent", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"11px", color:"#fff", flexShrink:0 }}>
                 {done?"✓":""}
               </div>
-              <div style={{ fontWeight:600, fontSize:"14px", marginBottom:"4px", paddingRight:"30px", color:done?"rgba(255,255,255,.5)":"var(--txt)", textDecoration:done?"line-through":"none" }}>{ex.name}</div>
+              <ExerciseCardInline name={ex.name} done={done}/>
               {ex.muscleTarget && <div style={{ fontSize:"11px", color:"var(--mut)", marginBottom:"7px" }}>{ex.muscleTarget}</div>}
               {/* Stat pills */}
               <div style={{ display:"flex", gap:"5px", flexWrap:"wrap" }}>
@@ -4762,8 +4838,8 @@ function ProgramView({ prog, userEmail }) {
 
       {/* Tab nav */}
       <div style={{ display:"flex", gap:"6px", marginBottom:"12px", overflowX:"auto", scrollbarWidth:"none" }}>
-        {[["schedule","💪 Schedule"],["nutrition",<><NutriIcon size={14} style={{marginRight:"4px",verticalAlign:"middle"}}/>Nutrition</>],["progression","📈 Progression"],["goals","🎯 Goals"]].map(([t,lbl])=>(
-          <button key={t} onClick={()=>setActiveTab(t)} style={{ padding:"7px 13px", background:activeTab===t?"var(--acc)":"rgba(255,255,255,.04)", border:`1px solid ${activeTab===t?"var(--acc)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:activeTab===t?"#000":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fb)", fontWeight:activeTab===t?700:400, whiteSpace:"nowrap", flexShrink:0 }}>{lbl}</button>
+        {[["schedule","💪 Schedule"],["nutrition",<><NutriIcon size={14} style={{marginRight:"4px",verticalAlign:"middle"}}/>Nutrition</>],["progression","📈 Progression"],["goals","🎯 Goals"]].map(([pTabId,lbl])=>(
+          <button key={pTabId} onClick={()=>setActiveTab(pTabId)} style={{ padding:"7px 13px", background:activeTab===pTabId?"var(--acc)":"rgba(255,255,255,.04)", border:`1px solid ${activeTab===pTabId?"var(--acc)":"rgba(255,255,255,.08)"}`, borderRadius:"50px", color:activeTab===pTabId?"#000":"var(--mut)", cursor:"pointer", fontSize:"11px", fontFamily:"var(--fb)", fontWeight:activeTab===pTabId?700:400, whiteSpace:"nowrap", flexShrink:0 }}>{lbl}</button>
         ))}
       </div>
 
@@ -5638,7 +5714,7 @@ function UpgradeBtn({ onUpgrade }) {
   const [showPP, setShowPP] = useState(false);
   return (
     <>
-      <button onClick={()=>setShowPP(true)} style={{ width:"100%", padding:"12px", background:"var(--acc)", border:"none", borderRadius:"var(--r)", color:"#000", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px" }}>{`💳 UPGRADE TO PRO — ${currency}{prices.pro}/mo`}</button>
+      <button onClick={()=>setShowPP(true)} style={{ width:"100%", padding:"12px", background:"var(--acc)", border:"none", borderRadius:"var(--r)", color:"#000", cursor:"pointer", fontFamily:"var(--fd)", fontSize:"14px", letterSpacing:"2px" }}>{`💳 UPGRADE TO PRO — ${currency}${prices.pro}/mo`}</button>
       {showPP && <PayPalModal planName="Fit2All Pro" amount={prices.pro} onSuccess={()=>onUpgrade("done")} onClose={()=>setShowPP(false)}/>}
     </>
   );
@@ -5678,7 +5754,7 @@ function PlanScreen({ onSelect, onBack, defaultPlan }) {
           ))}
         </Card>
         <PBtn onClick={()=>sel==="pro"?setShowPP(true):onSelect("free")} col={MEMBER_PLANS[sel].color} style={{ fontSize:"16px", letterSpacing:"2px", color:sel==="pro"?"#fff":"#000" }}>
-          {sel==="pro"?`💳 PAY ${currency}{prices.pro}/mo via PayPal`:"🎁 START FREE TRIAL"}
+          {sel==="pro"?`💳 PAY ${currency}${prices.pro}/mo via PayPal`:"🎁 START FREE TRIAL"}
         </PBtn>
         <Mono style={{ textAlign:"center", marginTop:"8px" }}>{sel==="pro"?"Secure checkout · Cancel anytime":"No credit card required"}</Mono>
       </div>
@@ -5701,7 +5777,7 @@ function UpgradeModal({ reason, onUpgrade, onClose }) {
             <div style={{ fontFamily:"var(--fd)", fontSize:"19px", color:"var(--acc)", letterSpacing:"2px", marginBottom:"6px" }}>{info.title}</div>
             <p style={{ fontSize:"13px", color:"var(--mut)", lineHeight:1.7 }}>{info.body}</p>
           </div>
-          <PBtn onClick={()=>setShowPP(true)} style={{ marginBottom:"8px", fontSize:"14px", letterSpacing:"2px", color:"#000" }}>{`💳 PAY ${currency}{prices.pro}/mo via PayPal`}</PBtn>
+          <PBtn onClick={()=>setShowPP(true)} style={{ marginBottom:"8px", fontSize:"14px", letterSpacing:"2px", color:"#000" }}>{`💳 PAY ${currency}${prices.pro}/mo via PayPal`}</PBtn>
           <PBtn onClick={onClose} style={{ background:"transparent", border:"1px solid rgba(255,255,255,.08)", color:"var(--mut)", fontSize:"14px" }}>Maybe later</PBtn>
         </div>
       </div>
@@ -5991,11 +6067,11 @@ function BottomNav({ role, tab, setTab }) {
   return (
     <div style={{ position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", zIndex:50 }}>
       <div style={{ margin:"0 12px 12px", background:"rgba(12,12,12,.97)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", borderRadius:"22px", border:"1px solid rgba(255,255,255,.08)", padding:"6px 4px", display:"flex", justifyContent:"space-around", boxShadow:"0 8px 32px rgba(0,0,0,.6)" }}>
-        {tabs.map(([t, lbl])=>{
-          const isActive = tab === t;
+        {tabs.map(([tabId, lbl])=>{
+          const isActive = tab === tabId;
           return (
-            <button key={t} onClick={()=>setTab(t)} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"4px", background:"transparent", border:"1px solid transparent", borderRadius:"16px", cursor:"pointer", padding:"9px 10px", transition:"all .2s", flex:1, margin:"0 2px" }}>
-              <NavIcon id={t} active={isActive}/>
+            <button key={tabId} onClick={()=>setTab(tabId)} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"4px", background:"transparent", border:"1px solid transparent", borderRadius:"16px", cursor:"pointer", padding:"9px 10px", transition:"all .2s", flex:1, margin:"0 2px" }}>
+              <NavIcon id={tabId} active={isActive}/>
               <span style={{ fontSize:"11px", fontFamily:"var(--fb)", fontWeight:isActive?700:500, color:isActive?col:"rgba(255,255,255,.3)", transition:"color .2s", letterSpacing:"0px" }}>{lbl}</span>
             </button>
           );
@@ -6109,6 +6185,7 @@ export default function App() {
   function changeAppLang(l) { setLang(l); setLangState(l); }
   const currency = LANGS[lang]?.currency || "£";
   const prices = LANGS[lang]?.prices || LANGS.en.prices;
+  const langName = LANG_NAMES[lang] || "English";
   const t = T[lang] || T.en;
 
   // Restore session from localStorage on load
@@ -6185,7 +6262,7 @@ export default function App() {
   function doUpgrade() { setUpgradeReason(null); const s = mkMemberSub("pro"); setSub(s); }
 
   return (
-    <LangContext.Provider value={{ lang, currency, prices, t, changeLang:changeAppLang }}>
+    <LangContext.Provider value={{ lang, currency, prices, langName, t, changeLang:changeAppLang }}>
     <div style={{ maxWidth:"480px", margin:"0 auto", minHeight:"100vh", position:"relative" }}>
       {screen==="splash" && <SplashScreen onContinue={goRole} onPlanPill={plan=>{ if(plan==="trainer"){ goRole("trainer"); } else if(plan==="pro"){ setRole("enthusiast"); setScreen("plan_pro"); } else { goRole("enthusiast"); } }} onAdminHold={()=>setShowAdminLogin(true)}/>}
       {screen==="plan"   && <PlanScreen onSelect={goPlan} onBack={()=>setScreen("splash")}/>}
@@ -6302,8 +6379,8 @@ function ExerciseLibrary({ onClose }) {
 
           {/* Tags */}
           <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"14px" }}>
-            {[selected.category, selected.equipment?.[0], selected.force, selected.level].filter(Boolean).map((t,i)=>(
-              <div key={i} style={{ padding:"4px 11px", background:col+"18", border:`1px solid ${col}35`, borderRadius:"50px", fontSize:"11px", color:col, fontFamily:"var(--fm)" }}>{t}</div>
+            {[selected.category, selected.equipment?.[0], selected.force, selected.level].filter(Boolean).map((tagVal,i)=>(
+              <div key={i} style={{ padding:"4px 11px", background:col+"18", border:`1px solid ${col}35`, borderRadius:"50px", fontSize:"11px", color:col, fontFamily:"var(--fm)" }}>{tagVal}</div>
             ))}
           </div>
 
